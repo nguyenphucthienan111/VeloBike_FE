@@ -1,8 +1,24 @@
 import React from 'react';
 import { Package, Settings, LogOut, Clock, CheckCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { MOCK_LISTINGS } from '../constants';
 
 export const UserProfile: React.FC = () => {
+  const navigate = useNavigate();
+
+  const handleSignOut = () => {
+    // Clear localStorage
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+    
+    // Dispatch event to notify Layout component
+    window.dispatchEvent(new Event('authStatusChanged'));
+    
+    // Redirect to home
+    navigate('/');
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -22,7 +38,7 @@ export const UserProfile: React.FC = () => {
                 <button className="w-full flex items-center gap-3 px-4 py-3 bg-white hover:bg-gray-50 text-gray-600 text-sm font-medium transition-colors">
                     <Settings size={18} /> Settings
                 </button>
-                <button className="w-full flex items-center gap-3 px-4 py-3 bg-white hover:bg-red-50 text-red-500 text-sm font-medium transition-colors">
+                <button className="w-full flex items-center gap-3 px-4 py-3 bg-white hover:bg-red-50 text-red-500 text-sm font-medium transition-colors cursor-pointer" onClick={handleSignOut}>
                     <LogOut size={18} /> Sign Out
                 </button>
             </nav>

@@ -1,9 +1,55 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ShoppingBag, Search, Menu, User, ShieldCheck } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    // Initialize from localStorage immediately
+    const token = localStorage.getItem('accessToken');
+    console.log('Layout initialized, accessToken exists:', !!token);
+    return !!token;
+  });
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    // Check if user is logged in
+    const checkAuth = () => {
+      const token = localStorage.getItem('accessToken');
+      console.log('Checking auth, token:', !!token);
+      setIsAuthenticated(!!token);
+    };
+    
+    // Check immediately on mount
+    checkAuth();
+    
+    // Also check after a tiny delay to ensure localStorage is ready
+    const timeoutId = setTimeout(checkAuth, 100);
+    
+    // Listen for storage changes (from other tabs)
+    const handleStorageChange = () => {
+      console.log('Storage changed, rechecking auth');
+      checkAuth();
+    };
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Listen for custom auth event
+    const handleAuthChanged = () => {
+      console.log('Auth status changed event received');
+      checkAuth();
+    };
+    window.addEventListener('authStatusChanged', handleAuthChanged);
+    
+    // Also check periodically (as backup)
+    const interval = setInterval(checkAuth, 1000);
+    
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('authStatusChanged', handleAuthChanged);
+      clearInterval(interval);
+    };
+  }, [refreshKey]);
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -40,14 +86,27 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 <Search size={20} />
               </button>
               
-              <Link to="/cart" className="text-gray-400 hover:text-black transition-colors relative">
-                <ShoppingBag size={20} />
-                <span className="absolute -top-1 -right-1 bg-accent text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">1</span>
-              </Link>
-              
-              <Link to="/login" className="text-gray-400 hover:text-black transition-colors">
-                <User size={20} />
-              </Link>
+              {isAuthenticated ? (
+                <>
+                  <Link to="/cart" className="text-gray-400 hover:text-black transition-colors relative">
+                    <ShoppingBag size={20} />
+                    <span className="absolute -top-1 -right-1 bg-accent text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">1</span>
+                  </Link>
+                  
+                  <Link to="/profile" className="text-gray-400 hover:text-black transition-colors">
+                    <User size={20} />
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link to="/login" className="text-sm font-bold text-black hover:text-accent transition-colors">
+                    Sign In
+                  </Link>
+                  <Link to="/register" className="text-sm font-bold bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors">
+                    Sign Up
+                  </Link>
+                </>
+              )}
               
               <button className="md:hidden text-gray-800">
                 <Menu size={24} />
