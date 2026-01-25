@@ -1,10 +1,18 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, Shield, RefreshCw, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { MOCK_LISTINGS } from '../constants';
 import { BikeCard } from '../components/BikeCard';
 
 export const Home: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    // Check if user is logged in
+    const token = localStorage.getItem('accessToken');
+    setIsAuthenticated(!!token);
+  }, []);
+
   return (
     <div className="bg-white">
       {/* Hero Section */}
@@ -37,6 +45,24 @@ export const Home: React.FC = () => {
               SELL YOURS
             </Link>
           </div>
+
+          {/* Auth Buttons - Only show if not authenticated */}
+          {!isAuthenticated && (
+            <div className="mt-12 flex flex-col sm:flex-row gap-3 justify-center">
+              <Link 
+                to="/login" 
+                className="px-6 py-2 text-sm font-semibold text-white border border-white rounded-lg hover:bg-white hover:text-black transition-colors"
+              >
+                Đăng Nhập
+              </Link>
+              <Link 
+                to="/register" 
+                className="px-6 py-2 text-sm font-semibold text-black bg-white rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Đăng Ký
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 

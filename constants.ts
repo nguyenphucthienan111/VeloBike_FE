@@ -1,5 +1,26 @@
 import { BikeListing, BikeType, InspectionStatus } from './types';
 
+// API Configuration
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+export const API_ENDPOINTS = {
+  // Auth
+  REGISTER: `${API_BASE_URL}/auth/register`,
+  LOGIN: `${API_BASE_URL}/auth/login`,
+  VERIFY_EMAIL: `${API_BASE_URL}/auth/verify-email`,
+  RESEND_OTP: `${API_BASE_URL}/auth/resend-otp`,
+  GOOGLE_LOGIN: `${API_BASE_URL}/auth/google`,
+  FACEBOOK_LOGIN: `${API_BASE_URL}/auth/facebook`,
+  
+  // Listings
+  LISTINGS: `${API_BASE_URL}/listings`,
+  LISTINGS_SEARCH: `${API_BASE_URL}/listings/search`,
+  
+  // User
+  PROFILE: `${API_BASE_URL}/users/profile`,
+  UPDATE_PROFILE: `${API_BASE_URL}/users/profile`,
+};
+
 export const MOCK_LISTINGS: BikeListing[] = [
   {
     id: '1',
