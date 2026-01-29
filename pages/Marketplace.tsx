@@ -70,7 +70,26 @@ export const Marketplace: React.FC = () => {
   const getPaginatedListings = () => {
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
-    return listings.slice(start, end);
+    return listings.slice(start, end).map((listing) => ({
+      id: listing._id || listing.id,
+      title: listing.title,
+      brand: listing.generalInfo?.brand || 'Unknown',
+      model: listing.generalInfo?.model || 'Unknown',
+      year: listing.generalInfo?.year || 0,
+      price: listing.pricing?.amount || 0,
+      originalPrice: listing.pricing?.originalPrice || 0,
+      type: listing.type,
+      size: listing.generalInfo?.size || 'M',
+      conditionScore: 8.5, // Mock score
+      inspectionStatus: 'PASSED' as any,
+      imageUrl: listing.media?.thumbnails?.[0] || 'https://via.placeholder.com/400',
+      location: listing.location?.address || 'Unknown',
+      specs: {
+        groupset: listing.specs?.groupset || 'Standard',
+      },
+      sellerName: listing.sellerId?.fullName || 'Unknown',
+      isVerified: !!listing.sellerId?.badge,
+    }));
   };
 
   return (
@@ -159,11 +178,13 @@ export const Marketplace: React.FC = () => {
             </div>
 
             {/* Brand Filter */}
-            {facets && facets.brands.length > 0 && (
+            {facets && Array.isArray(facets.brands) && facets.brands.length > 0 && (
               <div className="bg-white p-6 rounded-lg border border-gray-200">
                 <h3 className="font-bold mb-4">Brands</h3>
                 <div className="space-y-3 max-h-72 overflow-y-auto pr-2">
-                  {facets.brands.map((brand) => (
+                  {facets.brands
+                    .filter((brand): brand is string => typeof brand === 'string')
+                    .map((brand) => (
                     <label key={brand} className="flex items-center gap-3 cursor-pointer group">
                       <div
                         className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
@@ -270,9 +291,9 @@ export const Marketplace: React.FC = () => {
                         if (currentPage <= 3) return i + 1;
                         if (currentPage >= totalPages - 2) return totalPages - 4 + i;
                         return currentPage - 2 + i;
-                      }).map((page) => (
+                      }).map((page, index) => (
                         <button
-                          key={page}
+                          key={`page-${page}-${index}`}
                           onClick={() => setCurrentPage(page)}
                           className={`w-10 h-10 rounded font-bold text-sm transition-colors ${
                             currentPage === page

@@ -139,10 +139,14 @@ export const useListings = (): UseListingsReturn => {
         const data: ListingsResponse = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.message || 'Failed to fetch listings');
+          throw new Error(data?.message || `Server error: ${response.status}`);
         }
 
-        setListings(data.data || []);
+        if (!data || !Array.isArray(data.data)) {
+          throw new Error('Invalid response format: data is null or not an array');
+        }
+
+        setListings(data.data);
         setTotalCount(data.count || 0);
         console.log('✅ Listings fetched:', data.count, 'items');
       } catch (err: any) {
@@ -165,8 +169,17 @@ export const useListings = (): UseListingsReturn => {
       const data = await response.json();
 
       if (data.data) {
-        setFacets(data.data);
-        console.log('✅ Facets fetched:', data.data);
+        // Ensure brands is an array of strings
+        const brands = Array.isArray(data.data.brands) 
+          ? data.data.brands.filter((b: any) => typeof b === 'string')
+          : [];
+        
+        setFacets({
+          types: data.data.types || [],
+          brands: brands,
+          priceRange: data.data.priceRange || { min: 0, max: 500000000 },
+        });
+        console.log('✅ Facets fetched:', { brands });
       } else {
         // Fallback with default brands
         setFacets({
