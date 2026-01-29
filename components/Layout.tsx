@@ -10,14 +10,28 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     console.log('Layout initialized, accessToken exists:', !!token);
     return !!token;
   });
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    // Check if user is logged in
+    // Check if user is logged in and get role
     const checkAuth = () => {
       const token = localStorage.getItem('accessToken');
+      const userData = localStorage.getItem('user');
       console.log('Checking auth, token:', !!token);
       setIsAuthenticated(!!token);
+      
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          setUserRole(user.role);
+          console.log('User role:', user.role);
+        } catch (e) {
+          setUserRole(null);
+        }
+      } else {
+        setUserRole(null);
+      }
     };
     
     // Check immediately on mount
@@ -39,6 +53,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       checkAuth();
     };
     window.addEventListener('authStatusChanged', handleAuthChanged);
+    window.addEventListener('authChange', handleAuthChanged);
     
     // Also check periodically (as backup)
     const interval = setInterval(checkAuth, 1000);
@@ -47,6 +62,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       clearTimeout(timeoutId);
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('authStatusChanged', handleAuthChanged);
+      window.removeEventListener('authChange', handleAuthChanged);
       clearInterval(interval);
     };
   }, [refreshKey]);
@@ -74,10 +90,21 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
             {/* Desktop Nav */}
             <nav className="hidden md:flex space-x-8">
-              <Link to="/" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/' ? 'text-black' : 'text-gray-500'}`}>HOME</Link>
-              <Link to="/marketplace" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/marketplace' ? 'text-black' : 'text-gray-500'}`}>MARKETPLACE</Link>
-              <Link to="/sell" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/sell' ? 'text-black' : 'text-gray-500'}`}>SELL YOUR BIKE</Link>
-              <Link to="/inspection" className="text-sm font-medium text-gray-500 hover:text-accent transition-colors">INSPECTION SERVICE</Link>
+              {userRole === 'SELLER' ? (
+                <>
+                  <Link to="/seller/dashboard" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname.includes('/seller/dashboard') ? 'text-black' : 'text-gray-500'}`}>DASHBOARD</Link>
+                  <Link to="/seller/inventory" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname.includes('/seller/inventory') ? 'text-black' : 'text-gray-500'}`}>INVENTORY</Link>
+                  <Link to="/seller/analytics" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname.includes('/seller/analytics') ? 'text-black' : 'text-gray-500'}`}>ANALYTICS</Link>
+                  <Link to="/" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/' ? 'text-black' : 'text-gray-500'}`}>HOME</Link>
+                </>
+              ) : (
+                <>
+                  <Link to="/" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/' ? 'text-black' : 'text-gray-500'}`}>HOME</Link>
+                  <Link to="/marketplace" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/marketplace' ? 'text-black' : 'text-gray-500'}`}>MARKETPLACE</Link>
+                  <Link to="/sell" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/sell' ? 'text-black' : 'text-gray-500'}`}>SELL YOUR BIKE</Link>
+                  <Link to="/inspection" className="text-sm font-medium text-gray-500 hover:text-accent transition-colors">INSPECTION SERVICE</Link>
+                </>
+              )}
             </nav>
 
             {/* Icons */}
@@ -88,12 +115,14 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               
               {isAuthenticated ? (
                 <>
-                  <Link to="/cart" className="text-gray-400 hover:text-black transition-colors relative">
-                    <ShoppingBag size={20} />
-                    <span className="absolute -top-1 -right-1 bg-accent text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">1</span>
-                  </Link>
+                  {userRole === 'BUYER' && (
+                    <Link to="/cart" className="text-gray-400 hover:text-black transition-colors relative">
+                      <ShoppingBag size={20} />
+                      <span className="absolute -top-1 -right-1 bg-accent text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">1</span>
+                    </Link>
+                  )}
                   
-                  <Link to="/profile" className="text-gray-400 hover:text-black transition-colors">
+                  <Link to={userRole === 'SELLER' ? '/seller/dashboard' : '/buyer/profile'} className="text-gray-400 hover:text-black transition-colors">
                     <User size={20} />
                   </Link>
                 </>

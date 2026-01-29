@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from '../constants';
+import { validateMockCredentials, mockLoginResponse } from '../services/mockAuth';
 
 interface LoginCredentials {
   email: string;
@@ -50,6 +51,27 @@ export const useAuth = (): UseAuthReturn => {
       setError(null);
 
       try {
+        // Check for mock credentials (for development/testing)
+        if (validateMockCredentials(credentials.email, credentials.password)) {
+          console.log('🎯 Using MOCK login for testing');
+          
+          // Simulate API delay
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Store mock tokens and user data
+          localStorage.setItem('accessToken', mockLoginResponse.accessToken);
+          localStorage.setItem('refreshToken', mockLoginResponse.refreshToken);
+          localStorage.setItem('user', JSON.stringify(mockLoginResponse.user));
+          
+          // Dispatch event to notify Layout component
+          window.dispatchEvent(new Event('authChange'));
+          
+          // Redirect based on role (buyer mock)
+          navigate('/buyer/dashboard');
+          return true;
+        }
+
+        // Otherwise, use real API
         const response = await fetch(API_ENDPOINTS.LOGIN, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -57,6 +79,8 @@ export const useAuth = (): UseAuthReturn => {
         });
 
         const data: AuthResponse = await response.json();
+        console.log('🔍 Login response:', data);
+        console.log('🔍 Response status:', response.status, response.ok);
 
         if (!response.ok) {
           setError(data.message || 'Login failed');
@@ -67,13 +91,30 @@ export const useAuth = (): UseAuthReturn => {
         if (data.accessToken) localStorage.setItem('accessToken', data.accessToken);
         if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
 
-        // Store user info
-        if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
+        // Store user info - user phải có
+        const user = data.user;
+        console.log('🔍 User object:', user);
+        if (user) {
+          localStorage.setItem('user', JSON.stringify(user));
+          console.log('✅ User stored:', user);
+        }
         
         // Dispatch event to notify Layout component
-        window.dispatchEvent(new Event('authStatusChanged'));
+        window.dispatchEvent(new Event('authChange'));
 
-        navigate('/');
+        // Redirect based on role
+        const role = user?.role;
+        console.log('📍 User role:', role, '| Type:', typeof role);
+        if (role === 'SELLER') {
+          console.log('➡️ Redirecting to /seller/dashboard');
+          navigate('/seller/dashboard');
+        } else if (role === 'BUYER') {
+          console.log('➡️ Redirecting to /buyer/dashboard');
+          navigate('/buyer/dashboard');
+        } else {
+          console.log('➡️ Redirecting to / (no matching role)');
+          navigate('/');
+        }
         return true;
       } catch (err: any) {
         setError(err.message || 'An error occurred during login');

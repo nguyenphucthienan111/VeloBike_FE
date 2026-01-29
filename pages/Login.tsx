@@ -106,12 +106,12 @@ export const Login: React.FC = () => {
                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
                   Password
                 </label>
-                <a
-                  href="/forgot-password"
+                <Link
+                  to="/forgot-password"
                   className="text-xs text-gray-600 hover:text-black font-semibold"
                 >
                   Forgot?
-                </a>
+                </Link>
               </div>
               <input
                 type="password"
