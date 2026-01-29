@@ -6,6 +6,7 @@ import { Marketplace } from './pages/Marketplace';
 import { ProductDetail } from './pages/ProductDetail';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+import { ForgotPassword } from './pages/ForgotPassword';
 import { Cart } from './pages/Cart';
 import { Sell } from './pages/Sell';
 import { UserProfile } from './pages/UserProfile';
@@ -22,6 +23,7 @@ const App: React.FC = () => {
           {/* New Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/sell" element={<Sell />} />
           <Route path="/profile" element={<UserProfile />} />

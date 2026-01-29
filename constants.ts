@@ -1,7 +1,8 @@
 import { BikeListing, BikeType, InspectionStatus } from './types';
 
 // API Configuration
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const VITE_API_URL = (import.meta as any).env.VITE_API_URL;
+export const API_BASE_URL = VITE_API_URL || 'http://localhost:5000/api';
 
 export const API_ENDPOINTS = {
   // Auth
@@ -11,6 +12,9 @@ export const API_ENDPOINTS = {
   RESEND_OTP: `${API_BASE_URL}/auth/resend-otp`,
   GOOGLE_LOGIN: `${API_BASE_URL}/auth/google`,
   FACEBOOK_LOGIN: `${API_BASE_URL}/auth/facebook`,
+  FORGOT_PASSWORD: `${API_BASE_URL}/auth/forgot-password`,
+  RESET_PASSWORD: `${API_BASE_URL}/auth/reset-password`,
+  CHANGE_PASSWORD: `${API_BASE_URL}/auth/change-password`,
   
   // Listings
   LISTINGS: `${API_BASE_URL}/listings`,

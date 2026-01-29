@@ -1,19 +1,19 @@
 import path from 'path';
 import fs from 'fs';
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig, loadEnv, ConfigEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode }: ConfigEnv) => {
     const env = loadEnv(mode, '.', '');
     
     // HTTPS disabled for now - using HTTP for local development
-    const https = false;
+    const httpsConfig = false as any;
 
     return {
       server: {
         port: 3000,
         host: 'localhost', // Chỉ chạy trên localhost
-        https, // Thêm HTTPS support
+        https: httpsConfig,
       },
       plugins: [react()],
       define: {

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from '../constants';
+import { validateMockCredentials, mockLoginResponse } from '../services/mockAuth';
 
 interface LoginCredentials {
   email: string;
@@ -50,6 +51,26 @@ export const useAuth = (): UseAuthReturn => {
       setError(null);
 
       try {
+        // Check for mock credentials (for development/testing)
+        if (validateMockCredentials(credentials.email, credentials.password)) {
+          console.log('🎯 Using MOCK login for testing');
+          
+          // Simulate API delay
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Store mock tokens and user data
+          localStorage.setItem('accessToken', mockLoginResponse.accessToken);
+          localStorage.setItem('refreshToken', mockLoginResponse.refreshToken);
+          localStorage.setItem('user', JSON.stringify(mockLoginResponse.user));
+          
+          // Dispatch event to notify Layout component
+          window.dispatchEvent(new Event('authChange'));
+          
+          navigate('/');
+          return true;
+        }
+
+        // Otherwise, use real API
         const response = await fetch(API_ENDPOINTS.LOGIN, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -71,7 +92,7 @@ export const useAuth = (): UseAuthReturn => {
         if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
         
         // Dispatch event to notify Layout component
-        window.dispatchEvent(new Event('authStatusChanged'));
+        window.dispatchEvent(new Event('authChange'));
 
         navigate('/');
         return true;
