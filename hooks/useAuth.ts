@@ -66,7 +66,8 @@ export const useAuth = (): UseAuthReturn => {
           // Dispatch event to notify Layout component
           window.dispatchEvent(new Event('authChange'));
           
-          navigate('/');
+          // Redirect based on role (buyer mock)
+          navigate('/buyer/dashboard');
           return true;
         }
 
@@ -78,6 +79,8 @@ export const useAuth = (): UseAuthReturn => {
         });
 
         const data: AuthResponse = await response.json();
+        console.log('🔍 Login response:', data);
+        console.log('🔍 Response status:', response.status, response.ok);
 
         if (!response.ok) {
           setError(data.message || 'Login failed');
@@ -88,13 +91,30 @@ export const useAuth = (): UseAuthReturn => {
         if (data.accessToken) localStorage.setItem('accessToken', data.accessToken);
         if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
 
-        // Store user info
-        if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
+        // Store user info - user phải có
+        const user = data.user;
+        console.log('🔍 User object:', user);
+        if (user) {
+          localStorage.setItem('user', JSON.stringify(user));
+          console.log('✅ User stored:', user);
+        }
         
         // Dispatch event to notify Layout component
         window.dispatchEvent(new Event('authChange'));
 
-        navigate('/');
+        // Redirect based on role
+        const role = user?.role;
+        console.log('📍 User role:', role, '| Type:', typeof role);
+        if (role === 'SELLER') {
+          console.log('➡️ Redirecting to /seller/dashboard');
+          navigate('/seller/dashboard');
+        } else if (role === 'BUYER') {
+          console.log('➡️ Redirecting to /buyer/dashboard');
+          navigate('/buyer/dashboard');
+        } else {
+          console.log('➡️ Redirecting to / (no matching role)');
+          navigate('/');
+        }
         return true;
       } catch (err: any) {
         setError(err.message || 'An error occurred during login');

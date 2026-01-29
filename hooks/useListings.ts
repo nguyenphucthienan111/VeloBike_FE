@@ -146,9 +146,12 @@ export const useListings = (): UseListingsReturn => {
           throw new Error('Invalid response format: data is null or not an array');
         }
 
-        setListings(data.data);
-        setTotalCount(data.count || 0);
-        console.log('✅ Listings fetched:', data.count, 'items');
+        // Filter out listings with null or invalid sellerId
+        const validListings = data.data.filter((listing: any) => listing && listing.sellerId);
+        
+        setListings(validListings);
+        setTotalCount(validListings.length);
+        console.log('✅ Listings fetched:', validListings.length, 'items');
       } catch (err: any) {
         const errorMsg = err.message || 'An error occurred while fetching listings';
         setError(errorMsg);
@@ -169,9 +172,11 @@ export const useListings = (): UseListingsReturn => {
       const data = await response.json();
 
       if (data.data) {
-        // Ensure brands is an array of strings
+        // Extract brand names - handle both string and object formats
         const brands = Array.isArray(data.data.brands) 
-          ? data.data.brands.filter((b: any) => typeof b === 'string')
+          ? data.data.brands
+              .map((b: any) => typeof b === 'string' ? b : (b?.name || b?._id || ''))
+              .filter((b: string) => b)
           : [];
         
         setFacets({

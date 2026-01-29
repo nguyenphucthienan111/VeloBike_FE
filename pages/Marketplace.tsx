@@ -183,9 +183,13 @@ export const Marketplace: React.FC = () => {
                 <h3 className="font-bold mb-4">Brands</h3>
                 <div className="space-y-3 max-h-72 overflow-y-auto pr-2">
                   {facets.brands
-                    .filter((brand): brand is string => typeof brand === 'string')
-                    .map((brand) => (
-                    <label key={brand} className="flex items-center gap-3 cursor-pointer group">
+                    .map((brand: any) => {
+                      // Extract brand name from object or string
+                      return typeof brand === 'string' ? brand : (brand?.name || brand?._id || '');
+                    })
+                    .filter((brand: string) => brand) // Filter empty strings
+                    .map((brand: string, index: number) => (
+                    <label key={`${brand}-${index}`} className="flex items-center gap-3 cursor-pointer group">
                       <div
                         className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
                           selectedBrands.includes(brand)

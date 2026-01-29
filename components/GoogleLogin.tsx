@@ -66,14 +66,20 @@ export const GoogleLogin: React.FC<GoogleLoginProps> = ({ onSuccess, onError }) 
       }
 
       // Dispatch event to notify Layout component
-      window.dispatchEvent(new Event('authStatusChanged'));
-      console.log('authStatusChanged event dispatched');
+      window.dispatchEvent(new Event('authChange'));
+      console.log('authChange event dispatched');
 
-      // Redirect to home
-      console.log('Navigating to home in 500ms');
+      // Redirect based on role
+      const role = data.user?.role;
+      console.log('User role:', role);
       setTimeout(() => {
-        console.log('Navigating to /');
-        navigate('/');
+        if (role === 'SELLER') {
+          navigate('/seller/dashboard');
+        } else if (role === 'BUYER') {
+          navigate('/buyer/dashboard');
+        } else {
+          navigate('/');
+        }
       }, 500);
     } catch (error: any) {
       console.error('Google login error:', error);

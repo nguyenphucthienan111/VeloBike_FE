@@ -149,11 +149,22 @@ export const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError
         localStorage.setItem('user', JSON.stringify(data.user));
       }
 
-      // Redirect
-      if (onSuccess) {
-        onSuccess();
+      // Dispatch event to notify Layout component
+      window.dispatchEvent(new Event('authChange'));
+
+      // Redirect based on role
+      const role = data.user?.role;
+      console.log('Facebook login user role:', role);
+      if (role === 'SELLER') {
+        navigate('/seller/dashboard');
+      } else if (role === 'BUYER') {
+        navigate('/buyer/dashboard');
       } else {
         navigate('/');
+      }
+
+      if (onSuccess) {
+        onSuccess();
       }
     } catch (error: any) {
       console.error('Facebook login error:', error);
