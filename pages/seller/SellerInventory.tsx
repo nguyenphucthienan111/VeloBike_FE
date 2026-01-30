@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { SellerSidebar } from '../../components/SellerSidebar';
 
 interface Listing {
   _id: string;
@@ -250,7 +251,7 @@ export const SellerInventory: React.FC = () => {
             onClick={() => navigate('/seller/orders')}
             className="w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
           >
-            Customers
+            Orders
           </button>
           <button
             onClick={() => navigate('/seller/wallet')}
@@ -291,7 +292,7 @@ export const SellerInventory: React.FC = () => {
 
         {/* Add Inventory Button */}
         <button 
-          onClick={() => navigate('/seller/add-listing')}
+          onClick={() => navigate('/seller/add-product')}
           className="w-full px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-bold"
         >
           + ADD INVENTORY

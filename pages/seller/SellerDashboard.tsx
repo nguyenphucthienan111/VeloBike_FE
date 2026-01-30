@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { SellerSidebar } from '../../components/SellerSidebar';
 
 interface DashboardStats {
   totalListings: number;
@@ -130,86 +131,7 @@ export const SellerDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100 flex">
       {/* Sidebar */}
-      <div className="w-56 bg-white text-gray-900 p-6 sticky top-0 h-screen overflow-y-auto border-r border-gray-200">
-        {/* Logo */}
-        <div className="mb-8 cursor-pointer" onClick={() => navigate('/')}>
-          <div className="text-xl font-extrabold tracking-tighter italic mb-2">
-            VELO<span className="text-red-600">BIKE</span>
-          </div>
-          <p className="text-xs text-gray-500">Seller Dashboard</p>
-        </div>
-
-        {/* Navigation */}
-        <nav className="space-y-1 mb-8">
-          <button
-            onClick={() => navigate('/seller/dashboard')}
-            className="w-full text-left px-4 py-3 rounded-lg bg-gray-900 text-white font-medium hover:bg-gray-800 transition-colors"
-          >
-            Dashboard
-          </button>
-          <button
-            onClick={() => navigate('/seller/inventory')}
-            className="w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            Inventory
-          </button>
-          <button
-            onClick={() => navigate('/seller/analytics')}
-            className="w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            Sales
-          </button>
-          <button
-            onClick={() => navigate('/seller/orders')}
-            className="w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            Customers
-          </button>
-          <button
-            onClick={() => navigate('/seller/wallet')}
-            className="w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            Wallet
-          </button>
-          <button
-            onClick={() => navigate('/seller/messages')}
-            className="w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            Messages
-          </button>
-          <button
-            onClick={() => navigate('/seller/reviews')}
-            className="w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            Reviews
-          </button>
-          <button
-            onClick={() => navigate('/seller/profile')}
-            className="w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            Settings
-          </button>
-        </nav>
-
-        {/* Storage Status */}
-        <div className="border-t border-gray-200 pt-6 mb-6">
-          <p className="text-xs text-gray-500 font-semibold mb-3">STORAGE STATUS</p>
-          <div className="space-y-2">
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-gray-600 h-2 rounded-full" style={{ width: '65%' }}></div>
-            </div>
-            <p className="text-xs text-gray-500">{stats?.totalListings || 0} of 100 listings</p>
-          </div>
-        </div>
-
-        {/* Add Inventory Button */}
-        <button 
-          onClick={() => navigate('/seller/inventory')}
-          className="w-full px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-bold"
-        >
-          + ADD INVENTORY
-        </button>
-      </div>
+      <SellerSidebar stats={stats || undefined} />
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
