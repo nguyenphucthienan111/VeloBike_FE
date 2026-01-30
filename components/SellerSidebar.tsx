@@ -65,9 +65,23 @@ export const SellerSidebar: React.FC<SellerSidebarProps> = ({ stats }) => {
       {/* Add Inventory Button */}
       <button 
         onClick={() => navigate('/seller/add-product')}
-        className="w-full px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-bold"
+        className="w-full px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-bold mb-4"
       >
         + ADD INVENTORY
+      </button>
+
+      {/* Logout Button */}
+      <button 
+        onClick={() => {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
+          window.dispatchEvent(new Event('authChange'));
+          navigate('/login');
+        }}
+        className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+      >
+        Logout
       </button>
     </div>
   );

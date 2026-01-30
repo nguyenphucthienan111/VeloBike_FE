@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from '../constants';
-import { validateMockCredentials, mockLoginResponse } from '../services/mockAuth';
+import { validateMockCredentials, mockLoginResponse, mockAdminLoginResponse } from '../services/mockAuth';
 
 interface LoginCredentials {
   email: string;
@@ -52,22 +52,28 @@ export const useAuth = (): UseAuthReturn => {
 
       try {
         // Check for mock credentials (for development/testing)
-        if (validateMockCredentials(credentials.email, credentials.password)) {
-          console.log('🎯 Using MOCK login for testing');
+        const mockValidation = validateMockCredentials(credentials.email, credentials.password);
+        if (mockValidation.valid) {
+          console.log('🎯 Using MOCK login for testing, role:', mockValidation.role);
           
           // Simulate API delay
           await new Promise(resolve => setTimeout(resolve, 500));
           
-          // Store mock tokens and user data
-          localStorage.setItem('accessToken', mockLoginResponse.accessToken);
-          localStorage.setItem('refreshToken', mockLoginResponse.refreshToken);
-          localStorage.setItem('user', JSON.stringify(mockLoginResponse.user));
+          // Store mock tokens and user data based on role
+          const mockResponse = mockValidation.role === 'ADMIN' ? mockAdminLoginResponse : mockLoginResponse;
+          localStorage.setItem('accessToken', mockResponse.accessToken);
+          localStorage.setItem('refreshToken', mockResponse.refreshToken);
+          localStorage.setItem('user', JSON.stringify(mockResponse.user));
           
           // Dispatch event to notify Layout component
           window.dispatchEvent(new Event('authChange'));
           
-          // Redirect based on role (buyer mock)
-          navigate('/buyer/dashboard');
+          // Redirect based on role
+          if (mockValidation.role === 'ADMIN') {
+            navigate('/admin/dashboard');
+          } else {
+            navigate('/buyer/dashboard');
+          }
           return true;
         }
 
