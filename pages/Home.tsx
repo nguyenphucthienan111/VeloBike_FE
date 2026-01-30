@@ -1,17 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, Shield, RefreshCw, Zap } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { MOCK_LISTINGS } from '../constants';
 import { BikeCard } from '../components/BikeCard';
 
 export const Home: React.FC = () => {
+  const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if user is logged in
     const token = localStorage.getItem('accessToken');
     setIsAuthenticated(!!token);
-  }, []);
+    
+    // Get user role
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        setUserRole(user.role);
+        
+        // Redirect seller to dashboard
+        if (user.role === 'SELLER') {
+          navigate('/seller/dashboard');
+          return;
+        }
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+      }
+    }
+  }, [navigate]);
 
   return (
     <div className="bg-white">

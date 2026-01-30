@@ -12,6 +12,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   });
   const [userRole, setUserRole] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  
+  // Hide header for seller dashboard pages
+  const isSellerPage = location.pathname.startsWith('/seller/');
 
   useEffect(() => {
     // Check if user is logged in and get role
@@ -68,7 +71,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   }, [refreshKey]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className={`min-h-screen ${isSellerPage ? 'flex' : 'flex flex-col'} bg-white`}>
+      {/* Top Banner and Header - Hidden for Seller Pages */}
+      {!isSellerPage && (
+        <>
       {/* Top Banner for Trust */}
       <div className="bg-black text-white text-xs py-2 text-center font-medium tracking-wide">
         <span className="flex items-center justify-center gap-2">
@@ -99,32 +105,37 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 </>
               ) : (
                 <>
-                  <Link to="/" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/' ? 'text-black' : 'text-gray-500'}`}>HOME</Link>
-                  <Link to="/marketplace" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/marketplace' ? 'text-black' : 'text-gray-500'}`}>MARKETPLACE</Link>
-                  <Link to="/sell" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/sell' ? 'text-black' : 'text-gray-500'}`}>SELL YOUR BIKE</Link>
-                  <Link to="/inspection" className="text-sm font-medium text-gray-500 hover:text-accent transition-colors">INSPECTION SERVICE</Link>
+              <Link to="/" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/' ? 'text-black' : 'text-gray-500'}`}>HOME</Link>
+              <Link to="/marketplace" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/marketplace' ? 'text-black' : 'text-gray-500'}`}>MARKETPLACE</Link>
+              <Link to="/sell" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/sell' ? 'text-black' : 'text-gray-500'}`}>SELL YOUR BIKE</Link>
+              <Link to="/inspection" className="text-sm font-medium text-gray-500 hover:text-accent transition-colors">INSPECTION SERVICE</Link>
                 </>
               )}
             </nav>
 
             {/* Icons */}
             <div className="flex items-center space-x-6">
-              <button className="text-gray-400 hover:text-black transition-colors">
+              {/* Search icon - only for Buyer or not authenticated */}
+              {userRole !== 'SELLER' && (
+                <button className="text-accent hover:text-accent/80 transition-colors">
                 <Search size={20} />
               </button>
+              )}
               
               {isAuthenticated ? (
                 <>
+                  {/* Shopping bag - only for Buyer */}
                   {userRole === 'BUYER' && (
-                    <Link to="/cart" className="text-gray-400 hover:text-black transition-colors relative">
-                      <ShoppingBag size={20} />
-                      <span className="absolute -top-1 -right-1 bg-accent text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">1</span>
-                    </Link>
+                    <Link to="/cart" className="text-accent hover:text-accent/80 transition-colors relative">
+                <ShoppingBag size={20} />
+                <span className="absolute -top-1 -right-1 bg-accent text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">1</span>
+              </Link>
                   )}
-                  
-                  <Link to={userRole === 'SELLER' ? '/seller/dashboard' : '/buyer/profile'} className="text-gray-400 hover:text-black transition-colors">
-                    <User size={20} />
-                  </Link>
+              
+                  {/* Profile icon - for both Buyer and Seller */}
+                  <Link to={userRole === 'SELLER' ? '/seller/profile' : '/buyer/profile'} className="text-accent hover:text-accent/80 transition-colors">
+                <User size={20} />
+              </Link>
                 </>
               ) : (
                 <>
@@ -144,13 +155,16 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </div>
         </div>
       </header>
+        </>
+      )}
 
       {/* Main Content */}
-      <main className="flex-grow">
+      <main className={isSellerPage ? 'flex-grow' : 'flex-grow'}>
         {children}
       </main>
 
-      {/* Footer */}
+      {/* Footer - Hidden for Seller Pages */}
+      {!isSellerPage && (
       <footer className="bg-[#111] text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
@@ -182,6 +196,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </div>
         </div>
       </footer>
+      )}
     </div>
   );
 };

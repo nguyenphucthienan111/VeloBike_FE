@@ -47,7 +47,7 @@ export const Marketplace: React.FC = () => {
   };
 
   const toggleBrand = (brand: string) => {
-    setSelectedBrands(prev =>
+    setSelectedBrands(prev => 
       prev.includes(brand) ? prev.filter(b => b !== brand) : [...prev, brand]
     );
     setCurrentPage(1);
@@ -122,7 +122,7 @@ export const Marketplace: React.FC = () => {
             </div>
 
             {/* Sort Dropdown */}
-            <div className="relative">
+             <div className="relative">
               <select
                 value={sortBy}
                 onChange={(e) => {
@@ -135,9 +135,9 @@ export const Marketplace: React.FC = () => {
                 <option value="price_low">Price: Low to High</option>
                 <option value="price_high">Price: High to Low</option>
                 <option value="newest">Newest Listed</option>
-              </select>
+                </select>
               <ChevronDown size={16} className="absolute right-3 top-3 pointer-events-none text-gray-600" />
-            </div>
+             </div>
           </div>
         </div>
 
@@ -162,10 +162,10 @@ export const Marketplace: React.FC = () => {
                     >
                       {selectedType === type && <Check size={12} className="text-white" />}
                     </div>
-                    <input
-                      type="radio"
-                      name="type"
-                      className="hidden"
+                    <input 
+                      type="radio" 
+                      name="type" 
+                      className="hidden" 
                       checked={selectedType === type}
                       onChange={() => handleTypeChange(type)}
                     />
@@ -180,7 +180,7 @@ export const Marketplace: React.FC = () => {
             {/* Brand Filter */}
             {facets && Array.isArray(facets.brands) && facets.brands.length > 0 && (
               <div className="bg-white p-6 rounded-lg border border-gray-200">
-                <h3 className="font-bold mb-4">Brands</h3>
+              <h3 className="font-bold mb-4">Brands</h3>
                 <div className="space-y-3 max-h-72 overflow-y-auto pr-2">
                   {facets.brands
                     .map((brand: any) => {
@@ -198,20 +198,20 @@ export const Marketplace: React.FC = () => {
                         }`}
                       >
                         {selectedBrands.includes(brand) && <Check size={12} className="text-white" />}
-                      </div>
-                      <input
-                        type="checkbox"
+                    </div>
+                    <input 
+                        type="checkbox" 
                         className="hidden"
                         checked={selectedBrands.includes(brand)}
                         onChange={() => toggleBrand(brand)}
-                      />
+                    />
                       <span className="text-sm text-gray-600 group-hover:text-black transition-colors">
                         {brand}
                       </span>
-                    </label>
-                  ))}
-                </div>
+                  </label>
+                ))}
               </div>
+            </div>
             )}
 
             {/* Price Range Filter */}
@@ -238,7 +238,7 @@ export const Marketplace: React.FC = () => {
                 >
                   Apply
                 </button>
-              </div>
+                </div>
             </div>
 
             {/* Clear Filters */}
@@ -261,9 +261,9 @@ export const Marketplace: React.FC = () => {
                   <p className="font-semibold text-red-900">Error</p>
                   <p className="text-red-700 text-sm">{error}</p>
                 </div>
-              </div>
+                </div>
             )}
-
+            
             {loading ? (
               <div className="flex flex-col items-center justify-center h-96">
                 <Loader className="animate-spin text-gray-400 mb-4" size={40} />
@@ -329,7 +329,7 @@ export const Marketplace: React.FC = () => {
                 >
                   Clear Filters
                 </button>
-              </div>
+                </div>
             )}
           </div>
         </div>

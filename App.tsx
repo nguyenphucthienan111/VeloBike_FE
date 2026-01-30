@@ -24,6 +24,7 @@ import { SellerReviews } from './pages/seller/SellerReviews';
 import { SellerProfile } from './pages/seller/SellerProfile';
 import { SellerSubscription } from './pages/seller/SellerSubscription';
 import { SellerNotifications } from './pages/seller/SellerNotifications';
+import { AddProduct } from './pages/seller/AddProduct';
 
 const App: React.FC = () => {
   return (
@@ -51,6 +52,7 @@ const App: React.FC = () => {
           {/* Seller Routes */}
           <Route path="/seller/dashboard" element={<SellerDashboard />} />
           <Route path="/seller/inventory" element={<SellerInventory />} />
+          <Route path="/seller/add-product" element={<AddProduct />} />
           <Route path="/seller/analytics" element={<SellerAnalytics />} />
           <Route path="/seller/orders" element={<SellerOrders />} />
           <Route path="/seller/wallet" element={<SellerWallet />} />
