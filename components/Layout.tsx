@@ -71,20 +71,20 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   }, [refreshKey]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className={`min-h-screen ${isSellerPage ? 'flex' : 'flex flex-col'} bg-white`}>
       {/* Top Banner and Header - Hidden for Seller Pages */}
       {!isSellerPage && (
         <>
-          {/* Top Banner for Trust */}
-          <div className="bg-black text-white text-xs py-2 text-center font-medium tracking-wide">
-            <span className="flex items-center justify-center gap-2">
-              <ShieldCheck size={14} className="text-accent" />
-              VERIFIED INSPECTION & ESCROW PAYMENTS GUARANTEED
-            </span>
-          </div>
+      {/* Top Banner for Trust */}
+      <div className="bg-black text-white text-xs py-2 text-center font-medium tracking-wide">
+        <span className="flex items-center justify-center gap-2">
+          <ShieldCheck size={14} className="text-accent" />
+          VERIFIED INSPECTION & ESCROW PAYMENTS GUARANTEED
+        </span>
+      </div>
 
-          {/* Navigation */}
-          <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 transition-all duration-300">
+      {/* Navigation */}
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
@@ -105,10 +105,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 </>
               ) : (
                 <>
-                  <Link to="/" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/' ? 'text-black' : 'text-gray-500'}`}>HOME</Link>
-                  <Link to="/marketplace" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/marketplace' ? 'text-black' : 'text-gray-500'}`}>MARKETPLACE</Link>
-                  <Link to="/sell" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/sell' ? 'text-black' : 'text-gray-500'}`}>SELL YOUR BIKE</Link>
-                  <Link to="/inspection" className="text-sm font-medium text-gray-500 hover:text-accent transition-colors">INSPECTION SERVICE</Link>
+              <Link to="/" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/' ? 'text-black' : 'text-gray-500'}`}>HOME</Link>
+              <Link to="/marketplace" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/marketplace' ? 'text-black' : 'text-gray-500'}`}>MARKETPLACE</Link>
+              <Link to="/sell" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/sell' ? 'text-black' : 'text-gray-500'}`}>SELL YOUR BIKE</Link>
+              <Link to="/inspection" className="text-sm font-medium text-gray-500 hover:text-accent transition-colors">INSPECTION SERVICE</Link>
                 </>
               )}
             </nav>
@@ -118,8 +118,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               {/* Search icon - only for Buyer or not authenticated */}
               {userRole !== 'SELLER' && (
                 <button className="text-accent hover:text-accent/80 transition-colors">
-                  <Search size={20} />
-                </button>
+                <Search size={20} />
+              </button>
               )}
               
               {isAuthenticated ? (
@@ -127,15 +127,15 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                   {/* Shopping bag - only for Buyer */}
                   {userRole === 'BUYER' && (
                     <Link to="/cart" className="text-accent hover:text-accent/80 transition-colors relative">
-                      <ShoppingBag size={20} />
-                      <span className="absolute -top-1 -right-1 bg-accent text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">1</span>
-                    </Link>
+                <ShoppingBag size={20} />
+                <span className="absolute -top-1 -right-1 bg-accent text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">1</span>
+              </Link>
                   )}
-                  
+              
                   {/* Profile icon - for both Buyer and Seller */}
                   <Link to={userRole === 'SELLER' ? '/seller/profile' : '/buyer/profile'} className="text-accent hover:text-accent/80 transition-colors">
-                    <User size={20} />
-                  </Link>
+                <User size={20} />
+              </Link>
                 </>
               ) : (
                 <>
@@ -159,11 +159,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       )}
 
       {/* Main Content */}
-      <main className="flex-grow">
+      <main className={isSellerPage ? 'flex-grow' : 'flex-grow'}>
         {children}
       </main>
 
-      {/* Footer */}
+      {/* Footer - Hidden for Seller Pages */}
+      {!isSellerPage && (
       <footer className="bg-[#111] text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
@@ -195,6 +196,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </div>
         </div>
       </footer>
+      )}
     </div>
   );
 };

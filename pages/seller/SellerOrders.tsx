@@ -121,19 +121,10 @@ export const SellerOrders: React.FC = () => {
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
         <div className="bg-white px-8 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center text-sm text-gray-600">
-              <span className="cursor-pointer hover:text-gray-900" onClick={() => navigate('/seller/dashboard')}>Dashboard</span>
-              <span className="mx-3">/</span>
-              <span className="font-medium text-gray-900">Orders</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => navigate('/seller/dashboard')}
-              className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              ← Back to Dashboard
-            </button>
+          <div className="flex items-center text-sm text-gray-600">
+            <span className="cursor-pointer hover:text-gray-900" onClick={() => navigate('/seller/dashboard')}>Dashboard</span>
+            <span className="mx-3">/</span>
+            <span className="font-medium text-gray-900">Orders</span>
           </div>
         </div>
 
