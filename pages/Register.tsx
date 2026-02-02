@@ -161,7 +161,7 @@ export const Register: React.FC = () => {
           {successMessage && (
             <div className="mb-4">
               <Alert type="success" message={successMessage} onClose={() => setSuccessMessage('')} />
-            </div>
+          </div>
           )}
 
           {/* Registration Form */}
@@ -196,7 +196,7 @@ export const Register: React.FC = () => {
                 required
               />
 
-              <div>
+          <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">
                   Account Type
                 </label>
@@ -209,8 +209,8 @@ export const Register: React.FC = () => {
                   <option value="BUYER">Buyer</option>
                   <option value="SELLER">Seller</option>
                 </select>
-              </div>
-
+          </div>
+          
               <FormInput
                 label="Password"
                 name="password"
@@ -253,7 +253,7 @@ export const Register: React.FC = () => {
                     Privacy Policy
                   </a>
                 </label>
-              </div>
+          </div>
               {errors.agreeToTerms && <p className="text-red-500 text-xs">{errors.agreeToTerms}</p>}
 
               {/* Submit Button */}
@@ -297,8 +297,8 @@ export const Register: React.FC = () => {
                 required
               />
 
-              <button
-                type="submit"
+          <button 
+            type="submit"
                 disabled={loading}
                 className="w-full bg-black text-white font-bold py-3 uppercase tracking-widest rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -310,7 +310,7 @@ export const Register: React.FC = () => {
                 onClick={handleResendOtp}
                 disabled={loading}
                 className="w-full border border-gray-300 text-gray-700 font-bold py-3 uppercase tracking-widest rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+          >
                 Resend Code
               </button>
 
@@ -325,18 +325,18 @@ export const Register: React.FC = () => {
                 className="text-sm text-gray-600 hover:text-black w-full text-center py-2"
               >
                 Back to Registration
-              </button>
-            </form>
+          </button>
+        </form>
           )}
 
           {/* Sign In Link */}
-          <div className="mt-8 pt-8 border-t border-gray-100 text-center">
+        <div className="mt-8 pt-8 border-t border-gray-100 text-center">
             <p className="text-sm text-gray-600">
               Already have an account?{' '}
               <Link to="/login" className="text-black font-bold hover:underline">
                 Sign In
               </Link>
-            </p>
+          </p>
           </div>
         </div>
       </div>

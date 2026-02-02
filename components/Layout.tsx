@@ -13,8 +13,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const [userRole, setUserRole] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   
-  // Hide header for seller dashboard pages
+  // Hide header for seller, admin, and inspector dashboard pages
+  // Inspector pages have their own header component
   const isSellerPage = location.pathname.startsWith('/seller/');
+  const isAdminPage = location.pathname.startsWith('/admin/');
+  const isInspectorPage = location.pathname.startsWith('/inspector/');
+  const isDashboardPage = isSellerPage || isAdminPage || isInspectorPage;
 
   useEffect(() => {
     // Check if user is logged in and get role
@@ -71,9 +75,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   }, [refreshKey]);
 
   return (
-    <div className={`min-h-screen ${isSellerPage ? 'flex' : 'flex flex-col'} bg-white`}>
-      {/* Top Banner and Header - Hidden for Seller Pages */}
-      {!isSellerPage && (
+    <div className={`min-h-screen ${isDashboardPage ? 'flex' : 'flex flex-col'} bg-white`}>
+      {/* Top Banner and Header - Hidden for Seller/Admin Pages */}
+      {!isDashboardPage && (
         <>
       {/* Top Banner for Trust */}
       <div className="bg-black text-white text-xs py-2 text-center font-medium tracking-wide">
@@ -103,6 +107,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                   <Link to="/seller/analytics" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname.includes('/seller/analytics') ? 'text-black' : 'text-gray-500'}`}>ANALYTICS</Link>
                   <Link to="/" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/' ? 'text-black' : 'text-gray-500'}`}>HOME</Link>
                 </>
+              ) : userRole === 'INSPECTOR' ? (
+                // Inspector: no nav links, just logo and profile icon
+                null
               ) : (
                 <>
               <Link to="/" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/' ? 'text-black' : 'text-gray-500'}`}>HOME</Link>
@@ -115,8 +122,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
             {/* Icons */}
             <div className="flex items-center space-x-6">
-              {/* Search icon - only for Buyer or not authenticated */}
-              {userRole !== 'SELLER' && (
+              {/* Search icon - only for Buyer or not authenticated (not for Inspector) */}
+              {userRole !== 'SELLER' && userRole !== 'INSPECTOR' && (
                 <button className="text-accent hover:text-accent/80 transition-colors">
                 <Search size={20} />
               </button>
@@ -132,8 +139,16 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               </Link>
                   )}
               
-                  {/* Profile icon - for both Buyer and Seller */}
-                  <Link to={userRole === 'SELLER' ? '/seller/profile' : '/buyer/profile'} className="text-accent hover:text-accent/80 transition-colors">
+                  {/* Profile icon - for Buyer, Seller, Inspector, and Admin */}
+                  <Link 
+                    to={
+                      userRole === 'SELLER' ? '/seller/profile' : 
+                      userRole === 'INSPECTOR' ? '/inspector/profile' :
+                      userRole === 'ADMIN' ? '/admin/profile' :
+                      '/buyer/profile'
+                    } 
+                    className="text-accent hover:text-accent/80 transition-colors"
+                  >
                 <User size={20} />
               </Link>
                 </>
@@ -159,12 +174,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       )}
 
       {/* Main Content */}
-      <main className={isSellerPage ? 'flex-grow' : 'flex-grow'}>
+      <main className={isDashboardPage || isInspectorPage ? 'flex-grow' : 'flex-grow'}>
         {children}
       </main>
 
-      {/* Footer - Hidden for Seller Pages */}
-      {!isSellerPage && (
+      {/* Footer - Hidden for Seller/Admin Pages */}
+      {!isDashboardPage && (
       <footer className="bg-[#111] text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
