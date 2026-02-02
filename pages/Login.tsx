@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { FormInput } from '../components/FormInput';
 import { Alert } from '../components/Alert';
 import { GoogleLogin } from '../components/GoogleLogin';
-import { FacebookLogin } from '../components/FacebookLogin';
 import { useAuth } from '../hooks/useAuth';
 
 interface LoginFormData {
@@ -156,9 +155,6 @@ export const Login: React.FC = () => {
           <div className="space-y-3">
             <GoogleLogin 
               onError={(error) => console.error('Google login failed:', error)}
-            />
-            <FacebookLogin 
-              onError={(error) => console.error('Facebook login failed:', error)}
             />
           </div>
 

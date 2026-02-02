@@ -51,7 +51,7 @@ export const GoogleLogin: React.FC<GoogleLoginProps> = ({ onSuccess, onError }) 
         throw new Error(data.message || 'Google login failed');
       }
 
-      // Store tokens
+      // Store tokens - ensure all are saved before redirect
       if (data.accessToken) {
         localStorage.setItem('accessToken', data.accessToken);
         console.log('accessToken saved');
@@ -62,25 +62,40 @@ export const GoogleLogin: React.FC<GoogleLoginProps> = ({ onSuccess, onError }) 
       }
       if (data.user) {
         localStorage.setItem('user', JSON.stringify(data.user));
-        console.log('user saved');
+        console.log('user saved:', data.user);
       }
 
       // Dispatch event to notify Layout component
       window.dispatchEvent(new Event('authChange'));
       console.log('authChange event dispatched');
 
-      // Redirect based on role
+      // Wait a bit to ensure localStorage is saved
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Redirect based on role - use window.location for HashRouter
       const role = data.user?.role;
-      console.log('User role:', role);
-      setTimeout(() => {
-        if (role === 'SELLER') {
-          navigate('/seller/dashboard');
-        } else if (role === 'BUYER') {
-          navigate('/buyer/dashboard');
-        } else {
-          navigate('/');
-        }
-      }, 500);
+      console.log('User role:', role, 'Redirecting...');
+      
+      let redirectPath = '/';
+      if (role === 'SELLER') {
+        redirectPath = '/seller/dashboard';
+      } else if (role === 'BUYER') {
+        redirectPath = '/buyer/dashboard';
+      } else if (role === 'ADMIN') {
+        redirectPath = '/admin/dashboard';
+      } else if (role === 'INSPECTOR') {
+        redirectPath = '/inspector/dashboard';
+      }
+      
+      console.log('Redirecting to:', redirectPath);
+      
+      // Use window.location.href for HashRouter to ensure redirect works
+      window.location.href = `#${redirectPath}`;
+      
+      // Call onSuccess if provided
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error: any) {
       console.error('Google login error:', error);
       if (onError) {
