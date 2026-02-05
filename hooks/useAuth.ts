@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from '../constants';
-import { validateMockCredentials, mockLoginResponse, mockAdminLoginResponse } from '../services/mockAuth';
+import { validateMockCredentials, mockLoginResponse, mockAdminLoginResponse, mockInspectorLoginResponse } from '../services/mockAuth';
 
 interface LoginCredentials {
   email: string;
@@ -60,7 +60,15 @@ export const useAuth = (): UseAuthReturn => {
           await new Promise(resolve => setTimeout(resolve, 500));
           
           // Store mock tokens and user data based on role
-          const mockResponse = mockValidation.role === 'ADMIN' ? mockAdminLoginResponse : mockLoginResponse;
+          let mockResponse;
+          if (mockValidation.role === 'ADMIN') {
+            mockResponse = mockAdminLoginResponse;
+          } else if (mockValidation.role === 'INSPECTOR') {
+            mockResponse = mockInspectorLoginResponse;
+          } else {
+            mockResponse = mockLoginResponse;
+          }
+          
           localStorage.setItem('accessToken', mockResponse.accessToken);
           localStorage.setItem('refreshToken', mockResponse.refreshToken);
           localStorage.setItem('user', JSON.stringify(mockResponse.user));
@@ -71,6 +79,8 @@ export const useAuth = (): UseAuthReturn => {
           // Redirect based on role
           if (mockValidation.role === 'ADMIN') {
             navigate('/admin/dashboard');
+          } else if (mockValidation.role === 'INSPECTOR') {
+            navigate('/inspector/dashboard');
           } else {
             navigate('/buyer/dashboard');
           }
@@ -117,6 +127,12 @@ export const useAuth = (): UseAuthReturn => {
         } else if (role === 'BUYER') {
           console.log('➡️ Redirecting to /buyer/dashboard');
           navigate('/buyer/dashboard');
+        } else if (role === 'ADMIN') {
+          console.log('➡️ Redirecting to /admin/dashboard');
+          navigate('/admin/dashboard');
+        } else if (role === 'INSPECTOR') {
+          console.log('➡️ Redirecting to /inspector/dashboard');
+          navigate('/inspector/dashboard');
         } else {
           console.log('➡️ Redirecting to / (no matching role)');
           navigate('/');

@@ -138,7 +138,7 @@ export const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError
         throw new Error(data.message || 'Facebook login failed');
       }
 
-      // Store tokens
+      // Store tokens - ensure all are saved before redirect
       if (data.accessToken) {
         localStorage.setItem('accessToken', data.accessToken);
       }
@@ -147,21 +147,34 @@ export const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError
       }
       if (data.user) {
         localStorage.setItem('user', JSON.stringify(data.user));
+        console.log('user saved:', data.user);
       }
 
       // Dispatch event to notify Layout component
       window.dispatchEvent(new Event('authChange'));
 
-      // Redirect based on role
+      // Wait a bit to ensure localStorage is saved
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Redirect based on role - use window.location for HashRouter
       const role = data.user?.role;
-      console.log('Facebook login user role:', role);
+      console.log('Facebook login user role:', role, 'Redirecting...');
+      
+      let redirectPath = '/';
       if (role === 'SELLER') {
-        navigate('/seller/dashboard');
+        redirectPath = '/seller/dashboard';
       } else if (role === 'BUYER') {
-        navigate('/buyer/dashboard');
-      } else {
-        navigate('/');
+        redirectPath = '/buyer/dashboard';
+      } else if (role === 'ADMIN') {
+        redirectPath = '/admin/dashboard';
+      } else if (role === 'INSPECTOR') {
+        redirectPath = '/inspector/dashboard';
       }
+      
+      console.log('Redirecting to:', redirectPath);
+      
+      // Use window.location.href for HashRouter to ensure redirect works
+      window.location.href = `#${redirectPath}`;
 
       if (onSuccess) {
         onSuccess();

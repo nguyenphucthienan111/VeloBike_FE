@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { FormInput } from '../components/FormInput';
 import { Alert } from '../components/Alert';
 import { GoogleLogin } from '../components/GoogleLogin';
-import { FacebookLogin } from '../components/FacebookLogin';
 import { useAuth } from '../hooks/useAuth';
 
 interface LoginFormData {
@@ -25,6 +24,12 @@ export const Login: React.FC = () => {
   });
 
   const validateEmail = (email: string): boolean => {
+    // Allow mock accounts (admin, kien123, ins) without @
+    const mockAccounts = ['admin', 'kien123', 'ins'];
+    if (mockAccounts.includes(email.toLowerCase().trim())) {
+      return true;
+    }
+    // Standard email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
@@ -92,10 +97,10 @@ export const Login: React.FC = () => {
             <FormInput
               label="Email Address"
               name="email"
-              type="email"
+              type="text"
               value={formData.email}
               onChange={handleInputChange}
-              placeholder="you@example.com"
+              placeholder="you@example.com, admin, or ins"
               error={errors.email}
               required
             />
@@ -150,9 +155,6 @@ export const Login: React.FC = () => {
           <div className="space-y-3">
             <GoogleLogin 
               onError={(error) => console.error('Google login failed:', error)}
-            />
-            <FacebookLogin 
-              onError={(error) => console.error('Facebook login failed:', error)}
             />
           </div>
 

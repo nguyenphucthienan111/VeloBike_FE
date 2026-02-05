@@ -25,6 +25,19 @@ import { SellerProfile } from './pages/seller/SellerProfile';
 import { SellerSubscription } from './pages/seller/SellerSubscription';
 import { SellerNotifications } from './pages/seller/SellerNotifications';
 import { AddProduct } from './pages/seller/AddProduct';
+import { AdminDashboard } from './pages/admin/AdminDashboard';
+import { AdminUsers } from './pages/admin/AdminUsers';
+import { AdminListings } from './pages/admin/AdminListings';
+import { AdminOrders } from './pages/admin/AdminOrders';
+import { AdminAnalytics } from './pages/admin/AdminAnalytics';
+import { AdminInspectors } from './pages/admin/AdminInspectors';
+import { AdminProfile } from './pages/admin/AdminProfile';
+import { InspectorDashboard } from './pages/inspector/InspectorDashboard';
+import { PendingInspections } from './pages/inspector/PendingInspections';
+import { InspectionForm } from './pages/inspector/InspectionForm';
+import { MyInspections } from './pages/inspector/MyInspections';
+import { InspectionDetail } from './pages/inspector/InspectionDetail';
+import { InspectorProfile } from './pages/inspector/InspectorProfile';
 
 const App: React.FC = () => {
   return (
@@ -62,7 +75,22 @@ const App: React.FC = () => {
           <Route path="/seller/subscription" element={<SellerSubscription />} />
           <Route path="/seller/notifications" element={<SellerNotifications />} />
           
-          <Route path="/inspection" element={<div className="p-20 text-center font-bold">Inspector Dashboard Coming Soon (Mobile Phase)</div>} />
+          {/* Admin Routes */}
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/listings" element={<AdminListings />} />
+          <Route path="/admin/orders" element={<AdminOrders />} />
+          <Route path="/admin/analytics" element={<AdminAnalytics />} />
+          <Route path="/admin/inspectors" element={<AdminInspectors />} />
+          <Route path="/admin/profile" element={<AdminProfile />} />
+          
+          {/* Inspector Routes */}
+          <Route path="/inspector/dashboard" element={<InspectorDashboard />} />
+          <Route path="/inspector/pending" element={<PendingInspections />} />
+          <Route path="/inspector/inspect/:orderId" element={<InspectionForm />} />
+          <Route path="/inspector/history" element={<MyInspections />} />
+          <Route path="/inspector/inspection/:orderId" element={<InspectionDetail />} />
+          <Route path="/inspector/profile" element={<InspectorProfile />} />
           
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
