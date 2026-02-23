@@ -25,6 +25,7 @@ import { SellerProfile } from './pages/seller/SellerProfile';
 import { SellerSubscription } from './pages/seller/SellerSubscription';
 import { SellerNotifications } from './pages/seller/SellerNotifications';
 import { AddProduct } from './pages/seller/AddProduct';
+import { EditProduct } from './pages/seller/EditProduct';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminUsers } from './pages/admin/AdminUsers';
 import { AdminListings } from './pages/admin/AdminListings';
@@ -32,6 +33,7 @@ import { AdminOrders } from './pages/admin/AdminOrders';
 import { AdminAnalytics } from './pages/admin/AdminAnalytics';
 import { AdminInspectors } from './pages/admin/AdminInspectors';
 import { AdminProfile } from './pages/admin/AdminProfile';
+import { AdminCatalog } from './pages/admin/AdminCatalog';
 import { InspectorDashboard } from './pages/inspector/InspectorDashboard';
 import { PendingInspections } from './pages/inspector/PendingInspections';
 import { InspectionForm } from './pages/inspector/InspectionForm';
@@ -66,6 +68,7 @@ const App: React.FC = () => {
           <Route path="/seller/dashboard" element={<SellerDashboard />} />
           <Route path="/seller/inventory" element={<SellerInventory />} />
           <Route path="/seller/add-product" element={<AddProduct />} />
+          <Route path="/seller/edit-listing/:id" element={<EditProduct />} />
           <Route path="/seller/analytics" element={<SellerAnalytics />} />
           <Route path="/seller/orders" element={<SellerOrders />} />
           <Route path="/seller/wallet" element={<SellerWallet />} />
@@ -79,6 +82,7 @@ const App: React.FC = () => {
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/users" element={<AdminUsers />} />
           <Route path="/admin/listings" element={<AdminListings />} />
+          <Route path="/admin/catalog" element={<AdminCatalog />} />
           <Route path="/admin/orders" element={<AdminOrders />} />
           <Route path="/admin/analytics" element={<AdminAnalytics />} />
           <Route path="/admin/inspectors" element={<AdminInspectors />} />

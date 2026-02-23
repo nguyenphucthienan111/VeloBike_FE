@@ -1,17 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { AdminSidebar } from '../../components/AdminSidebar';
+import { useToast, Toast } from '../../components/Toast';
+import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
 
 interface Listing {
   _id: string;
   title: string;
   description: string;
-  amount: number;
+  pricing?: {
+    amount: number;
+    currency: string;
+  };
+  amount?: number; // Fallback for backward compatibility
   status: string;
   sellerId: {
     _id: string;
     fullName: string;
     email: string;
     reputation?: { score: number };
+  } | null;
+  generalInfo?: {
+    brand: string;
+    model: string;
+    year: number;
   };
   brand?: string;
   model?: string;
@@ -20,9 +31,13 @@ interface Listing {
   priorityLevel?: number;
   approvalTimeHours?: number;
   sellerPlanType?: string;
+  media?: {
+    thumbnails?: string[];
+  };
 }
 
 export const AdminListings: React.FC = () => {
+  const { toast, showToast, hideToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [listings, setListings] = useState<Listing[]>([]);
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 20, pages: 0 });
@@ -49,7 +64,7 @@ export const AdminListings: React.FC = () => {
       });
       if (statusFilter) params.append('status', statusFilter);
 
-      const response = await fetch(`http://localhost:5000/api/admin/listings?${params}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/listings?${params}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
@@ -62,7 +77,7 @@ export const AdminListings: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching listings:', error);
-      setError('Error loading listings');
+      setError(isConnectionError(error) ? CONNECTION_ERROR_MESSAGE : 'Error loading listings');
     } finally {
       setLoading(false);
     }
@@ -80,7 +95,7 @@ export const AdminListings: React.FC = () => {
         body.rejectionReason = rejectionReason;
       }
 
-      const response = await fetch(`http://localhost:5000/api/admin/listings/${selectedListing._id}/status`, {
+      const response = await fetch(`${API_BASE_URL}/admin/listings/${selectedListing._id}/status`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -93,22 +108,45 @@ export const AdminListings: React.FC = () => {
         setShowActionModal(false);
         setSelectedListing(null);
         setRejectionReason('');
+        showToast(
+          actionType === 'approve' 
+            ? 'Listing approved and published successfully!' 
+            : 'Listing has been rejected.',
+          actionType === 'approve' ? 'success' : 'warning'
+        );
         fetchListings();
       } else {
         const data = await response.json();
-        alert(data.message || 'Failed to update listing status');
+        showToast(data.message || 'Unable to update listing status', 'error');
       }
     } catch (error) {
       console.error('Error updating listing status:', error);
-      alert('Error updating listing status');
+      showToast('Error updating listing status', 'error');
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
+  const formatCurrency = (amount: number | undefined) => {
+    if (!amount || isNaN(amount)) return '0 VND';
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'VND',
     }).format(amount);
+  };
+
+  const getListingPrice = (listing: Listing) => {
+    return listing.pricing?.amount || listing.amount || 0;
+  };
+
+  const getListingBrand = (listing: Listing) => {
+    return listing.generalInfo?.brand || listing.brand || 'N/A';
+  };
+
+  const getListingModel = (listing: Listing) => {
+    return listing.generalInfo?.model || listing.model || 'N/A';
+  };
+
+  const getListingYear = (listing: Listing) => {
+    return listing.generalInfo?.year || listing.year || null;
   };
 
   return (
@@ -169,19 +207,42 @@ export const AdminListings: React.FC = () => {
                       {listings.map((listing) => (
                         <tr key={listing._id} className="hover:bg-gray-50">
                           <td className="px-6 py-4">
-                            <div>
-                              <p className="font-semibold text-gray-900">{listing.title}</p>
-                              <p className="text-sm text-gray-600">{listing.brand} {listing.model} ({listing.year})</p>
+                            <div className="flex items-center gap-3">
+                              {/* Product Image */}
+                              <div className="flex-shrink-0">
+                                {listing.media?.thumbnails?.[0] ? (
+                                  <img
+                                    src={listing.media.thumbnails[0]}
+                                    alt={listing.title}
+                                    className="w-12 h-12 object-cover rounded-lg border border-gray-200"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/48?text=No+Image';
+                                    }}
+                                  />
+                                ) : (
+                                  <div className="w-12 h-12 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
+                                    <span className="text-xs text-gray-400">No Image</span>
+                                  </div>
+                                )}
+                              </div>
+                              {/* Product Info */}
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-gray-900 truncate">{listing.title}</p>
+                                <p className="text-sm text-gray-600">
+                                  {getListingBrand(listing)} {getListingModel(listing)}
+                                  {getListingYear(listing) && ` (${getListingYear(listing)})`}
+                                </p>
+                              </div>
                             </div>
                           </td>
                           <td className="px-6 py-4">
                             <div>
-                              <p className="font-semibold text-gray-900">{listing.sellerId.fullName}</p>
-                              <p className="text-sm text-gray-600">{listing.sellerId.email}</p>
+                              <p className="font-semibold text-gray-900">{listing.sellerId?.fullName || 'N/A'}</p>
+                              <p className="text-sm text-gray-600">{listing.sellerId?.email || 'N/A'}</p>
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <p className="font-semibold text-gray-900">{formatCurrency(listing.amount)}</p>
+                            <p className="font-semibold text-gray-900">{formatCurrency(getListingPrice(listing))}</p>
                           </td>
                           <td className="px-6 py-4">
                             <span className={`px-2 py-1 text-xs font-semibold rounded ${
@@ -278,7 +339,7 @@ export const AdminListings: React.FC = () => {
                 <span className="font-semibold">Listing:</span> {selectedListing.title}
               </p>
               <p className="text-gray-700">
-                <span className="font-semibold">Seller:</span> {selectedListing.sellerId.fullName}
+                <span className="font-semibold">Seller:</span> {selectedListing.sellerId?.fullName || 'N/A'}
               </p>
             </div>
             {actionType === 'reject' && (
@@ -317,6 +378,16 @@ export const AdminListings: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast.isVisible && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          isVisible={toast.isVisible}
+          onClose={hideToast}
+        />
       )}
     </div>
   );

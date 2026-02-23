@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AdminSidebar } from '../../components/AdminSidebar';
+import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
 
 interface Inspector {
   _id: string;
@@ -34,7 +35,7 @@ export const AdminInspectors: React.FC = () => {
       });
       if (isActiveFilter !== '') params.append('isActive', isActiveFilter);
 
-      const response = await fetch(`http://localhost:5000/api/admin/inspectors?${params}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/inspectors?${params}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
@@ -47,7 +48,7 @@ export const AdminInspectors: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching inspectors:', error);
-      setError('Error loading inspectors');
+      setError(isConnectionError(error) ? CONNECTION_ERROR_MESSAGE : 'Error loading inspectors');
     } finally {
       setLoading(false);
     }

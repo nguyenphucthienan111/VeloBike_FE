@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
 
 interface UserProfile {
   id: string;
@@ -59,7 +60,7 @@ export const AdminProfile: React.FC = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/users/me', {
+      const response = await fetch(`${API_BASE_URL}/users/me`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
@@ -82,7 +83,7 @@ export const AdminProfile: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
-      setError('Failed to load profile');
+      setError(isConnectionError(error) ? CONNECTION_ERROR_MESSAGE : 'Failed to load profile');
     } finally {
       setLoading(false);
     }
@@ -158,7 +159,7 @@ export const AdminProfile: React.FC = () => {
         formDataToSend.append('avatar', avatarFile);
       }
 
-      const response = await fetch('http://localhost:5000/api/users/me', {
+      const response = await fetch(`${API_BASE_URL}/users/me`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

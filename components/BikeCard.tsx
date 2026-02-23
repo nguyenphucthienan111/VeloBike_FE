@@ -9,8 +9,13 @@ interface BikeCardProps {
 
 export const BikeCard: React.FC<BikeCardProps> = ({ bike }) => {
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+    if (!price || isNaN(price)) return '0 VND';
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND', minimumFractionDigits: 0 }).format(price);
   };
+
+  if (!bike || !bike.id) {
+    return null; // Don't render if bike data is invalid
+  }
 
   return (
     <Link to={`/bike/${bike.id}`} className="group block bg-white border border-gray-100 hover:shadow-xl transition-all duration-300 ease-out overflow-hidden">
@@ -56,9 +61,9 @@ export const BikeCard: React.FC<BikeCardProps> = ({ bike }) => {
         </h3>
         
         <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
-          <span className="bg-gray-100 px-2 py-1 rounded">{bike.specs.groupset.split(' ')[0]}</span>
-          <span className="bg-gray-100 px-2 py-1 rounded">{bike.size}</span>
-          <span className="flex items-center gap-1"><MapPin size={12}/> {bike.location}</span>
+          <span className="bg-gray-100 px-2 py-1 rounded">{bike.specs?.groupset?.split(' ')[0] || 'Standard'}</span>
+          <span className="bg-gray-100 px-2 py-1 rounded">{bike.size || 'M'}</span>
+          <span className="flex items-center gap-1"><MapPin size={12}/> {bike.location || 'Unknown'}</span>
         </div>
 
         <div className="flex items-end justify-between border-t border-gray-100 pt-3">

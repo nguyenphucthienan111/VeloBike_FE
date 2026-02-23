@@ -4,6 +4,14 @@ import { BikeListing, BikeType, InspectionStatus } from './types';
 const VITE_API_URL = (import.meta as any).env.VITE_API_URL;
 export const API_BASE_URL = VITE_API_URL || 'http://localhost:5000/api';
 
+/** Message when backend is not reachable (ERR_CONNECTION_REFUSED / Failed to fetch) */
+export const CONNECTION_ERROR_MESSAGE =
+  'Không kết nối được máy chủ. Vui lòng đảm bảo backend đang chạy (mặc định: localhost:5000).';
+
+export function isConnectionError(err: unknown): boolean {
+  return err instanceof TypeError && (err.message === 'Failed to fetch' || (err as Error).message?.includes('fetch'));
+}
+
 export const API_ENDPOINTS = {
   // Auth
   REGISTER: `${API_BASE_URL}/auth/register`,

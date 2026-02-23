@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AdminSidebar } from '../../components/AdminSidebar';
+import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
 
 interface Order {
   _id: string;
@@ -49,7 +50,7 @@ export const AdminOrders: React.FC = () => {
       });
       if (statusFilter) params.append('status', statusFilter);
 
-      const response = await fetch(`http://localhost:5000/api/admin/orders?${params}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/orders?${params}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
@@ -62,7 +63,7 @@ export const AdminOrders: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching orders:', error);
-      setError('Error loading orders');
+      setError(isConnectionError(error) ? CONNECTION_ERROR_MESSAGE : 'Error loading orders');
     } finally {
       setLoading(false);
     }
@@ -73,7 +74,7 @@ export const AdminOrders: React.FC = () => {
 
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`http://localhost:5000/api/admin/orders/${orderId}/payout`, {
+      const response = await fetch(`${API_BASE_URL}/admin/orders/${orderId}/payout`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` },
       });

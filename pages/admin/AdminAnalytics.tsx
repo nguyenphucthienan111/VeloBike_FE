@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AdminSidebar } from '../../components/AdminSidebar';
+import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
 
 interface AnalyticsData {
   period: string;
@@ -25,7 +26,7 @@ export const AdminAnalytics: React.FC = () => {
       const token = localStorage.getItem('accessToken');
       if (!token) return;
 
-      const response = await fetch(`http://localhost:5000/api/admin/analytics?period=${period}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/analytics?period=${period}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
@@ -37,7 +38,7 @@ export const AdminAnalytics: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching analytics:', error);
-      setError('Error loading analytics');
+      setError(isConnectionError(error) ? CONNECTION_ERROR_MESSAGE : 'Error loading analytics');
     } finally {
       setLoading(false);
     }

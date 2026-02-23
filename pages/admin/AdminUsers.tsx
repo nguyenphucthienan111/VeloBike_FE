@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AdminSidebar } from '../../components/AdminSidebar';
+import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
 
 interface User {
   _id: string;
@@ -43,7 +44,7 @@ export const AdminUsers: React.FC = () => {
       if (filters.role) params.append('role', filters.role);
       if (filters.status) params.append('status', filters.status);
 
-      const response = await fetch(`http://localhost:5000/api/admin/users?${params}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/users?${params}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
@@ -56,7 +57,7 @@ export const AdminUsers: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching users:', error);
-      setError('Error loading users');
+      setError(isConnectionError(error) ? CONNECTION_ERROR_MESSAGE : 'Error loading users');
     } finally {
       setLoading(false);
     }
@@ -65,7 +66,7 @@ export const AdminUsers: React.FC = () => {
   const handleBanUser = async (userId: string, isActive: boolean) => {
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`http://localhost:5000/api/admin/users/${userId}/status`, {
+      const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/status`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -90,7 +91,7 @@ export const AdminUsers: React.FC = () => {
 
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`http://localhost:5000/api/admin/users/${selectedUser._id}/kyc`, {
+      const response = await fetch(`${API_BASE_URL}/admin/users/${selectedUser._id}/kyc`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -222,9 +223,15 @@ export const AdminUsers: React.FC = () => {
                             </span>
                           </td>
                           <td className="px-6 py-4">
-                            <span className={`px-2 py-1 text-xs font-semibold rounded ${getStatusColor(user.kycStatus)}`}>
-                              {user.kycStatus}
-                            </span>
+                            {user.role === 'SELLER' ? (
+                              <span className={`px-2 py-1 text-xs font-semibold rounded ${getStatusColor(user.kycStatus)}`}>
+                                {user.kycStatus}
+                              </span>
+                            ) : (
+                              <span className="px-2 py-1 text-xs font-semibold rounded text-gray-400 bg-gray-50">
+                                N/A
+                              </span>
+                            )}
                           </td>
                           <td className="px-6 py-4">
                             <span className={`px-2 py-1 text-xs font-semibold rounded ${
@@ -235,16 +242,18 @@ export const AdminUsers: React.FC = () => {
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex gap-2">
-                              <button
-                                onClick={() => {
-                                  setSelectedUser(user);
-                                  setKycStatus(user.kycStatus);
-                                  setShowKycModal(true);
-                                }}
-                                className="px-3 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                              >
-                                KYC
-                              </button>
+                              {user.role === 'SELLER' && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedUser(user);
+                                    setKycStatus(user.kycStatus);
+                                    setShowKycModal(true);
+                                  }}
+                                  className="px-3 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                >
+                                  KYC
+                                </button>
+                              )}
                               <button
                                 onClick={() => handleBanUser(user._id, user.isActive)}
                                 className={`px-3 py-1 text-xs font-semibold rounded transition-colors ${
@@ -291,14 +300,15 @@ export const AdminUsers: React.FC = () => {
         </div>
       </div>
 
-      {/* KYC Modal */}
-      {showKycModal && selectedUser && (
+      {/* KYC Modal - Only for SELLER */}
+      {showKycModal && selectedUser && selectedUser.role === 'SELLER' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Update KYC Status</h2>
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-gray-900 mb-2">User</label>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">Seller</label>
               <p className="text-gray-700">{selectedUser.fullName} ({selectedUser.email})</p>
+              <p className="text-xs text-gray-500 mt-1">Role: {selectedUser.role}</p>
             </div>
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-900 mb-2">KYC Status</label>
@@ -311,6 +321,7 @@ export const AdminUsers: React.FC = () => {
                 <option value="VERIFIED">VERIFIED</option>
                 <option value="REJECTED">REJECTED</option>
               </select>
+              <p className="text-xs text-gray-500 mt-1">KYC verification is required for SELLER role</p>
             </div>
             <div className="flex gap-3">
               <button

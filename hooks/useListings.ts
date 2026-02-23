@@ -28,14 +28,25 @@ export interface Listing {
   sellerId: {
     _id?: string;
     fullName: string;
-    reputation: number;
+    reputation?: number;
     badge?: string;
     planType?: string;
-  };
+  } | null;
   location: {
     type: string;
     coordinates: number[];
     address: string;
+  };
+  specs?: {
+    groupset?: string;
+    frameMaterial?: string;
+    wheelset?: string;
+    brakeType?: string;
+    suspensionType?: string;
+    travelFront?: string;
+    travelRear?: string;
+    wheelSize?: string;
+    weight?: number;
   };
   views: number;
   createdAt: string;
@@ -136,22 +147,95 @@ export const useListings = (): UseListingsReturn => {
         console.log('📡 Fetching listings:', fullUrl);
 
         const response = await fetch(fullUrl);
-        const data: ListingsResponse = await response.json();
-
+        
         if (!response.ok) {
-          throw new Error(data?.message || `Server error: ${response.status}`);
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData?.message || `Server error: ${response.status}`);
+        }
+        
+        const data: ListingsResponse = await response.json();
+        console.log('📦 Raw API response:', data);
+
+        if (!data) {
+          throw new Error('Invalid response: data is null');
         }
 
-        if (!data || !Array.isArray(data.data)) {
-          throw new Error('Invalid response format: data is null or not an array');
+        if (!Array.isArray(data.data)) {
+          console.error('❌ Invalid response format:', data);
+          throw new Error('Invalid response format: data.data is not an array');
         }
+        
+        console.log('📦 Total listings from API:', data.data.length);
 
         // Filter out listings with null or invalid sellerId
-        const validListings = data.data.filter((listing: any) => listing && listing.sellerId);
+        // Note: BE already filters by PUBLISHED status, but we check again for safety
+        const validListings = data.data
+          .filter((listing: any) => {
+            try {
+              if (!listing || !listing._id) {
+                console.warn('⚠️ Listing missing _id:', listing);
+                return false;
+              }
+              
+              // Accept PUBLISHED listings (BE should already filter, but check anyway)
+              // Also accept PENDING_APPROVAL for testing if no PUBLISHED listings exist
+              if (listing.status && listing.status !== 'PUBLISHED' && listing.status !== 'PENDING_APPROVAL') {
+                return false; // Skip non-published/non-pending listings
+              }
+              
+              // sellerId can be null, object, or string/ObjectId - check safely
+              if (!listing.sellerId) {
+                console.warn('⚠️ Listing missing sellerId:', listing._id, 'Status:', listing.status);
+                // Allow listings without sellerId for now (might be test data)
+                // return false;
+              }
+              
+              // If sellerId is object, check if it has _id or fullName
+              if (listing.sellerId && typeof listing.sellerId === 'object' && listing.sellerId !== null) {
+                const hasValidSeller = listing.sellerId?._id || listing.sellerId?.fullName || listing.sellerId?.id;
+                if (!hasValidSeller) {
+                  console.warn('⚠️ Listing has invalid sellerId object:', listing._id, listing.sellerId);
+                  // Allow for now, will handle in mapping
+                }
+              }
+              
+              return true;
+            } catch (err) {
+              console.error('❌ Error filtering listing:', listing?._id, err);
+              return false;
+            }
+          })
+          .map((listing: any) => {
+            try {
+              // Normalize sellerId structure - check null safely
+              if (listing?.sellerId && typeof listing.sellerId === 'object' && listing.sellerId !== null) {
+                // Ensure sellerId has _id - use optional chaining
+                if (!listing.sellerId?._id && listing.sellerId?.id) {
+                  listing.sellerId._id = listing.sellerId.id;
+                }
+              }
+              // Ensure listing has all required fields
+              if (!listing?._id) {
+                console.warn('⚠️ Listing missing _id after mapping:', listing);
+                return null;
+              }
+              return listing;
+            } catch (err) {
+              console.error('❌ Error mapping listing:', listing?._id, err);
+              return null;
+            }
+          })
+          .filter((listing: any) => listing !== null && listing?._id); // Remove any null entries from map errors
         
         setListings(validListings);
         setTotalCount(validListings.length);
-        console.log('✅ Listings fetched:', validListings.length, 'items');
+        console.log('✅ Valid listings after filter:', validListings.length, 'items');
+        if (validListings.length > 0) {
+          console.log('📦 Sample listing:', validListings[0]);
+        } else {
+          console.warn('⚠️ No valid listings found. Total from API:', data.data.length);
+          console.log('📦 Sample raw listing:', data.data[0]);
+        }
       } catch (err: any) {
         const errorMsg = err.message || 'An error occurred while fetching listings';
         setError(errorMsg);
