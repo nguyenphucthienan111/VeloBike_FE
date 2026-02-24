@@ -12,8 +12,11 @@ export default defineConfig(({ mode }: ConfigEnv) => {
     return {
       server: {
         port: 3000,
-        host: 'localhost', // Chỉ chạy trên localhost
+        host: true,
         https: httpsConfig,
+        hmr: {
+          clientPort: 3000,
+        },
       },
       plugins: [react()],
       define: {

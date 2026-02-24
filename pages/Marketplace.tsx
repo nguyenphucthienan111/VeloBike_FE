@@ -2,12 +2,36 @@ import React, { useState, useEffect } from 'react';
 import { Filter, ChevronDown, Check, Search, Loader, AlertCircle } from 'lucide-react';
 import { BikeCard } from '../components/BikeCard';
 import { useListings } from '../hooks/useListings';
+import { useCatalog } from '../hooks/useCatalog';
+
+const BIKE_TYPES = ['ROAD', 'MTB', 'GRAVEL', 'TRIATHLON', 'E_BIKE'];
+const BRAND_OTHER = '__OTHER__'; // Sentinel cho "Khác" – hãng không thuộc danh sách admin
+
+/** Fallback khi không lấy được categories từ API */
+const FALLBACK_CATEGORIES = [
+  { label: 'ROAD', value: 'ROAD' },
+  { label: 'MTB', value: 'MTB' },
+  { label: 'GRAVEL', value: 'GRAVEL' },
+  { label: 'TRIATHLON', value: 'TRIATHLON' },
+  { label: 'E-Bike', value: 'E_BIKE' },
+];
 
 export const Marketplace: React.FC = () => {
   const { listings, loading, error, facets, fetch, fetchFacets } = useListings();
+  const { categories, brands: catalogBrands, getTypeForCategory, fetch: fetchCatalog } = useCatalog();
 
-  // Filters state
-  const [selectedType, setSelectedType] = useState<string>('ALL');
+  // Brand options: từ Admin Catalog + "Khác" (hãng không có trong danh sách)
+  const catalogBrandNames = catalogBrands.map((b) => b.name.toLowerCase().trim());
+  const baseBrandOptions =
+    catalogBrands.length > 0
+      ? catalogBrands.map((b) => b.name)
+      : (facets?.brands ?? [])
+          .map((b: any) => (typeof b === 'string' ? b : b?.name || b?._id || ''))
+          .filter((b: string) => b);
+  const brandOptions = [...baseBrandOptions, BRAND_OTHER];
+
+  // Filters state (đồng bộ: không chọn gì = hiện tất cả)
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [minPrice, setMinPrice] = useState<string>('0');
   const [maxPrice, setMaxPrice] = useState<string>('500000000');
@@ -18,17 +42,40 @@ export const Marketplace: React.FC = () => {
   const itemsPerPage = 12;
   const totalPages = Math.ceil(listings.length / itemsPerPage);
 
-  // Fetch facets on mount
+  // Category options: từ admin API (không có "All Categories" – không chọn = hiện tất cả)
+  const categoryOptions =
+    categories.length > 0
+      ? categories.map((c) => {
+          const typeValue = getTypeForCategory(c.slug, c.name);
+          return { label: c.name, value: typeValue ?? `cat:${c.slug}` };
+        })
+      : FALLBACK_CATEGORIES;
+
+  // Type cho API: không chọn category nào = ALL; có chọn thì lấy type đầu tiên thuộc BikeType
+  const typeForApi =
+    selectedCategories.length === 0
+      ? 'ALL'
+      : selectedCategories.find((v) => BIKE_TYPES.includes(v)) ?? 'ALL';
+
+  // Fetch catalog (categories từ admin) và facets on mount
   useEffect(() => {
+    fetchCatalog();
     fetchFacets();
-  }, []);
+  }, [fetchCatalog, fetchFacets]);
+
+  // Khi chọn "Khác" phải lấy tất cả rồi filter FE (API không hỗ trợ "brand not in")
+  const hasOtherBrand = selectedBrands.includes(BRAND_OTHER);
+  const brandForApi =
+    hasOtherBrand || selectedBrands.length === 0
+      ? undefined
+      : selectedBrands[0];
 
   // Fetch listings when filters change
   useEffect(() => {
     const timer = setTimeout(() => {
       fetch({
-        type: selectedType,
-        brand: selectedBrands[0] || undefined, // API supports single brand
+        type: typeForApi,
+        brand: brandForApi,
         minPrice: minPrice ? Number(minPrice) : undefined,
         maxPrice: maxPrice ? Number(maxPrice) : undefined,
         sortBy: sortBy !== 'recommended' ? sortBy : undefined,
@@ -39,10 +86,12 @@ export const Marketplace: React.FC = () => {
     }, 500); // Debounce 500ms
 
     return () => clearTimeout(timer);
-  }, [selectedType, selectedBrands, minPrice, maxPrice, sortBy, searchQuery, currentPage]);
+  }, [typeForApi, brandForApi, selectedBrands, minPrice, maxPrice, sortBy, searchQuery, currentPage]);
 
-  const handleTypeChange = (type: string) => {
-    setSelectedType(type);
+  const toggleCategory = (value: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
+    );
     setCurrentPage(1);
   };
 
@@ -58,7 +107,7 @@ export const Marketplace: React.FC = () => {
   };
 
   const clearAllFilters = () => {
-    setSelectedType('ALL');
+    setSelectedCategories([]);
     setSelectedBrands([]);
     setMinPrice('0');
     setMaxPrice('500000000');
@@ -70,26 +119,75 @@ export const Marketplace: React.FC = () => {
   const getPaginatedListings = () => {
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
-    return listings.slice(start, end).map((listing) => ({
-      id: listing._id || listing.id,
-      title: listing.title,
-      brand: listing.generalInfo?.brand || 'Unknown',
-      model: listing.generalInfo?.model || 'Unknown',
-      year: listing.generalInfo?.year || 0,
-      price: listing.pricing?.amount || 0,
-      originalPrice: listing.pricing?.originalPrice || 0,
-      type: listing.type,
-      size: listing.generalInfo?.size || 'M',
-      conditionScore: 8.5, // Mock score
-      inspectionStatus: 'PASSED' as any,
-      imageUrl: listing.media?.thumbnails?.[0] || 'https://via.placeholder.com/400',
-      location: listing.location?.address || 'Unknown',
-      specs: {
-        groupset: listing.specs?.groupset || 'Standard',
-      },
-      sellerName: listing.sellerId?.fullName || 'Unknown',
-      isVerified: !!listing.sellerId?.badge,
-    }));
+
+    // Filter "Khác" (brand not in catalog) on FE when selected
+    const isOtherBrand = (brand: string) => {
+      const b = (brand || '').toLowerCase().trim();
+      return !catalogBrandNames.some((c) => c === b);
+    };
+    const brandFilter = (listing: any) => {
+      const brand = listing?.generalInfo?.brand || '';
+      if (selectedBrands.length === 0) return true;
+      if (hasOtherBrand && selectedBrands.length === 1)
+        return isOtherBrand(brand);
+      if (hasOtherBrand) {
+        const realBrands = selectedBrands.filter((b) => b !== BRAND_OTHER);
+        return realBrands.some((rb) => rb === brand) || isOtherBrand(brand);
+      }
+      return selectedBrands.includes(brand);
+    };
+
+    // Filter and map listings safely
+    const validListings = listings
+      .filter((listing) => {
+        if (!listing || !listing._id) return false;
+        if (listing.status !== 'PUBLISHED') return false;
+        // Check sellerId safely
+        if (!listing.sellerId) return false;
+        if (typeof listing.sellerId === 'object' && !listing.sellerId._id && !listing.sellerId.fullName) {
+          return false;
+        }
+        return brandFilter(listing);
+      })
+      .slice(start, end)
+      .map((listing) => {
+        // Safely extract sellerId info
+        let sellerName = 'Unknown';
+        let isVerified = false;
+        
+        if (listing.sellerId) {
+          if (typeof listing.sellerId === 'object') {
+            sellerName = listing.sellerId.fullName || 'Unknown';
+            isVerified = !!listing.sellerId.badge;
+          } else {
+            sellerName = 'Unknown';
+          }
+        }
+        
+        return {
+          id: listing._id || listing.id || '',
+          title: listing.title || 'Untitled',
+          brand: listing.generalInfo?.brand || 'Unknown',
+          model: listing.generalInfo?.model || 'Unknown',
+          year: listing.generalInfo?.year || 0,
+          price: listing.pricing?.amount || 0,
+          originalPrice: listing.pricing?.originalPrice || listing.pricing?.amount || 0,
+          type: listing.type || 'ROAD',
+          size: listing.generalInfo?.size || 'M',
+          conditionScore: 8.5, // Mock score
+          inspectionStatus: 'PASSED' as any,
+          imageUrl: listing.media?.thumbnails?.[0] || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect fill='%23e5e7eb' width='400' height='400'/%3E%3Ctext fill='%239ca3af' x='200' y='200' font-size='20' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E",
+          location: listing.location?.address || 'Unknown',
+          specs: {
+            groupset: listing.specs?.groupset || 'Standard',
+          },
+          sellerName,
+          isVerified,
+        };
+      })
+      .filter((bike) => bike.id); // Filter out any bikes without ID
+    
+    return validListings;
   };
 
   return (
@@ -145,51 +243,44 @@ export const Marketplace: React.FC = () => {
           {/* Filters Sidebar */}
           <aside className="w-full lg:w-64 flex-shrink-0 space-y-8">
             
-            {/* Category Filter */}
+            {/* Category Filter - đồng bộ với Brands: checkbox, không chọn = hiện tất cả */}
             <div className="bg-white p-6 rounded-lg border border-gray-200">
               <h3 className="font-bold mb-4 flex items-center gap-2">
                 <Filter size={18} /> Category
               </h3>
-              <div className="space-y-3">
-                {['ALL', 'ROAD', 'MTB', 'GRAVEL', 'TRIATHLON', 'E_BIKE'].map((type) => (
-                  <label key={type} className="flex items-center gap-3 cursor-pointer group">
+              <div className="space-y-3 max-h-72 overflow-y-auto pr-2">
+                {categoryOptions.map((opt, idx) => (
+                  <label key={`cat-${idx}-${opt.value}`} className="flex items-center gap-3 cursor-pointer group">
                     <div
                       className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                        selectedType === type
+                        selectedCategories.includes(opt.value)
                           ? 'bg-black border-black'
                           : 'border-gray-300 group-hover:border-black'
                       }`}
                     >
-                      {selectedType === type && <Check size={12} className="text-white" />}
+                      {selectedCategories.includes(opt.value) && <Check size={12} className="text-white" />}
                     </div>
-                    <input 
-                      type="radio" 
-                      name="type" 
-                      className="hidden" 
-                      checked={selectedType === type}
-                      onChange={() => handleTypeChange(type)}
+                    <input
+                      type="checkbox"
+                      className="hidden"
+                      checked={selectedCategories.includes(opt.value)}
+                      onChange={() => toggleCategory(opt.value)}
                     />
-                    <span className={`text-sm ${selectedType === type ? 'font-bold text-black' : 'text-gray-600 group-hover:text-black'}`}>
-                      {type === 'E_BIKE' ? 'E-Bike' : type === 'ALL' ? 'All Categories' : type}
+                    <span className={`text-sm ${selectedCategories.includes(opt.value) ? 'font-bold text-black' : 'text-gray-600 group-hover:text-black'}`}>
+                      {opt.label}
                     </span>
                   </label>
                 ))}
               </div>
             </div>
 
-            {/* Brand Filter */}
-            {facets && Array.isArray(facets.brands) && facets.brands.length > 0 && (
+            {/* Brand Filter - lấy từ Admin Catalog API (đồng bộ với Category) */}
+            {brandOptions.length > 0 && (
               <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <h3 className="font-bold mb-4">Brands</h3>
+                <h3 className="font-bold mb-4">Brands</h3>
                 <div className="space-y-3 max-h-72 overflow-y-auto pr-2">
-                  {facets.brands
-                    .map((brand: any) => {
-                      // Extract brand name from object or string
-                      return typeof brand === 'string' ? brand : (brand?.name || brand?._id || '');
-                    })
-                    .filter((brand: string) => brand) // Filter empty strings
-                    .map((brand: string, index: number) => (
-                    <label key={`${brand}-${index}`} className="flex items-center gap-3 cursor-pointer group">
+                  {brandOptions.map((brand: string, index: number) => (
+                    <label key={brand === BRAND_OTHER ? BRAND_OTHER : `${brand}-${index}`} className="flex items-center gap-3 cursor-pointer group">
                       <div
                         className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
                           selectedBrands.includes(brand)
@@ -198,20 +289,20 @@ export const Marketplace: React.FC = () => {
                         }`}
                       >
                         {selectedBrands.includes(brand) && <Check size={12} className="text-white" />}
-                    </div>
-                    <input 
-                        type="checkbox" 
+                      </div>
+                      <input
+                        type="checkbox"
                         className="hidden"
                         checked={selectedBrands.includes(brand)}
                         onChange={() => toggleBrand(brand)}
-                    />
+                      />
                       <span className="text-sm text-gray-600 group-hover:text-black transition-colors">
-                        {brand}
+                        {brand === BRAND_OTHER ? 'Khác' : brand}
                       </span>
-                  </label>
-                ))}
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
             )}
 
             {/* Price Range Filter */}
@@ -242,7 +333,7 @@ export const Marketplace: React.FC = () => {
             </div>
 
             {/* Clear Filters */}
-            {(selectedType !== 'ALL' || selectedBrands.length > 0 || searchQuery) && (
+            {(selectedCategories.length > 0 || selectedBrands.length > 0 || searchQuery) && (
               <button
                 onClick={clearAllFilters}
                 className="w-full px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-100 transition-colors text-sm"
@@ -272,9 +363,11 @@ export const Marketplace: React.FC = () => {
             ) : getPaginatedListings().length > 0 ? (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-                  {getPaginatedListings().map((bike) => (
-                    <BikeCard key={bike.id || bike._id} bike={bike as any} />
-                  ))}
+                  {getPaginatedListings()
+                    .filter((bike) => bike && bike.id) // Extra safety check
+                    .map((bike) => (
+                      <BikeCard key={bike.id} bike={bike as any} />
+                    ))}
                 </div>
 
                 {/* Pagination */}

@@ -11,10 +11,11 @@ export const AdminSidebar: React.FC = () => {
     { path: '/admin/dashboard', label: 'Dashboard' },
     { path: '/admin/users', label: 'Users' },
     { path: '/admin/listings', label: 'Listings' },
+    { path: '/admin/catalog', label: 'Catalog' },
     { path: '/admin/orders', label: 'Orders' },
     { path: '/admin/analytics', label: 'Analytics' },
     { path: '/admin/inspectors', label: 'Inspectors' },
-    { path: '/admin/profile', label: 'Profile' },
+    { path: '/admin/profile', label: 'My Profile' },
   ];
 
   return (

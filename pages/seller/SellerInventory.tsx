@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SellerSidebar } from '../../components/SellerSidebar';
+import { Toast, useToast } from '../../components/Toast';
 
 interface Listing {
   _id: string;
@@ -10,6 +11,12 @@ interface Listing {
   views: number;
   status: string;
   createdAt: string;
+  media?: {
+    thumbnails?: string[];
+  };
+  pricing?: {
+    amount: number;
+  };
 }
 
 export const SellerInventory: React.FC = () => {
@@ -17,12 +24,13 @@ export const SellerInventory: React.FC = () => {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('Tất cả loại');
-  const [filterDate, setFilterDate] = useState('Tất cả trạng thái');
+  const [filterStatus, setFilterStatus] = useState('All Types');
+  const [filterDate, setFilterDate] = useState('All Status');
   const [selectedListings, setSelectedListings] = useState<string[]>([]);
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [bulkStatus, setBulkStatus] = useState('PUBLISHED');
   const [user, setUser] = useState<any>(null);
+  const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -64,7 +72,13 @@ export const SellerInventory: React.FC = () => {
   });
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+    if (!value || isNaN(value)) return '0 VNĐ';
+    return new Intl.NumberFormat('en-US', { 
+      style: 'currency', 
+      currency: 'VND',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
   };
 
   const handleSelectListing = (id: string) => {
@@ -82,7 +96,7 @@ export const SellerInventory: React.FC = () => {
   };
 
   const handleDeleteListing = async (id: string) => {
-    if (!confirm('Bạn chắc chắn muốn xóa sản phẩm này?')) return;
+    if (!window.confirm('Are you sure you want to delete this product?')) return;
 
     try {
       const token = localStorage.getItem('accessToken');
@@ -93,18 +107,18 @@ export const SellerInventory: React.FC = () => {
 
       if (response.ok) {
         setListings(listings.filter(l => l._id !== id));
-        alert('Xóa sản phẩm thành công!');
+        showToast('Product deleted successfully!', 'success');
       } else {
-        alert('Xóa sản phẩm thất bại');
+        showToast('Failed to delete product', 'error');
       }
     } catch (error) {
       console.error('Error deleting listing:', error);
-      alert('Có lỗi xảy ra');
+      showToast('An error occurred', 'error');
     }
   };
 
   const handleBulkDelete = async () => {
-    if (!confirm(`Bạn chắc chắn muốn xóa ${selectedListings.length} sản phẩm?`)) return;
+    if (!confirm(`Are you sure you want to delete ${selectedListings.length} products?`)) return;
 
     try {
       const token = localStorage.getItem('accessToken');
@@ -120,19 +134,19 @@ export const SellerInventory: React.FC = () => {
       if (response.ok) {
         setListings(listings.filter(l => !selectedListings.includes(l._id)));
         setSelectedListings([]);
-        alert('Xóa thành công!');
+        alert('Deleted successfully!');
       } else {
-        alert('Xóa thất bại');
+        alert('Delete failed');
       }
     } catch (error) {
       console.error('Error bulk deleting:', error);
-      alert('Có lỗi xảy ra');
+      alert('An error occurred');
     }
   };
 
   const handleBulkUpdateStatus = async () => {
     if (selectedListings.length === 0) {
-      alert('Vui lòng chọn ít nhất 1 sản phẩm');
+      alert('Please select at least 1 product');
       return;
     }
 
@@ -156,13 +170,13 @@ export const SellerInventory: React.FC = () => {
         ));
         setSelectedListings([]);
         setShowBulkActions(false);
-        alert('Cập nhật trạng thái thành công!');
+        showToast('Status updated successfully!', 'success');
       } else {
-        alert('Cập nhật thất bại');
+        showToast('Update failed', 'error');
       }
     } catch (error) {
       console.error('Error bulk updating:', error);
-      alert('Có lỗi xảy ra');
+      showToast('An error occurred', 'error');
     }
   };
 
@@ -178,13 +192,14 @@ export const SellerInventory: React.FC = () => {
         setListings(listings.map(l =>
           l._id === id ? { ...l, status: 'PENDING_APPROVAL' } : l
         ));
-        alert('Gửi phê duyệt thành công!');
+        showToast('Submitted for approval successfully!', 'success');
       } else {
-        alert('Gửi phê duyệt thất bại');
+        const errorData = await response.json();
+        showToast(errorData.message || 'Failed to submit for approval', 'error');
       }
     } catch (error) {
       console.error('Error submitting for approval:', error);
-      alert('Có lỗi xảy ra');
+      showToast('An error occurred', 'error');
     }
   };
 
@@ -209,7 +224,7 @@ export const SellerInventory: React.FC = () => {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin h-12 w-12 border-4 border-red-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Đang tải...</p>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
@@ -434,18 +449,40 @@ export const SellerInventory: React.FC = () => {
                         />
                       </td>
                       <td className="px-6 py-4">
-                        <button
-                          onClick={() => navigate(`/seller/listing/${listing._id}`)}
-                          className="font-medium text-blue-600 hover:underline"
-                        >
-                          {listing.title}
-                        </button>
+                        <div className="flex items-center gap-3">
+                          {/* Product Image */}
+                          <div className="flex-shrink-0">
+                            {listing.media?.thumbnails?.[0] ? (
+                              <img
+                                src={listing.media.thumbnails[0]}
+                                alt={listing.title}
+                                className="w-12 h-12 object-cover rounded-lg border border-gray-200"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Crect fill='%23e5e7eb' width='48' height='48'/%3E%3Ctext fill='%239ca3af' x='24' y='26' font-size='10' text-anchor='middle'%3ENo Image%3C/text%3E%3C/svg%3E";
+                                }}
+                              />
+                            ) : (
+                              <div className="w-12 h-12 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
+                                <span className="text-xs text-gray-400">No Image</span>
+                              </div>
+                            )}
+                          </div>
+                          {/* Product Name */}
+                          <div className="flex-1 min-w-0">
+                            <button
+                              onClick={() => navigate(`/seller/listing/${listing._id}`)}
+                              className="font-medium text-blue-600 hover:underline text-left block truncate"
+                            >
+                              {listing.title}
+                            </button>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <span className="text-gray-700">{listing.type}</span>
                       </td>
                       <td className="px-6 py-4 font-medium text-gray-900">
-                        {formatCurrency(listing.amount)}
+                        {formatCurrency(listing.pricing?.amount || listing.amount || 0)}
                       </td>
                       <td className="px-6 py-4 text-gray-600">
                         <span className="text-gray-400">#</span> {listing.views}
@@ -456,7 +493,7 @@ export const SellerInventory: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-gray-600">
-                        {new Date(listing.createdAt).toLocaleDateString('vi-VN')}
+                        {new Date(listing.createdAt).toLocaleDateString('en-US')}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
@@ -518,6 +555,15 @@ export const SellerInventory: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={hideToast}
+        duration={3000}
+      />
     </div>
   );
 };

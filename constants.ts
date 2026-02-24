@@ -4,6 +4,20 @@ import { BikeListing, BikeType, InspectionStatus } from './types';
 const VITE_API_URL = (import.meta as any).env.VITE_API_URL;
 export const API_BASE_URL = VITE_API_URL || 'http://localhost:5000/api';
 
+/** Message when backend is not reachable (ERR_CONNECTION_REFUSED / Failed to fetch) */
+export const CONNECTION_ERROR_MESSAGE =
+  'Không kết nối được máy chủ. Vui lòng đảm bảo backend đang chạy (mặc định: localhost:5000).';
+
+export function isConnectionError(err: unknown): boolean {
+  return err instanceof TypeError && (err.message === 'Failed to fetch' || (err as Error).message?.includes('fetch'));
+}
+
+/** True if using mock login (ins/admin/kien123) - token won't work with real BE */
+export function isMockToken(): boolean {
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  return !!token && token.startsWith('mock_access_token_');
+}
+
 export const API_ENDPOINTS = {
   // Auth
   REGISTER: `${API_BASE_URL}/auth/register`,

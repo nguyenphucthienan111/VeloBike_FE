@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AdminSidebar } from '../../components/AdminSidebar';
+import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
 
 interface Order {
   _id: string;
@@ -49,7 +50,7 @@ export const AdminOrders: React.FC = () => {
       });
       if (statusFilter) params.append('status', statusFilter);
 
-      const response = await fetch(`http://localhost:5000/api/admin/orders?${params}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/orders?${params}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
@@ -62,7 +63,7 @@ export const AdminOrders: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching orders:', error);
-      setError('Error loading orders');
+      setError(isConnectionError(error) ? CONNECTION_ERROR_MESSAGE : 'Error loading orders');
     } finally {
       setLoading(false);
     }
@@ -73,7 +74,7 @@ export const AdminOrders: React.FC = () => {
 
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`http://localhost:5000/api/admin/orders/${orderId}/payout`, {
+      const response = await fetch(`${API_BASE_URL}/admin/orders/${orderId}/payout`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -165,31 +166,37 @@ export const AdminOrders: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {orders.map((order) => (
+                      {orders
+                        .filter((order) => order && order._id)
+                        .map((order) => (
                         <tr key={order._id} className="hover:bg-gray-50">
                           <td className="px-6 py-4">
                             <p className="text-sm font-mono text-gray-900">{order._id.substring(0, 8)}...</p>
                           </td>
                           <td className="px-6 py-4">
-                            <p className="font-semibold text-gray-900">{order.listingId.title}</p>
+                            <p className="font-semibold text-gray-900">
+                              {order.listingId?.title ?? (typeof order.listingId === 'string' ? order.listingId : 'N/A')}
+                            </p>
                           </td>
                           <td className="px-6 py-4">
                             <div>
-                              <p className="font-semibold text-gray-900">{order.buyerId.fullName}</p>
-                              <p className="text-sm text-gray-600">{order.buyerId.email}</p>
+                              <p className="font-semibold text-gray-900">{order.buyerId?.fullName ?? 'N/A'}</p>
+                              <p className="text-sm text-gray-600">{order.buyerId?.email ?? ''}</p>
                             </div>
                           </td>
                           <td className="px-6 py-4">
                             <div>
-                              <p className="font-semibold text-gray-900">{order.sellerId.fullName}</p>
-                              <p className="text-sm text-gray-600">{order.sellerId.email}</p>
+                              <p className="font-semibold text-gray-900">{order.sellerId?.fullName ?? 'N/A'}</p>
+                              <p className="text-sm text-gray-600">{order.sellerId?.email ?? ''}</p>
                             </div>
                           </td>
                           <td className="px-6 py-4">
                             <div>
-                              <p className="font-semibold text-gray-900">{formatCurrency(order.amount)}</p>
+                              <p className="font-semibold text-gray-900">
+                                {formatCurrency(order.amount ?? order.financials?.totalAmount ?? 0)}
+                              </p>
                               <p className="text-xs text-gray-600">
-                                Platform: {formatCurrency(order.financials.platformFee)}
+                                Platform: {formatCurrency(order.financials?.platformFee ?? 0)}
                               </p>
                             </div>
                           </td>

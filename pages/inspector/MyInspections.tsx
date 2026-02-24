@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { InspectorSidebar } from '../../components/InspectorSidebar';
 import { InspectorHeader } from '../../components/InspectorHeader';
+import { API_BASE_URL, isMockToken } from '../../constants';
 
 interface Inspection {
   id: string;
@@ -36,6 +37,13 @@ export const MyInspections: React.FC = () => {
       const token = localStorage.getItem('accessToken');
       if (!token) return;
 
+      if (isMockToken()) {
+        setInspections([]);
+        setPagination(p => ({ ...p, total: 0, pages: 0 }));
+        setLoading(false);
+        return;
+      }
+
       const params = new URLSearchParams({
         page: pagination.page.toString(),
         limit: pagination.limit.toString(),
@@ -44,7 +52,7 @@ export const MyInspections: React.FC = () => {
         // Note: API might not support verdict filter, but we'll filter client-side
       }
 
-      const response = await fetch(`http://localhost:5000/api/inspections/my-inspections?${params}`, {
+      const response = await fetch(`${API_BASE_URL}/inspections/my-inspections?${params}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 

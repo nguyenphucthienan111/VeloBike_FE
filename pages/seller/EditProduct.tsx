@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { SellerSidebar } from '../../components/SellerSidebar';
 import { Toast, useToast } from '../../components/Toast';
 
-export const AddProduct: React.FC = () => {
+export const EditProduct: React.FC = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const { id } = useParams<{ id: string }>();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{[key: string]: number}>({});
   const { toast, showToast, hideToast } = useToast();
   
@@ -24,7 +26,72 @@ export const AddProduct: React.FC = () => {
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [uploadedVideo, setUploadedVideo] = useState<File | null>(null);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
   const [videoPreviews, setVideoPreviews] = useState<string>('');
+  const [existingVideo, setExistingVideo] = useState<string>('');
+
+  useEffect(() => {
+    if (id) {
+      fetchListing();
+    }
+  }, [id]);
+
+  const fetchListing = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        showToast('Please login', 'error');
+        navigate('/login');
+        return;
+      }
+
+      const response = await fetch(`http://localhost:5000/api/listings/${id}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          const listing = data.data;
+          setFormData({
+            title: listing.title || '',
+            description: listing.description || '',
+            type: listing.type || 'MTB',
+            brand: listing.generalInfo?.brand || '',
+            model: listing.generalInfo?.model || '',
+            year: listing.generalInfo?.year || new Date().getFullYear(),
+            size: listing.generalInfo?.size || '',
+            amount: listing.pricing?.amount?.toString() || '',
+            videoUrl: listing.media?.videoUrl || '',
+          });
+          
+          // Set existing images
+          if (listing.media?.thumbnails && listing.media.thumbnails.length > 0) {
+            setExistingImages(listing.media.thumbnails);
+            setImagePreviews(listing.media.thumbnails);
+          }
+          
+          // Set existing video
+          if (listing.media?.videoUrl) {
+            setExistingVideo(listing.media.videoUrl);
+            setVideoPreviews(listing.media.videoUrl);
+          }
+        } else {
+          showToast('Product not found', 'error');
+          navigate('/seller/inventory');
+        }
+      } else {
+        showToast('Unable to load product information', 'error');
+        navigate('/seller/inventory');
+      }
+    } catch (error) {
+      console.error('Error fetching listing:', error);
+      showToast('Error loading data', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -65,14 +132,23 @@ export const AddProduct: React.FC = () => {
   };
 
   const removeImage = (index: number) => {
-    setUploadedImages(prev => prev.filter((_, i) => i !== index));
-    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+    // Check if it's an existing image or new upload
+    if (index < existingImages.length) {
+      // Remove existing image
+      setExistingImages(prev => prev.filter((_, i) => i !== index));
+      setImagePreviews(prev => prev.filter((_, i) => i !== index));
+    } else {
+      // Remove new upload
+      const newIndex = index - existingImages.length;
+      setUploadedImages(prev => prev.filter((_, i) => i !== newIndex));
+      setImagePreviews(prev => prev.filter((_, i) => i !== index));
+    }
   };
 
   const removeVideo = () => {
     setUploadedVideo(null);
-    setVideoPreviews('');
-    setFormData(prev => ({ ...prev, videoUrl: '' }));
+    setVideoPreviews(existingVideo);
+    setFormData(prev => ({ ...prev, videoUrl: existingVideo }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -83,20 +159,20 @@ export const AddProduct: React.FC = () => {
       return;
     }
 
-    if (uploadedImages.length === 0) {
+    if (imagePreviews.length === 0) {
       showToast('Please upload at least one image', 'warning');
       return;
     }
 
-    setLoading(true);
+    setSaving(true);
     try {
       const token = localStorage.getItem('accessToken');
       
-      // Upload images
-      const thumbnails: string[] = [];
+      // Upload new images if any
+      const newImageUrls: string[] = [];
       for (let i = 0; i < uploadedImages.length; i++) {
         const formDataImg = new FormData();
-        formDataImg.append('image', uploadedImages[i]); // API expects 'image' field
+        formDataImg.append('image', uploadedImages[i]);
         
         try {
           const uploadRes = await fetch('http://localhost:5000/api/upload', {
@@ -109,8 +185,7 @@ export const AddProduct: React.FC = () => {
           
           if (uploadRes.ok) {
             const uploadData = await uploadRes.json();
-            // API returns: { success: true, data: { url, public_id } }
-            thumbnails.push(uploadData.data?.url || '');
+            newImageUrls.push(uploadData.data?.url || '');
             setUploadProgress(prev => ({ ...prev, [`image-${i}`]: 100 }));
           } else {
             const errorData = await uploadRes.json();
@@ -121,11 +196,11 @@ export const AddProduct: React.FC = () => {
         }
       }
 
-      // Upload video (if needed - note: API might not support video, check backend)
-      let videoUrl = formData.videoUrl;
+      // Upload video if new
+      let videoUrl = existingVideo;
       if (uploadedVideo) {
         const formDataVideo = new FormData();
-        formDataVideo.append('image', uploadedVideo); // API expects 'image' field
+        formDataVideo.append('image', uploadedVideo);
         
         try {
           const uploadRes = await fetch('http://localhost:5000/api/upload', {
@@ -138,7 +213,6 @@ export const AddProduct: React.FC = () => {
           
           if (uploadRes.ok) {
             const uploadData = await uploadRes.json();
-            // API returns: { success: true, data: { url, public_id } }
             videoUrl = uploadData.data?.url || '';
             setUploadProgress(prev => ({ ...prev, 'video': 100 }));
           } else {
@@ -150,7 +224,10 @@ export const AddProduct: React.FC = () => {
         }
       }
 
-      // Create listing
+      // Combine existing and new images
+      const allThumbnails = [...existingImages, ...newImageUrls].filter(url => url);
+
+      // Update listing
       const payload = {
         title: formData.title,
         description: formData.description,
@@ -160,26 +237,26 @@ export const AddProduct: React.FC = () => {
           model: formData.model,
           year: parseInt(formData.year.toString()),
           size: formData.size,
-          condition: 'GOOD', // Default condition, can be added to form later
+          condition: 'GOOD',
         },
         pricing: {
-          amount: parseFloat(formData.amount), // Amount in VND (API expects VND)
-          currency: 'VND', // API default is VND
+          amount: parseFloat(formData.amount),
+          currency: 'VND',
         },
         media: {
-          thumbnails: thumbnails,
+          thumbnails: allThumbnails,
           videoUrl: videoUrl || undefined,
         },
         location: {
           type: 'Point',
-          coordinates: [106.6297, 10.8231], // Default to Ho Chi Minh City, should be from geolocation or form
-          address: 'Ho Chi Minh City', // Default address, should be from form
+          coordinates: [106.6297, 10.8231],
+          address: 'Ho Chi Minh City',
         },
         inspectionRequired: false,
       };
 
-      const response = await fetch('http://localhost:5000/api/listings', {
-        method: 'POST',
+      const response = await fetch(`http://localhost:5000/api/listings/${id}`, {
+        method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -190,26 +267,40 @@ export const AddProduct: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          showToast('Product added successfully! (Status: DRAFT)', 'success');
+          showToast('Product updated successfully!', 'success');
           setTimeout(() => {
             navigate('/seller/inventory');
           }, 1500);
         } else {
-          showToast(data.message || 'Không thể tạo listing', 'error');
+          showToast(data.message || 'Unable to update listing', 'error');
         }
       } else {
         const error = await response.json();
-        const errorMessage = error.message || error.error || 'Error creating listing';
+        const errorMessage = error.message || error.error || 'Error updating listing';
         showToast(errorMessage, 'error');
         console.error('API Error:', error);
       }
     } catch (error: any) {
-      console.error('Error adding product:', error);
-      showToast('Error adding product', 'error');
+      console.error('Error updating product:', error);
+      showToast('Error updating product', 'error');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex">
+        <SellerSidebar />
+        <div className="flex-1 overflow-auto bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin h-12 w-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading product information...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -224,9 +315,9 @@ export const AddProduct: React.FC = () => {
             <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
               <span className="cursor-pointer hover:text-gray-900" onClick={() => navigate('/seller/inventory')}>Inventory</span>
               <span>/</span>
-              <span className="text-gray-900 font-medium">Add New Product</span>
+              <span className="text-gray-900 font-medium">Edit Product</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Add New Product</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Edit Product</h1>
           </div>
 
           {/* Single Form Container */}
@@ -429,16 +520,16 @@ export const AddProduct: React.FC = () => {
               </button>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={saving}
                 className="px-8 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
               >
-                {loading ? (
+                {saving ? (
                   <span className="flex items-center gap-2">
                     <span className="animate-spin">⏳</span>
                     Saving...
                   </span>
                 ) : (
-                  'Save Product'
+                  'Update Product'
                 )}
               </button>
             </div>

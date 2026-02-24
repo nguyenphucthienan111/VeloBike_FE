@@ -7,7 +7,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     // Initialize from localStorage immediately
     const token = localStorage.getItem('accessToken');
-    console.log('Layout initialized, accessToken exists:', !!token);
+    // console.log('Layout initialized, accessToken exists:', !!token); // Removed excessive logging
     return !!token;
   });
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -25,14 +25,14 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     const checkAuth = () => {
       const token = localStorage.getItem('accessToken');
       const userData = localStorage.getItem('user');
-      console.log('Checking auth, token:', !!token);
+      // console.log('Checking auth, token:', !!token); // Removed excessive logging
       setIsAuthenticated(!!token);
       
       if (userData) {
         try {
           const user = JSON.parse(userData);
           setUserRole(user.role);
-          console.log('User role:', user.role);
+          // console.log('User role:', user.role); // Removed excessive logging
         } catch (e) {
           setUserRole(null);
         }

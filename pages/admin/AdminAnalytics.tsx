@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AdminSidebar } from '../../components/AdminSidebar';
+import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
 
 interface AnalyticsData {
   period: string;
@@ -22,22 +23,26 @@ export const AdminAnalytics: React.FC = () => {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
+      setError('');
       const token = localStorage.getItem('accessToken');
-      if (!token) return;
+      if (!token) {
+        setError('Chưa đăng nhập');
+        return;
+      }
 
-      const response = await fetch(`http://localhost:5000/api/admin/analytics?period=${period}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/analytics?period=${period}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
+      const data = await response.json().catch(() => ({}));
       if (response.ok) {
-        const data = await response.json();
-        setAnalytics(data.data);
+        setAnalytics(data.data ?? null);
       } else {
-        setError('Failed to load analytics');
+        setError(data?.message || data?.error || `Failed to load analytics (${response.status})`);
       }
     } catch (error) {
       console.error('Error fetching analytics:', error);
-      setError('Error loading analytics');
+      setError(isConnectionError(error) ? CONNECTION_ERROR_MESSAGE : 'Error loading analytics');
     } finally {
       setLoading(false);
     }
@@ -70,8 +75,14 @@ export const AdminAnalytics: React.FC = () => {
           </div>
 
           {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex justify-between items-center">
               <p className="text-sm text-red-700">{error}</p>
+              <button
+                onClick={() => fetchAnalytics()}
+                className="px-3 py-1 text-sm font-medium text-red-700 border border-red-300 rounded hover:bg-red-100"
+              >
+                Thử lại
+              </button>
             </div>
           )}
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
 
 interface UserProfile {
   id: string;
@@ -29,7 +30,7 @@ export const AdminProfile: React.FC = () => {
   const [success, setSuccess] = useState('');
   
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing] = useState(true);
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -59,7 +60,7 @@ export const AdminProfile: React.FC = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/users/me', {
+      const response = await fetch(`${API_BASE_URL}/users/me`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
@@ -82,7 +83,7 @@ export const AdminProfile: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
-      setError('Failed to load profile');
+      setError(isConnectionError(error) ? CONNECTION_ERROR_MESSAGE : 'Failed to load profile');
     } finally {
       setLoading(false);
     }
@@ -158,7 +159,7 @@ export const AdminProfile: React.FC = () => {
         formDataToSend.append('avatar', avatarFile);
       }
 
-      const response = await fetch('http://localhost:5000/api/users/me', {
+      const response = await fetch(`${API_BASE_URL}/users/me`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -168,7 +169,6 @@ export const AdminProfile: React.FC = () => {
 
       if (response.ok) {
         setSuccess('Profile updated successfully!');
-        setIsEditing(false);
         setAvatarFile(null);
         await fetchProfile();
       } else {
@@ -204,33 +204,8 @@ export const AdminProfile: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
-          <div className="flex gap-4 items-center">
-            <button 
-              onClick={() => navigate('/admin/dashboard')}
-              className="text-sm font-medium text-gray-600 hover:text-gray-900"
-            >
-              ← Back to Dashboard
-            </button>
-            <button 
-              onClick={() => setIsEditing(!isEditing)}
-              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                isEditing
-                  ? 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                  : 'bg-gray-900 text-white hover:bg-gray-800'
-              }`}
-            >
-              {isEditing ? 'Cancel' : 'Edit Profile'}
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Main Content - Horizontal Layout */}
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-6 pt-8">
         {/* Messages */}
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -258,14 +233,12 @@ export const AdminProfile: React.FC = () => {
                     <span className="text-gray-400 text-sm">No photo</span>
                   )}
                 </div>
-                {isEditing && (
-                  <input
+                <input
                     type="file"
                     accept="image/*"
                     onChange={handleAvatarChange}
                     className="text-sm w-full"
                   />
-                )}
               </div>
             </div>
 
@@ -348,10 +321,7 @@ export const AdminProfile: React.FC = () => {
                     name="fullName"
                     value={formData.fullName}
                     onChange={handleInputChange}
-                    disabled={!isEditing}
-                    className={`w-full px-4 py-2 border border-gray-300 rounded-lg ${
-                      isEditing ? 'focus:outline-none focus:border-gray-900' : 'bg-gray-50 text-gray-600 cursor-not-allowed'
-                    }`}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
                   />
                 </div>
 
@@ -460,13 +430,12 @@ export const AdminProfile: React.FC = () => {
             </div>
 
             {/* Save Button */}
-            {isEditing && (
               <div className="flex gap-3">
                 <button
-                  onClick={() => setIsEditing(false)}
+                  onClick={() => fetchProfile()}
                   className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
                 >
-                  Cancel
+                  Reset
                 </button>
                 <button
                   onClick={handleSaveProfile}
@@ -476,7 +445,6 @@ export const AdminProfile: React.FC = () => {
                   {saving ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
-            )}
           </div>
         </div>
       </div>
