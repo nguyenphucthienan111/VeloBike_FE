@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { InspectorSidebar } from '../../components/InspectorSidebar';
 import { InspectorHeader } from '../../components/InspectorHeader';
+import { API_BASE_URL, isMockToken } from '../../constants';
 
 interface Stats {
   totalInspections: number;
@@ -44,23 +45,38 @@ export const InspectorDashboard: React.FC = () => {
         return;
       }
 
+      // Mock token (ins/1) won't work with real BE - use default data
+      if (isMockToken()) {
+        setStats({ totalInspections: 0, pendingInspections: 0, completedInspections: 0, passRate: 0, averageScore: 0 });
+        setEarnings({ totalEarnings: 0, pendingEarnings: 0, completedEarnings: 0, currency: 'VND' });
+        setLoading(false);
+        return;
+      }
+
       const [statsResponse, earningsResponse] = await Promise.all([
-        fetch('http://localhost:5000/api/dashboard/inspector/stats', {
+        fetch(`${API_BASE_URL}/dashboard/inspector/stats`, {
           headers: { 'Authorization': `Bearer ${token}` },
         }),
-        fetch('http://localhost:5000/api/dashboard/inspector/earnings', {
+        fetch(`${API_BASE_URL}/dashboard/inspector/earnings`, {
           headers: { 'Authorization': `Bearer ${token}` },
         }),
       ]);
 
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
-        setStats(statsData.data);
+        const d = statsData.data;
+        setStats({
+          totalInspections: d?.totalInspections ?? 0,
+          pendingInspections: d?.pendingInspections ?? 0,
+          completedInspections: d?.totalInspections ?? 0,
+          passRate: d?.passRate ?? 0,
+          averageScore: d?.averageScore ?? 0,
+        });
       }
 
       if (earningsResponse.ok) {
         const earningsData = await earningsResponse.json();
-        setEarnings(earningsData.data);
+        setEarnings(earningsData.data || { totalEarnings: 0, pendingEarnings: 0, completedEarnings: 0, currency: 'VND' });
       }
     } catch (error) {
       console.error('Error fetching dashboard:', error);

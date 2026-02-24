@@ -30,7 +30,7 @@ export const InspectorProfile: React.FC = () => {
   const [success, setSuccess] = useState('');
   
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing] = useState(true); // Luôn cho phép chỉnh sửa, Save ở cuối form
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -162,7 +162,6 @@ export const InspectorProfile: React.FC = () => {
 
       if (response.ok) {
         setSuccess('Profile updated successfully!');
-        setIsEditing(false);
         setAvatarFile(null);
         await fetchProfile();
       } else {
@@ -201,29 +200,7 @@ export const InspectorProfile: React.FC = () => {
         {/* Main Content */}
         <div className="flex-1 p-8">
           <div className="max-w-7xl mx-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
-            <div className="flex gap-4 items-center">
-              <button 
-                onClick={() => navigate('/inspector/dashboard')}
-                className="text-sm font-medium text-gray-600 hover:text-gray-900"
-              >
-                ← Back to Dashboard
-              </button>
-              <button 
-                onClick={() => setIsEditing(!isEditing)}
-                className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                  isEditing
-                    ? 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                    : 'bg-gray-900 text-white hover:bg-gray-800'
-                }`}
-              >
-                {isEditing ? 'Cancel' : 'Edit Profile'}
-              </button>
-            </div>
-          </div>
-
-          {/* Messages */}
+            {/* Messages */}
           {error && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-700">{error}</p>
@@ -250,14 +227,12 @@ export const InspectorProfile: React.FC = () => {
                       <span className="text-gray-400 text-sm">No photo</span>
                     )}
                   </div>
-                  {isEditing && (
-                    <input
+                  <input
                       type="file"
                       accept="image/*"
                       onChange={handleAvatarChange}
                       className="text-sm w-full"
                     />
-                  )}
                 </div>
               </div>
 
@@ -319,9 +294,9 @@ export const InspectorProfile: React.FC = () => {
                       name="fullName"
                       value={formData.fullName}
                       onChange={handleInputChange}
-                      disabled={!isEditing}
+                      disabled={false}
                       className={`w-full px-4 py-2 border border-gray-300 rounded-lg ${
-                        isEditing ? 'focus:outline-none focus:border-gray-900' : 'bg-gray-50 text-gray-600 cursor-not-allowed'
+                        'focus:outline-none focus:border-gray-900'
                       }`}
                     />
                   </div>
@@ -332,10 +307,10 @@ export const InspectorProfile: React.FC = () => {
                       name="phone"
                       value={formData.phone}
                       onChange={handleInputChange}
-                      disabled={!isEditing}
+                      disabled={false}
                       placeholder="Enter your phone number"
                       className={`w-full px-4 py-2 border border-gray-300 rounded-lg ${
-                        isEditing ? 'focus:outline-none focus:border-gray-900' : 'bg-gray-50 text-gray-600 cursor-not-allowed'
+                        'focus:outline-none focus:border-gray-900'
                       }`}
                     />
                   </div>
@@ -353,10 +328,10 @@ export const InspectorProfile: React.FC = () => {
                       name="address.street"
                       value={formData.address.street}
                       onChange={handleInputChange}
-                      disabled={!isEditing}
+                      disabled={false}
                       placeholder="Enter your street address"
                       className={`w-full px-4 py-2 border border-gray-300 rounded-lg ${
-                        isEditing ? 'focus:outline-none focus:border-gray-900' : 'bg-gray-50 text-gray-600 cursor-not-allowed'
+                        'focus:outline-none focus:border-gray-900'
                       }`}
                     />
                   </div>
@@ -367,10 +342,10 @@ export const InspectorProfile: React.FC = () => {
                       name="address.district"
                       value={formData.address.district}
                       onChange={handleInputChange}
-                      disabled={!isEditing}
+                      disabled={false}
                       placeholder="Enter your district"
                       className={`w-full px-4 py-2 border border-gray-300 rounded-lg ${
-                        isEditing ? 'focus:outline-none focus:border-gray-900' : 'bg-gray-50 text-gray-600 cursor-not-allowed'
+                        'focus:outline-none focus:border-gray-900'
                       }`}
                     />
                   </div>
@@ -382,10 +357,10 @@ export const InspectorProfile: React.FC = () => {
                         name="address.city"
                         value={formData.address.city}
                         onChange={handleInputChange}
-                        disabled={!isEditing}
+                        disabled={false}
                         placeholder="Enter your city"
                         className={`w-full px-4 py-2 border border-gray-300 rounded-lg ${
-                          isEditing ? 'focus:outline-none focus:border-gray-900' : 'bg-gray-50 text-gray-600 cursor-not-allowed'
+                          'focus:outline-none focus:border-gray-900'
                         }`}
                       />
                     </div>
@@ -396,10 +371,10 @@ export const InspectorProfile: React.FC = () => {
                         name="address.province"
                         value={formData.address.province}
                         onChange={handleInputChange}
-                        disabled={!isEditing}
+                        disabled={false}
                         placeholder="Enter your province"
                         className={`w-full px-4 py-2 border border-gray-300 rounded-lg ${
-                          isEditing ? 'focus:outline-none focus:border-gray-900' : 'bg-gray-50 text-gray-600 cursor-not-allowed'
+                          'focus:outline-none focus:border-gray-900'
                         }`}
                       />
                     </div>
@@ -411,10 +386,10 @@ export const InspectorProfile: React.FC = () => {
                       name="address.zipCode"
                       value={formData.address.zipCode}
                       onChange={handleInputChange}
-                      disabled={!isEditing}
+                      disabled={false}
                       placeholder="Enter your zip code"
                       className={`w-full px-4 py-2 border border-gray-300 rounded-lg ${
-                        isEditing ? 'focus:outline-none focus:border-gray-900' : 'bg-gray-50 text-gray-600 cursor-not-allowed'
+                        'focus:outline-none focus:border-gray-900'
                       }`}
                     />
                   </div>
@@ -422,13 +397,12 @@ export const InspectorProfile: React.FC = () => {
               </div>
 
               {/* Save Button */}
-              {isEditing && (
-                <div className="flex gap-3">
+              <div className="flex gap-3">
                   <button
-                    onClick={() => setIsEditing(false)}
+                    onClick={() => fetchProfile()}
                     className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
                   >
-                    Cancel
+                    Reset
                   </button>
                   <button
                     onClick={handleSaveProfile}
@@ -438,7 +412,6 @@ export const InspectorProfile: React.FC = () => {
                     {saving ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
-              )}
             </div>
           </div>
           </div>

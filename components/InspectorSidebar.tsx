@@ -11,7 +11,7 @@ export const InspectorSidebar: React.FC = () => {
     { path: '/inspector/dashboard', label: 'Dashboard' },
     { path: '/inspector/pending', label: 'Pending Inspections' },
     { path: '/inspector/history', label: 'My Inspections' },
-    { path: '/inspector/profile', label: 'Profile' },
+    { path: '/inspector/profile', label: 'My Profile' },
   ];
 
   return (

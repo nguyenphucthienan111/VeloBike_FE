@@ -21,7 +21,7 @@ export const SellerSidebar: React.FC<SellerSidebarProps> = ({ stats }) => {
     { path: '/seller/wallet', label: 'Wallet' },
     { path: '/seller/messages', label: 'Messages' },
     { path: '/seller/reviews', label: 'Reviews' },
-    { path: '/seller/profile', label: 'Settings' },
+    { path: '/seller/profile', label: 'My Profile' },
   ];
 
   return (

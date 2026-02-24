@@ -27,7 +27,7 @@ export const SellerProfile: React.FC = () => {
   const [success, setSuccess] = useState('');
   
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing] = useState(true);
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -158,7 +158,6 @@ export const SellerProfile: React.FC = () => {
 
       if (response.ok) {
         setSuccess('Profile updated successfully!');
-        setIsEditing(false);
         setAvatarFile(null);
         setBannerFile(null);
         await fetchProfile();
@@ -193,25 +192,6 @@ export const SellerProfile: React.FC = () => {
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
         <div className="p-8">
-          {/* Header */}
-          <div className="flex justify-between items-start mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
-              <p className="text-sm text-gray-600 mt-1">Manage your personal and shop information</p>
-            </div>
-
-            <button 
-              onClick={() => setIsEditing(!isEditing)}
-              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                isEditing
-                  ? 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                  : 'bg-gray-900 text-white hover:bg-gray-800'
-              }`}
-            >
-              {isEditing ? 'Cancel' : 'Edit Profile'}
-            </button>
-          </div>
-
           {/* Messages */}
           {error && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -225,9 +205,9 @@ export const SellerProfile: React.FC = () => {
           )}
 
           {/* Banner */}
-          {!isEditing && profile?.banner && (
+          {(profile?.banner || bannerPreview) && (
             <div className="mb-8 rounded-lg overflow-hidden h-40 bg-gray-200">
-              <img src={profile.banner} alt="Banner" className="w-full h-full object-cover" />
+              <img src={(bannerPreview as string) || profile?.banner || ''} alt="Banner" className="w-full h-full object-cover" />
             </div>
           )}
 
@@ -247,14 +227,12 @@ export const SellerProfile: React.FC = () => {
                   </div>
                 </div>
                 
-                {isEditing && (
-                  <input
+                <input
                     type="file"
                     accept="image/*"
                     onChange={handleAvatarChange}
                     className="w-full text-sm"
                   />
-                )}
               </div>
             </div>
 
@@ -284,10 +262,7 @@ export const SellerProfile: React.FC = () => {
                       name="fullName"
                       value={formData.fullName}
                       onChange={handleInputChange}
-                      disabled={!isEditing}
-                      className={`w-full px-4 py-2 border border-gray-300 rounded-lg ${
-                        isEditing ? 'focus:outline-none focus:border-gray-900' : 'bg-gray-50 text-gray-600 cursor-not-allowed'
-                      }`}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
                     />
                   </div>
 
@@ -299,11 +274,8 @@ export const SellerProfile: React.FC = () => {
                       name="phone"
                       value={formData.phone}
                       onChange={handleInputChange}
-                      disabled={!isEditing}
                       placeholder="Enter your phone number"
-                      className={`w-full px-4 py-2 border border-gray-300 rounded-lg ${
-                        isEditing ? 'focus:outline-none focus:border-gray-900' : 'bg-gray-50 text-gray-600 cursor-not-allowed'
-                      }`}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
                     />
                   </div>
 
@@ -314,12 +286,9 @@ export const SellerProfile: React.FC = () => {
                       name="bio"
                       value={formData.bio}
                       onChange={handleInputChange}
-                      disabled={!isEditing}
                       placeholder="Tell buyers about yourself"
                       rows={3}
-                      className={`w-full px-4 py-2 border border-gray-300 rounded-lg resize-none ${
-                        isEditing ? 'focus:outline-none focus:border-gray-900' : 'bg-gray-50 text-gray-600 cursor-not-allowed'
-                      }`}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:border-gray-900"
                     />
                   </div>
                 </div>
@@ -338,11 +307,8 @@ export const SellerProfile: React.FC = () => {
                       name="shopName"
                       value={formData.shopName}
                       onChange={handleInputChange}
-                      disabled={!isEditing}
                       placeholder="Enter your shop name"
-                      className={`w-full px-4 py-2 border border-gray-300 rounded-lg ${
-                        isEditing ? 'focus:outline-none focus:border-gray-900' : 'bg-gray-50 text-gray-600 cursor-not-allowed'
-                      }`}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
                     />
                   </div>
 
@@ -353,12 +319,9 @@ export const SellerProfile: React.FC = () => {
                       name="shopDescription"
                       value={formData.shopDescription}
                       onChange={handleInputChange}
-                      disabled={!isEditing}
                       placeholder="Describe your shop"
                       rows={3}
-                      className={`w-full px-4 py-2 border border-gray-300 rounded-lg resize-none ${
-                        isEditing ? 'focus:outline-none focus:border-gray-900' : 'bg-gray-50 text-gray-600 cursor-not-allowed'
-                      }`}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:border-gray-900"
                     />
                   </div>
 
@@ -369,10 +332,7 @@ export const SellerProfile: React.FC = () => {
                       name="businessType"
                       value={formData.businessType}
                       onChange={handleInputChange}
-                      disabled={!isEditing}
-                      className={`w-full px-4 py-2 border border-gray-300 rounded-lg ${
-                        isEditing ? 'focus:outline-none focus:border-gray-900' : 'bg-gray-50 text-gray-600 cursor-not-allowed'
-                      }`}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
                     >
                       <option value="">Select business type</option>
                       <option value="individual">Individual Seller</option>
@@ -396,11 +356,8 @@ export const SellerProfile: React.FC = () => {
                       name="businessRegistration"
                       value={formData.businessRegistration}
                       onChange={handleInputChange}
-                      disabled={!isEditing}
                       placeholder="Enter your business registration number"
-                      className={`w-full px-4 py-2 border border-gray-300 rounded-lg ${
-                        isEditing ? 'focus:outline-none focus:border-gray-900' : 'bg-gray-50 text-gray-600 cursor-not-allowed'
-                      }`}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
                     />
                   </div>
 
@@ -412,11 +369,8 @@ export const SellerProfile: React.FC = () => {
                       name="address"
                       value={formData.address}
                       onChange={handleInputChange}
-                      disabled={!isEditing}
                       placeholder="Enter your address"
-                      className={`w-full px-4 py-2 border border-gray-300 rounded-lg ${
-                        isEditing ? 'focus:outline-none focus:border-gray-900' : 'bg-gray-50 text-gray-600 cursor-not-allowed'
-                      }`}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
                     />
                   </div>
 
@@ -429,7 +383,6 @@ export const SellerProfile: React.FC = () => {
                         name="city"
                         value={formData.city}
                         onChange={handleInputChange}
-                        disabled={!isEditing}
                         placeholder="Enter your city"
                         className={`w-full px-4 py-2 border border-gray-300 rounded-lg ${
                           isEditing ? 'focus:outline-none focus:border-gray-900' : 'bg-gray-50 text-gray-600 cursor-not-allowed'
@@ -443,7 +396,6 @@ export const SellerProfile: React.FC = () => {
                         name="country"
                         value={formData.country}
                         onChange={handleInputChange}
-                        disabled={!isEditing}
                         placeholder="Enter your country"
                         className={`w-full px-4 py-2 border border-gray-300 rounded-lg ${
                           isEditing ? 'focus:outline-none focus:border-gray-900' : 'bg-gray-50 text-gray-600 cursor-not-allowed'
@@ -455,8 +407,7 @@ export const SellerProfile: React.FC = () => {
               </div>
 
               {/* Banner Upload */}
-              {isEditing && (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                   <h2 className="text-lg font-bold text-gray-900 mb-6">Banner</h2>
                   <div className="space-y-4">
                     <div className="mb-4">
@@ -476,16 +427,14 @@ export const SellerProfile: React.FC = () => {
                     />
                   </div>
                 </div>
-              )}
 
               {/* Save Button */}
-              {isEditing && (
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setIsEditing(false)}
+                    onClick={() => fetchProfile()}
                     className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
                   >
-                    Cancel
+                    Reset
                   </button>
                   <button
                     onClick={handleSaveProfile}
@@ -495,7 +444,6 @@ export const SellerProfile: React.FC = () => {
                     {saving ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
-              )}
             </div>
           </div>
         </div>

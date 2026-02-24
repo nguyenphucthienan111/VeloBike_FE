@@ -12,6 +12,12 @@ export function isConnectionError(err: unknown): boolean {
   return err instanceof TypeError && (err.message === 'Failed to fetch' || (err as Error).message?.includes('fetch'));
 }
 
+/** True if using mock login (ins/admin/kien123) - token won't work with real BE */
+export function isMockToken(): boolean {
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  return !!token && token.startsWith('mock_access_token_');
+}
+
 export const API_ENDPOINTS = {
   // Auth
   REGISTER: `${API_BASE_URL}/auth/register`,

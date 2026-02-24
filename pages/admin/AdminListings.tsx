@@ -41,7 +41,7 @@ export const AdminListings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [listings, setListings] = useState<Listing[]>([]);
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 20, pages: 0 });
-  const [statusFilter, setStatusFilter] = useState('PENDING_APPROVAL');
+  const [statusFilter, setStatusFilter] = useState('');
   const [error, setError] = useState('');
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [showActionModal, setShowActionModal] = useState(false);
@@ -216,7 +216,7 @@ export const AdminListings: React.FC = () => {
                                     alt={listing.title}
                                     className="w-12 h-12 object-cover rounded-lg border border-gray-200"
                                     onError={(e) => {
-                                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/48?text=No+Image';
+                                      (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Crect fill='%23e5e7eb' width='48' height='48'/%3E%3Ctext fill='%239ca3af' x='24' y='26' font-size='10' text-anchor='middle'%3ENo Image%3C/text%3E%3C/svg%3E";
                                     }}
                                   />
                                 ) : (
