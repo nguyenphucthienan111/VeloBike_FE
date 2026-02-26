@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { ShoppingBag, Search, Menu, User, ShieldCheck } from 'lucide-react';
+import { ShoppingBag, Search, Menu, User, ShieldCheck, Heart, Bell, MessageCircle } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { API_BASE_URL } from '../constants';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    // Initialize from localStorage immediately
     const token = localStorage.getItem('accessToken');
-    // console.log('Layout initialized, accessToken exists:', !!token); // Removed excessive logging
     return !!token;
   });
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [orderCount, setOrderCount] = useState<number>(0);
+  const [notificationUnread, setNotificationUnread] = useState<number>(0);
   const [refreshKey, setRefreshKey] = useState(0);
   
   // Hide header for seller, admin, and inspector dashboard pages
@@ -74,6 +75,47 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     };
   }, [refreshKey]);
 
+  // Số đơn hàng thật cho BUYER (bỏ mock)
+  useEffect(() => {
+    if (!isAuthenticated || userRole !== 'BUYER') {
+      setOrderCount(0);
+      return;
+    }
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
+    fetch(`${API_BASE_URL}/orders?role=buyer&page=1&limit=1`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.pagination?.total != null) setOrderCount(data.pagination.total);
+        else setOrderCount(0);
+      })
+      .catch(() => setOrderCount(0));
+  }, [isAuthenticated, userRole, refreshKey]);
+
+  // Số thông báo chưa đọc (icon chuông) - GET /api/notifications
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setNotificationUnread(0);
+      return;
+    }
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
+    fetch(`${API_BASE_URL}/notifications?page=1&limit=1`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.success && data?.pagination?.unreadCount != null) {
+          setNotificationUnread(data.pagination.unreadCount);
+        } else {
+          setNotificationUnread(0);
+        }
+      })
+      .catch(() => setNotificationUnread(0));
+  }, [isAuthenticated, refreshKey]);
+
   return (
     <div className={`min-h-screen ${isDashboardPage ? 'flex' : 'flex flex-col'} bg-white`}>
       {/* Top Banner and Header - Hidden for Seller/Admin Pages */}
@@ -88,58 +130,94 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       </div>
 
       {/* Navigation */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 transition-all duration-300 w-full px-4 sm:px-6 lg:px-8">
+        <div className="relative flex justify-between items-center h-16 w-full">
             {/* Logo */}
-            <div className="flex-shrink-0 flex items-center">
+            <div className="flex-shrink-0 flex items-center z-10">
               <Link to="/" className="text-2xl font-extrabold tracking-tighter italic">
                 VELO<span className="text-accent">BIKE</span>
               </Link>
             </div>
 
-            {/* Desktop Nav */}
-            <nav className="hidden md:flex space-x-8">
+            {/* Desktop Nav - căn chính giữa trang (absolute center) */}
+            <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center space-x-6">
               {userRole === 'SELLER' ? (
                 <>
-                  <Link to="/seller/dashboard" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname.includes('/seller/dashboard') ? 'text-black' : 'text-gray-500'}`}>DASHBOARD</Link>
-                  <Link to="/seller/inventory" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname.includes('/seller/inventory') ? 'text-black' : 'text-gray-500'}`}>INVENTORY</Link>
-                  <Link to="/seller/analytics" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname.includes('/seller/analytics') ? 'text-black' : 'text-gray-500'}`}>ANALYTICS</Link>
-                  <Link to="/" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/' ? 'text-black' : 'text-gray-500'}`}>HOME</Link>
+                  <Link to="/seller/dashboard" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname.includes('/seller/dashboard') ? 'text-black' : 'text-gray-500'}`}>DASHBOARD</Link>
+                  <Link to="/seller/inventory" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname.includes('/seller/inventory') ? 'text-black' : 'text-gray-500'}`}>INVENTORY</Link>
+                  <Link to="/seller/analytics" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname.includes('/seller/analytics') ? 'text-black' : 'text-gray-500'}`}>ANALYTICS</Link>
+                  <Link to="/" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname === '/' ? 'text-black' : 'text-gray-500'}`}>HOME</Link>
                 </>
               ) : userRole === 'INSPECTOR' ? (
-                // Inspector: no nav links, just logo and profile icon
                 null
               ) : (
                 <>
-              <Link to="/" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/' ? 'text-black' : 'text-gray-500'}`}>HOME</Link>
-              <Link to="/marketplace" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/marketplace' ? 'text-black' : 'text-gray-500'}`}>MARKETPLACE</Link>
-              <Link to="/sell" className={`text-sm font-medium hover:text-accent transition-colors ${location.pathname === '/sell' ? 'text-black' : 'text-gray-500'}`}>SELL YOUR BIKE</Link>
-              <Link to="/inspection" className="text-sm font-medium text-gray-500 hover:text-accent transition-colors">INSPECTION SERVICE</Link>
+                  <Link to="/" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname === '/' ? 'text-black' : 'text-gray-500'}`}>HOME</Link>
+                  <Link to="/marketplace" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname === '/marketplace' ? 'text-black' : 'text-gray-500'}`}>MARKETPLACE</Link>
+                  {userRole === 'BUYER' && (
+                    <Link to="/buyer/dashboard" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname === '/buyer/dashboard' ? 'text-black' : 'text-gray-500'}`}>DASHBOARD</Link>
+                  )}
+                  <Link to="/inspection" className="text-xs font-medium text-gray-500 hover:text-accent transition-colors">INSPECTION SERVICE</Link>
                 </>
               )}
             </nav>
 
-            {/* Icons */}
-            <div className="flex items-center space-x-6">
-              {/* Search icon - only for Buyer or not authenticated (not for Inspector) */}
+            {/* Icons - sát góc phải (header full width) */}
+            <div className="flex items-center gap-3 sm:gap-4 ml-auto flex-shrink-0 z-10">
               {userRole !== 'SELLER' && userRole !== 'INSPECTOR' && (
-                <button className="text-accent hover:text-accent/80 transition-colors">
-                <Search size={20} />
-              </button>
+                <button className="text-accent hover:text-accent/80 transition-colors p-1" title="Search">
+                  <Search size={20} />
+                </button>
               )}
               
               {isAuthenticated ? (
                 <>
-                  {/* Shopping bag - only for Buyer */}
+                  {/* BUYER: Heart → Đơn hàng (bag) → Bell → Liên hệ → Đăng tin → Profile */}
                   {userRole === 'BUYER' && (
-                    <Link to="/cart" className="text-accent hover:text-accent/80 transition-colors relative">
-                <ShoppingBag size={20} />
-                <span className="absolute -top-1 -right-1 bg-accent text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">1</span>
-              </Link>
+                    <>
+                      <Link to="/buyer/wishlist" className="text-accent hover:text-accent/80 transition-colors p-1 rounded-full hover:bg-gray-100" title="Wishlist">
+                        <Heart size={20} />
+                      </Link>
+                      <Link to="/buyer/orders" className="text-accent hover:text-accent/80 transition-colors relative p-1 rounded-full hover:bg-gray-100" title="Orders">
+                        <ShoppingBag size={20} />
+                        {orderCount > 0 && (
+                          <span className="absolute -top-0.5 -right-0.5 bg-accent text-white text-[10px] font-bold min-w-[1rem] h-4 px-1 rounded-full flex items-center justify-center">
+                            {orderCount > 99 ? '99+' : orderCount}
+                          </span>
+                        )}
+                      </Link>
+                      <Link to="/buyer/notifications" className="text-accent hover:text-accent/80 transition-colors relative p-1 rounded-full hover:bg-gray-100" title="Notifications">
+                        <Bell size={20} />
+                        {notificationUnread > 0 && (
+                          <span className="absolute -top-0.5 -right-0.5 bg-accent text-white text-[10px] font-bold min-w-[1rem] h-4 px-1 rounded-full flex items-center justify-center">
+                            {notificationUnread > 99 ? '99+' : notificationUnread}
+                          </span>
+                        )}
+                      </Link>
+                      <Link to="/buyer/messages" className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:border-accent hover:text-accent rounded-full px-3 py-2 text-sm font-medium transition-colors" title="Contact">
+                        <MessageCircle size={18} />
+                        <span>Contact</span>
+                      </Link>
+                      <Link to="/sell" className="flex items-center bg-black text-white hover:bg-gray-800 rounded-full px-4 py-2 text-sm font-medium transition-colors">
+                        Post listing
+                      </Link>
+                    </>
                   )}
-              
-                  {/* Profile icon - for Buyer, Seller, Inspector, and Admin */}
+                  {/* SELLER: Liên hệ (seller mess) → Quản lý tin → Đăng tin → Profile */}
+                  {userRole === 'SELLER' && (
+                    <>
+                      <Link to="/seller/messages" className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:border-accent hover:text-accent rounded-full px-3 py-2 text-sm font-medium transition-colors" title="Liên hệ">
+                        <MessageCircle size={18} />
+                        <span>Liên hệ</span>
+                      </Link>
+                      <Link to="/seller/dashboard" className="flex items-center bg-white border border-gray-200 text-gray-700 hover:border-accent hover:text-accent rounded-full px-3 py-2 text-sm font-medium transition-colors" title="Quản lý tin">
+                        Quản lý tin
+                      </Link>
+                      <Link to="/seller/add-product" className="flex items-center bg-black text-white hover:bg-gray-800 rounded-full px-4 py-2 text-sm font-medium transition-colors">
+                        Đăng tin
+                      </Link>
+                    </>
+                  )}
                   <Link 
                     to={
                       userRole === 'SELLER' ? '/seller/profile' : 
@@ -147,10 +225,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                       userRole === 'ADMIN' ? '/admin/profile' :
                       '/buyer/profile'
                     } 
-                    className="text-accent hover:text-accent/80 transition-colors"
+                    className="text-accent hover:text-accent/80 transition-colors p-1 rounded-full hover:bg-gray-100 flex items-center gap-1.5"
+                    title="Account"
                   >
-                <User size={20} />
-              </Link>
+                    <User size={20} />
+                  </Link>
                 </>
               ) : (
                 <>
@@ -168,7 +247,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               </button>
             </div>
           </div>
-        </div>
       </header>
         </>
       )}

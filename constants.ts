@@ -9,13 +9,8 @@ export const CONNECTION_ERROR_MESSAGE =
   'Không kết nối được máy chủ. Vui lòng đảm bảo backend đang chạy (mặc định: localhost:5000).';
 
 export function isConnectionError(err: unknown): boolean {
-  return err instanceof TypeError && (err.message === 'Failed to fetch' || (err as Error).message?.includes('fetch'));
-}
-
-/** True if using mock login (ins/admin/kien123) - token won't work with real BE */
-export function isMockToken(): boolean {
-  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('accessToken') : null;
-  return !!token && token.startsWith('mock_access_token_');
+  const msg = String((err as Error)?.message || '');
+  return msg === 'Failed to fetch' || /network|refused|ECONNREFUSED/i.test(msg);
 }
 
 export const API_ENDPOINTS = {

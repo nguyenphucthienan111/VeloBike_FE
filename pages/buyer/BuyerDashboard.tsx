@@ -18,10 +18,10 @@ export const BuyerDashboard: React.FC = () => {
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
           <h1 className="text-3xl font-bold text-gray-900">
-            Bảng Điều Khiển Người Mua
+            Buyer Dashboard
           </h1>
           <p className="mt-2 text-gray-600">
-            Chào mừng, {user?.fullName || 'Khách hàng'}!
+            Welcome, {user?.fullName || 'Guest'}!
           </p>
         </div>
       </div>
@@ -31,70 +31,70 @@ export const BuyerDashboard: React.FC = () => {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-gray-500 text-sm font-medium">Đơn Hàng</div>
+            <div className="text-gray-500 text-sm font-medium">Orders</div>
             <div className="text-3xl font-bold text-gray-900 mt-2">8</div>
-            <div className="text-blue-600 text-sm mt-2">Tổng cộng</div>
+            <div className="text-blue-600 text-sm mt-2">Total</div>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-gray-500 text-sm font-medium">Đã Giao</div>
+            <div className="text-gray-500 text-sm font-medium">Delivered</div>
             <div className="text-3xl font-bold text-gray-900 mt-2">6</div>
-            <div className="text-green-600 text-sm mt-2">Hoàn thành</div>
+            <div className="text-green-600 text-sm mt-2">Completed</div>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-gray-500 text-sm font-medium">Đang Giao</div>
+            <div className="text-gray-500 text-sm font-medium">In transit</div>
             <div className="text-3xl font-bold text-gray-900 mt-2">2</div>
-            <div className="text-yellow-600 text-sm mt-2">Chờ nhận</div>
+            <div className="text-yellow-600 text-sm mt-2">Pending</div>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-gray-500 text-sm font-medium">Tổng Chi</div>
+            <div className="text-gray-500 text-sm font-medium">Total spent</div>
             <div className="text-3xl font-bold text-gray-900 mt-2">120M</div>
-            <div className="text-blue-600 text-sm mt-2">VNĐ</div>
+            <div className="text-blue-600 text-sm mt-2">VND</div>
           </div>
         </div>
 
         {/* Quick Actions */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Hành Động Nhanh</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Quick actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <button
               onClick={() => navigate('/marketplace')}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Tìm Mua Xe
+              Browse bikes
             </button>
             <button
               onClick={() => navigate('/buyer/orders')}
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
-              Xem Đơn Hàng
+              View orders
             </button>
             <button
               onClick={() => navigate('/buyer/wishlist')}
               className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
             >
-              Yêu Thích
+              Wishlist
             </button>
             <button
               onClick={() => navigate('/buyer/profile')}
               className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
             >
-              Tài Khoản
+              Account
             </button>
           </div>
         </div>
 
         {/* Recent Orders */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Đơn Hàng Gần Đây</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Recent orders</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="border-b">
                 <tr>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Mã Đơn</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Sản Phẩm</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Giá</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Trạng Thái</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Ngày</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Order ID</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Product</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Price</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Date</th>
                 </tr>
               </thead>
               <tbody>
@@ -104,7 +104,7 @@ export const BuyerDashboard: React.FC = () => {
                   <td className="py-3 px-4">15.5M</td>
                   <td className="py-3 px-4">
                     <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">
-                      Đã Giao
+                      Delivered
                     </span>
                   </td>
                   <td className="py-3 px-4">20/01/2026</td>
@@ -115,7 +115,7 @@ export const BuyerDashboard: React.FC = () => {
                   <td className="py-3 px-4">12.3M</td>
                   <td className="py-3 px-4">
                     <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
-                      Đang Giao
+                      Shipping
                     </span>
                   </td>
                   <td className="py-3 px-4">27/01/2026</td>

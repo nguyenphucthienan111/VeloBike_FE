@@ -40,7 +40,6 @@ export const InspectorProfile: React.FC = () => {
       district: '',
       city: '',
       province: '',
-      zipCode: '',
     },
   });
 
@@ -76,7 +75,6 @@ export const InspectorProfile: React.FC = () => {
             district: profileData.address?.district || '',
             city: profileData.address?.city || '',
             province: profileData.address?.province || '',
-            zipCode: profileData.address?.zipCode || '',
           },
         });
         setAvatarPreview(profileData.avatar || null);
@@ -127,37 +125,26 @@ export const InspectorProfile: React.FC = () => {
       setError('');
       setSuccess('');
       const token = localStorage.getItem('accessToken');
+      if (!token) return;
 
-      const formDataToSend = new FormData();
-      formDataToSend.append('fullName', formData.fullName);
-      if (formData.phone) {
-        formDataToSend.append('phone', formData.phone);
-      }
-      if (formData.address.street) {
-        formDataToSend.append('address[street]', formData.address.street);
-      }
-      if (formData.address.district) {
-        formDataToSend.append('address[district]', formData.address.district);
-      }
-      if (formData.address.city) {
-        formDataToSend.append('address[city]', formData.address.city);
-      }
-      if (formData.address.province) {
-        formDataToSend.append('address[province]', formData.address.province);
-      }
-      if (formData.address.zipCode) {
-        formDataToSend.append('address[zipCode]', formData.address.zipCode);
-      }
-      if (avatarFile) {
-        formDataToSend.append('avatar', avatarFile);
-      }
+      const body = {
+        fullName: formData.fullName,
+        phone: formData.phone || '',
+        address: {
+          street: formData.address.street || '',
+          district: formData.address.district || '',
+          city: formData.address.city || '',
+          province: formData.address.province || '',
+        },
+      };
 
       const response = await fetch('http://localhost:5000/api/users/me', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: formDataToSend,
+        body: JSON.stringify(body),
       });
 
       if (response.ok) {
@@ -378,20 +365,6 @@ export const InspectorProfile: React.FC = () => {
                         }`}
                       />
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Zip Code</label>
-                    <input
-                      type="text"
-                      name="address.zipCode"
-                      value={formData.address.zipCode}
-                      onChange={handleInputChange}
-                      disabled={false}
-                      placeholder="Enter your zip code"
-                      className={`w-full px-4 py-2 border border-gray-300 rounded-lg ${
-                        'focus:outline-none focus:border-gray-900'
-                      }`}
-                    />
                   </div>
                 </div>
               </div>

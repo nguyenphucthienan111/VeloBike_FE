@@ -14,6 +14,8 @@ import { BuyerDashboard } from './pages/buyer/BuyerDashboard';
 import { BuyerOrders } from './pages/buyer/BuyerOrders';
 import { BuyerWishlist } from './pages/buyer/BuyerWishlist';
 import { BuyerProfile } from './pages/buyer/BuyerProfile';
+import { BuyerMessages } from './pages/buyer/BuyerMessages';
+import { BuyerNotifications } from './pages/buyer/BuyerNotifications';
 import { SellerDashboard } from './pages/seller/SellerDashboard';
 import { SellerInventory } from './pages/seller/SellerInventory';
 import { SellerAnalytics } from './pages/seller/SellerAnalytics';
@@ -63,6 +65,8 @@ const App: React.FC = () => {
           <Route path="/buyer/orders" element={<BuyerOrders />} />
           <Route path="/buyer/wishlist" element={<BuyerWishlist />} />
           <Route path="/buyer/profile" element={<BuyerProfile />} />
+          <Route path="/buyer/messages" element={<BuyerMessages />} />
+          <Route path="/buyer/notifications" element={<BuyerNotifications />} />
           
           {/* Seller Routes */}
           <Route path="/seller/dashboard" element={<SellerDashboard />} />

@@ -476,9 +476,17 @@ export const ProductDetail: React.FC = () => {
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 mb-6">
+                <div className="flex items-center gap-2 mb-6 flex-wrap">
                     <span className="text-xs font-bold bg-black text-white px-2 py-1">SIZE {bike.size}</span>
                     <span className="text-xs text-gray-500">Condition: {formatCondition(bike.condition)}</span>
+                    {/* Availability badge */}
+                    {listing.status === 'SOLD' ? (
+                      <span className="text-xs font-bold bg-gray-500 text-white px-2 py-1 rounded">ĐÃ BÁN</span>
+                    ) : listing.status === 'PUBLISHED' ? (
+                      <span className="text-xs font-bold bg-green-600 text-white px-2 py-1 rounded">CÒN HÀNG</span>
+                    ) : listing.status ? (
+                      <span className="text-xs font-bold bg-amber-500 text-white px-2 py-1 rounded">{listing.status}</span>
+                    ) : null}
                 </div>
 
                 {/* Views & Boost Info */}
@@ -511,7 +519,7 @@ export const ProductDetail: React.FC = () => {
                       disabled={orderLoading || listing?.status !== 'PUBLISHED'}
                       className="w-full bg-accent hover:bg-red-600 text-white py-4 font-bold uppercase tracking-widest transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {orderLoading ? 'PROCESSING...' : 'BUY NOW (ESCROW)'}
+                        {orderLoading ? 'PROCESSING...' : listing?.status === 'SOLD' ? 'ĐÃ BÁN' : 'BUY NOW (ESCROW)'}
                     </button>
                     <button className="w-full border-2 border-black hover:bg-black hover:text-white text-black py-4 font-bold uppercase tracking-widest transition-colors">
                         MAKE AN OFFER

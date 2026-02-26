@@ -24,12 +24,6 @@ export const Login: React.FC = () => {
   });
 
   const validateEmail = (email: string): boolean => {
-    // Allow mock accounts (admin, kien123, ins) without @
-    const mockAccounts = ['admin', 'kien123', 'ins'];
-    if (mockAccounts.includes(email.toLowerCase().trim())) {
-      return true;
-    }
-    // Standard email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
@@ -100,7 +94,7 @@ export const Login: React.FC = () => {
               type="text"
               value={formData.email}
               onChange={handleInputChange}
-              placeholder="you@example.com, admin, or ins"
+              placeholder="you@example.com"
               error={errors.email}
               required
             />
