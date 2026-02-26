@@ -1,10 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { ShoppingBag, Search, Menu, User, ShieldCheck, Heart, Bell, MessageCircle } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useEffect, useState, useRef } from 'react';
+import { ShoppingBag, Search, Menu, User, ShieldCheck, Heart, Bell, MessageCircle, ChevronRight, Settings, HelpCircle, LogOut } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../constants';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const profileRef = useRef<HTMLDivElement>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<{ fullName?: string; avatar?: string } | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     const token = localStorage.getItem('accessToken');
     return !!token;
@@ -33,12 +37,14 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         try {
           const user = JSON.parse(userData);
           setUserRole(user.role);
-          // console.log('User role:', user.role); // Removed excessive logging
+          setUserProfile({ fullName: user.fullName, avatar: user.avatar });
         } catch (e) {
           setUserRole(null);
+          setUserProfile(null);
         }
       } else {
         setUserRole(null);
+        setUserProfile(null);
       }
     };
     
@@ -115,6 +121,27 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       })
       .catch(() => setNotificationUnread(0));
   }, [isAuthenticated, refreshKey]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
+    };
+    if (profileOpen) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [profileOpen]);
+
+  const profileUrl = userRole === 'SELLER' ? '/seller/profile' : userRole === 'INSPECTOR' ? '/inspector/profile' : userRole === 'ADMIN' ? '/admin/profile' : '/buyer/profile';
+
+  const handleLogout = () => {
+    setProfileOpen(false);
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+    window.dispatchEvent(new Event('authChange'));
+    navigate('/login');
+  };
 
   return (
     <div className={`min-h-screen ${isDashboardPage ? 'flex' : 'flex flex-col'} bg-white`}>
@@ -218,18 +245,60 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                       </Link>
                     </>
                   )}
-                  <Link 
-                    to={
-                      userRole === 'SELLER' ? '/seller/profile' : 
-                      userRole === 'INSPECTOR' ? '/inspector/profile' :
-                      userRole === 'ADMIN' ? '/admin/profile' :
-                      '/buyer/profile'
-                    } 
-                    className="text-accent hover:text-accent/80 transition-colors p-1 rounded-full hover:bg-gray-100 flex items-center gap-1.5"
-                    title="Account"
-                  >
-                    <User size={20} />
-                  </Link>
+                  <div className="relative" ref={profileRef}>
+                    <button
+                      type="button"
+                      onClick={() => setProfileOpen((v) => !v)}
+                      className="text-accent hover:text-accent/80 transition-colors p-1 rounded-full hover:bg-gray-100"
+                      title="Account"
+                    >
+                      <User size={20} />
+                    </button>
+                    {profileOpen && (
+                      <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden">
+                        {/* Header: avatar + name (click → profile) */}
+                        <Link to={profileUrl} onClick={() => setProfileOpen(false)} className="block p-4 border-b border-gray-100 bg-gray-50/50 hover:bg-gray-100/50">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                              {userProfile?.avatar ? (
+                                <img src={userProfile.avatar} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <User size={24} className="text-gray-500" />
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-semibold text-gray-900 truncate">{userProfile?.fullName || 'Account'}</p>
+                              <p className="text-xs text-gray-500 capitalize">{userRole?.toLowerCase()}</p>
+                            </div>
+                          </div>
+                        </Link>
+                        {/* Khác — chỉ giữ mục có trang/action thật */}
+                        <div className="py-2 border-t border-gray-100">
+                          <p className="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Khác</p>
+                          <Link to={profileUrl} onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
+                            <Settings size={18} className="text-gray-500 flex-shrink-0" />
+                            <span className="flex-1">Cài đặt tài khoản</span>
+                            <ChevronRight size={16} className="text-gray-400" />
+                          </Link>
+                          <Link to="#" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
+                            <HelpCircle size={18} className="text-gray-500 flex-shrink-0" />
+                            <span className="flex-1">Trợ giúp</span>
+                            <ChevronRight size={16} className="text-gray-400" />
+                          </Link>
+                          <Link to="#" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
+                            <MessageCircle size={18} className="text-gray-500 flex-shrink-0" />
+                            <span className="flex-1">Đóng góp ý kiến</span>
+                            <ChevronRight size={16} className="text-gray-400" />
+                          </Link>
+                          <button type="button" onClick={handleLogout} className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 w-full">
+                            <LogOut size={18} className="flex-shrink-0" />
+                            <span className="flex-1 text-left">Đăng xuất</span>
+                            <ChevronRight size={16} className="text-gray-400" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </>
               ) : (
                 <>
