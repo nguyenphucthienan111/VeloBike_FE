@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { AdminSidebar } from '../../components/AdminSidebar';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
 
 interface Brand {
@@ -199,9 +198,8 @@ export const AdminCatalog: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <AdminSidebar />
-      <main className="flex-1 p-8 overflow-auto">
+    <div>
+      <div className="p-8 overflow-auto">
         <div className="max-w-6xl w-full">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">Catalog</h1>
 
@@ -325,7 +323,7 @@ export const AdminCatalog: React.FC = () => {
             </section>
           </div>
         </div>
-      </main>
+      </div>
 
       {/* Brand modal */}
       {showBrandModal && (

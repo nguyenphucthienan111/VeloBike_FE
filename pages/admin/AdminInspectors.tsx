@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { AdminSidebar } from '../../components/AdminSidebar';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
 
 interface Inspector {
@@ -55,9 +54,7 @@ export const AdminInspectors: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <AdminSidebar />
-      <div className="flex-1 p-6">
+    <div className="p-6">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">Inspectors Management</h1>
 
@@ -157,7 +154,6 @@ export const AdminInspectors: React.FC = () => {
             )}
           </div>
         </div>
-      </div>
     </div>
   );
 };

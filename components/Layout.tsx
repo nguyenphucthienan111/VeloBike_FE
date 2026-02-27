@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { ShoppingBag, Search, Menu, User, ShieldCheck, Heart, Bell, MessageCircle, ChevronRight, Settings, HelpCircle, LogOut } from 'lucide-react';
+import { ShoppingBag, Search, Menu, User, ShieldCheck, Heart, Bell, MessageCircle, ChevronRight, Settings, HelpCircle, LogOut, Store, CreditCard } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../constants';
 
@@ -272,7 +272,26 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                             </div>
                           </div>
                         </Link>
-                        {/* Khác — chỉ giữ mục có trang/action thật */}
+                        {/* Seller: Cửa hàng */}
+                        <div className="py-2 border-t border-gray-100">
+                          <p className="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Seller</p>
+                          <div className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
+                            <Store size={18} className="text-gray-500 flex-shrink-0" />
+                            <span className="flex-1">Cửa hàng / chuyên trang</span>
+                            <Link to="/seller/kyc" onClick={() => setProfileOpen(false)} className="rounded bg-gray-200 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-300">Tạo ngay</Link>
+                          </div>
+                        </div>
+                        {/* Buyer: Lịch sử thanh toán (chỉ khi role BUYER) */}
+                        {userRole === 'BUYER' && (
+                          <div className="py-2 border-t border-gray-100">
+                            <Link to="/buyer/payment-history" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
+                              <CreditCard size={18} className="text-gray-500 flex-shrink-0" />
+                              <span className="flex-1">Lịch sử thanh toán</span>
+                              <ChevronRight size={16} className="text-gray-400" />
+                            </Link>
+                          </div>
+                        )}
+                        {/* Khác */}
                         <div className="py-2 border-t border-gray-100">
                           <p className="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Khác</p>
                           <Link to={profileUrl} onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">

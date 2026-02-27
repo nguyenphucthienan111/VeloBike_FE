@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { AdminSidebar } from '../../components/AdminSidebar';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
+
+interface KycData {
+  documentType?: string;
+  documentId?: string;
+  frontImage?: string;
+  backImage?: string;
+  verifiedAt?: string;
+}
 
 interface User {
   _id: string;
@@ -12,6 +19,7 @@ interface User {
   isActive: boolean;
   emailVerified: boolean;
   createdAt: string;
+  kycData?: KycData;
   wallet?: { balance: number; currency: string };
   reputation?: { score: number; reviewCount: number };
 }
@@ -132,9 +140,7 @@ export const AdminUsers: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <AdminSidebar />
-      <div className="flex-1 p-6">
+    <div className="p-6">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">Users Management</h1>
 
@@ -242,7 +248,7 @@ export const AdminUsers: React.FC = () => {
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex gap-2">
-                              {user.role === 'SELLER' && (
+                              {(user.role === 'SELLER' || user.kycStatus === 'PENDING' || (user.kycData && (user.kycData.documentType || user.kycData.documentId || user.kycData.frontImage || user.kycData.backImage))) && (
                                 <button
                                   onClick={() => {
                                     setSelectedUser(user);
@@ -298,18 +304,65 @@ export const AdminUsers: React.FC = () => {
             )}
           </div>
         </div>
-      </div>
 
-      {/* KYC Modal - Only for SELLER */}
-      {showKycModal && selectedUser && selectedUser.role === 'SELLER' && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+      {/* KYC Modal — SELLER hoặc user có hồ sơ KYC (kể cả BUYER đã gửi KYC) */}
+      {showKycModal && selectedUser && (selectedUser.role === 'SELLER' || selectedUser.kycStatus === 'PENDING' || (selectedUser.kycData && (selectedUser.kycData.documentType || selectedUser.kycData.documentId || selectedUser.kycData.frontImage || selectedUser.kycData.backImage))) && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto py-4">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 my-auto">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Update KYC Status</h2>
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-gray-900 mb-2">Seller</label>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">{selectedUser.role === 'SELLER' ? 'Seller' : 'Người dùng'}</label>
               <p className="text-gray-700">{selectedUser.fullName} ({selectedUser.email})</p>
               <p className="text-xs text-gray-500 mt-1">Role: {selectedUser.role}</p>
             </div>
+
+            {/* Hồ sơ KYC đã gửi — luôn hiển thị, có hoặc chưa có tài liệu */}
+            <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Hồ sơ đã gửi</h3>
+              {selectedUser.kycData && (selectedUser.kycData.documentType || selectedUser.kycData.documentId || selectedUser.kycData.frontImage || selectedUser.kycData.backImage) ? (
+                <>
+                  <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+                    {selectedUser.kycData.documentType && (
+                      <div>
+                        <span className="text-gray-500">Loại giấy tờ:</span>
+                        <span className="ml-2 font-medium text-gray-900">{selectedUser.kycData.documentType}</span>
+                      </div>
+                    )}
+                    {selectedUser.kycData.documentId && (
+                      <div>
+                        <span className="text-gray-500">Số CCCD/CMND:</span>
+                        <span className="ml-2 font-medium text-gray-900">{selectedUser.kycData.documentId}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {selectedUser.kycData.frontImage ? (
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Ảnh mặt trước</p>
+                        <a href={selectedUser.kycData.frontImage} target="_blank" rel="noopener noreferrer" className="block rounded border border-gray-200 overflow-hidden bg-white">
+                          <img src={selectedUser.kycData.frontImage} alt="Mặt trước" className="w-full h-32 object-contain" />
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-32 rounded border border-gray-200 bg-white text-gray-400 text-sm">Chưa có ảnh</div>
+                    )}
+                    {selectedUser.kycData.backImage ? (
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Ảnh mặt sau</p>
+                        <a href={selectedUser.kycData.backImage} target="_blank" rel="noopener noreferrer" className="block rounded border border-gray-200 overflow-hidden bg-white">
+                          <img src={selectedUser.kycData.backImage} alt="Mặt sau" className="w-full h-32 object-contain" />
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-32 rounded border border-gray-200 bg-white text-gray-400 text-sm">Chưa có ảnh</div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-gray-500">Seller chưa gửi tài liệu KYC (ảnh CCCD/CMND). Có thể cập nhật trạng thái bên dưới sau khi họ gửi.</p>
+              )}
+            </div>
+
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-900 mb-2">KYC Status</label>
               <select
