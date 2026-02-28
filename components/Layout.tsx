@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { ShoppingBag, Search, Menu, User, ShieldCheck, Heart, Bell, MessageCircle, ChevronRight, Settings, HelpCircle, LogOut, Store, CreditCard } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../constants';
+import { handleSessionExpired } from '../utils/auth';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
@@ -92,8 +93,15 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     fetch(`${API_BASE_URL}/orders?role=buyer&page=1&limit=1`, {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (res.status === 401) {
+          handleSessionExpired();
+          return null;
+        }
+        return res.json();
+      })
       .then((data) => {
+        if (!data) return;
         if (data?.pagination?.total != null) setOrderCount(data.pagination.total);
         else setOrderCount(0);
       })
@@ -111,8 +119,15 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     fetch(`${API_BASE_URL}/notifications?page=1&limit=1`, {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (res.status === 401) {
+          handleSessionExpired();
+          return null;
+        }
+        return res.json();
+      })
       .then((data) => {
+        if (!data) return;
         if (data?.success && data?.pagination?.unreadCount != null) {
           setNotificationUnread(data.pagination.unreadCount);
         } else {

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
+import { handleSessionExpired } from '../../utils/auth';
 
 const TYPE_LABELS: Record<string, string> = {
   DEPOSIT: 'Nạp tiền',
@@ -54,7 +55,12 @@ export const BuyerPaymentHistory: React.FC = () => {
         });
         const data = await res.json();
         if (!res.ok) {
-          setError(data?.message || 'Không tải được lịch sử thanh toán.');
+          const msg = data?.message || 'Không tải được lịch sử thanh toán.';
+          if (res.status === 401 && (msg.includes('authorized') || msg.includes('token'))) {
+            handleSessionExpired();
+            return;
+          }
+          setError(msg);
           setTransactions([]);
           return;
         }
@@ -92,7 +98,9 @@ export const BuyerPaymentHistory: React.FC = () => {
         <p className="text-gray-500">Đang tải...</p>
       )}
       {error && (
-        <p className="text-red-600">{error}</p>
+        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-red-800">
+          <p className="text-sm">{error}</p>
+        </div>
       )}
       {!loading && !error && transactions.length === 0 && (
         <p className="text-gray-500">Chưa có giao dịch nào.</p>

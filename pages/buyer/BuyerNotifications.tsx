@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Bell } from 'lucide-react';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
+import { handleSessionExpired } from '../../utils/auth';
 
 interface NotificationItem {
   _id: string;
@@ -30,7 +31,12 @@ export const BuyerNotifications: React.FC = () => {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.message || 'Failed to load notifications.');
+        const msg = data?.message || 'Không tải được thông báo.';
+        if (res.status === 401 && (msg.includes('authorized') || msg.includes('token'))) {
+          handleSessionExpired();
+          return;
+        }
+        setError(msg);
         setList([]);
         setLoading(false);
         return;

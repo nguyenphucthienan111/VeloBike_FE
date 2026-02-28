@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ShieldCheck, Ruler, Truck, ChevronLeft, AlertCircle, CheckCircle, Eye, MapPin } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { API_BASE_URL } from '../constants';
+import { handleSessionExpired } from '../utils/auth';
 import { Toast, useToast } from '../components/Toast';
 
 interface ListingData {
@@ -266,15 +267,8 @@ export const ProductDetail: React.FC = () => {
       const orderData = await orderResponse.json();
 
       if (!orderResponse.ok) {
-        // Handle 401 Unauthorized - token expired or invalid
         if (orderResponse.status === 401) {
-          showToast('Session expired. Please login again', 'error');
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('user');
-          setTimeout(() => {
-            navigate('/login');
-          }, 2000);
+          handleSessionExpired();
           return;
         }
         throw new Error(orderData.message || 'Failed to create order');
@@ -302,15 +296,8 @@ export const ProductDetail: React.FC = () => {
       const paymentData = await paymentResponse.json();
 
       if (!paymentResponse.ok) {
-        // Handle 401 Unauthorized - token expired or invalid
         if (paymentResponse.status === 401) {
-          showToast('Session expired. Please login again', 'error');
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('user');
-          setTimeout(() => {
-            navigate('/login');
-          }, 2000);
+          handleSessionExpired();
           return;
         }
         
