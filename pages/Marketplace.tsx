@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Filter, ChevronDown, Check, Search, Loader, AlertCircle } from 'lucide-react';
 import { BikeCard } from '../components/BikeCard';
 import { useListings } from '../hooks/useListings';
-import { useCatalog } from '../hooks/useCatalog';
 
 const BIKE_TYPES = ['ROAD', 'MTB', 'GRAVEL', 'TRIATHLON', 'E_BIKE'];
 const BRAND_OTHER = '__OTHER__'; // Sentinel cho "Khác" – hãng không thuộc danh sách admin
 
 /** Fallback khi không lấy được categories từ API */
+const TYPE_TO_LABEL: Record<string, string> = {
+  ROAD: 'ROAD', MTB: 'MTB', GRAVEL: 'GRAVEL', TRIATHLON: 'TRIATHLON', E_BIKE: 'E-Bike',
+};
+
 const FALLBACK_CATEGORIES = [
   { label: 'ROAD', value: 'ROAD' },
   { label: 'MTB', value: 'MTB' },
@@ -18,17 +21,13 @@ const FALLBACK_CATEGORIES = [
 
 export const Marketplace: React.FC = () => {
   const { listings, loading, error, facets, fetch, fetchFacets } = useListings();
-  const { categories, brands: catalogBrands, getTypeForCategory, fetch: fetchCatalog } = useCatalog();
 
-  // Brand options: từ Admin Catalog + "Khác" (hãng không có trong danh sách)
-  const catalogBrandNames = catalogBrands.map((b) => b.name.toLowerCase().trim());
-  const baseBrandOptions =
-    catalogBrands.length > 0
-      ? catalogBrands.map((b) => b.name)
-      : (facets?.brands ?? [])
-          .map((b: any) => (typeof b === 'string' ? b : b?.name || b?._id || ''))
-          .filter((b: string) => b);
+  // Brand options từ facets (không gọi admin API)
+  const baseBrandOptions = (facets?.brands ?? [])
+    .map((b: any) => (typeof b === 'string' ? b : b?.name || b?._id || ''))
+    .filter((b: string) => b);
   const brandOptions = [...baseBrandOptions, BRAND_OTHER];
+  const catalogBrandNames = baseBrandOptions.map((b) => b.toLowerCase().trim());
 
   // Filters state (đồng bộ: không chọn gì = hiện tất cả)
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -42,13 +41,10 @@ export const Marketplace: React.FC = () => {
   const itemsPerPage = 12;
   const totalPages = Math.ceil(listings.length / itemsPerPage);
 
-  // Category options: từ admin API (không có "All Categories" – không chọn = hiện tất cả)
+  // Category options: từ facets.types (không gọi admin categories)
   const categoryOptions =
-    categories.length > 0
-      ? categories.map((c) => {
-          const typeValue = getTypeForCategory(c.slug, c.name);
-          return { label: c.name, value: typeValue ?? `cat:${c.slug}` };
-        })
+    facets?.types?.length > 0
+      ? facets.types.map((t: string) => ({ label: TYPE_TO_LABEL[t] || t, value: t }))
       : FALLBACK_CATEGORIES;
 
   // Type cho API: không chọn category nào = ALL; có chọn thì lấy type đầu tiên thuộc BikeType
@@ -57,11 +53,10 @@ export const Marketplace: React.FC = () => {
       ? 'ALL'
       : selectedCategories.find((v) => BIKE_TYPES.includes(v)) ?? 'ALL';
 
-  // Fetch catalog (categories từ admin) và facets on mount
+  // Chỉ fetch facets (không gọi admin categories/brands) - giảm 2 API calls, tránh 429
   useEffect(() => {
-    fetchCatalog();
     fetchFacets();
-  }, [fetchCatalog, fetchFacets]);
+  }, [fetchFacets]);
 
   // Khi chọn "Khác" phải lấy tất cả rồi filter FE (API không hỗ trợ "brand not in")
   const hasOtherBrand = selectedBrands.includes(BRAND_OTHER);

@@ -60,7 +60,7 @@ export const SellerProfile: React.FC = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/users/profile', {
+      const response = await fetch('http://localhost:5000/api/users/me', {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
@@ -68,6 +68,7 @@ export const SellerProfile: React.FC = () => {
         const data = await response.json();
         const profileData = data.data;
         setProfile(profileData);
+        const addr = profileData.address || {};
         setFormData({
           fullName: profileData.fullName || '',
           phone: profileData.phone || '',
@@ -76,9 +77,9 @@ export const SellerProfile: React.FC = () => {
           shopDescription: profileData.shopDescription || '',
           businessRegistration: profileData.businessRegistration || '',
           businessType: profileData.businessType || '',
-          address: profileData.address || '',
-          city: profileData.city || '',
-          country: profileData.country || '',
+          address: (typeof addr === 'string' ? addr : addr.street) || '',
+          city: (typeof addr === 'object' ? addr.city : '') || profileData.city || '',
+          country: (typeof addr === 'object' ? addr.province : '') || profileData.country || '',
         });
         setAvatarPreview(profileData.avatar || null);
         setBannerPreview(profileData.banner || null);
@@ -130,30 +131,28 @@ export const SellerProfile: React.FC = () => {
       setSuccess('');
       const token = localStorage.getItem('accessToken');
 
-      // Prepare form data with files
-      const formDataToSend = new FormData();
-      
-      // Add text fields
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value) {
-          formDataToSend.append(key, value);
-        }
-      });
+      const body = {
+        fullName: formData.fullName,
+        phone: formData.phone || '',
+        bio: formData.bio || '',
+        shopName: formData.shopName || '',
+        shopDescription: formData.shopDescription || '',
+        businessRegistration: formData.businessRegistration || '',
+        businessType: formData.businessType || '',
+        address: {
+          street: formData.address || '',
+          city: formData.city || '',
+          province: formData.country || '',
+        },
+      };
 
-      // Add files if changed
-      if (avatarFile) {
-        formDataToSend.append('avatar', avatarFile);
-      }
-      if (bannerFile) {
-        formDataToSend.append('banner', bannerFile);
-      }
-
-      const response = await fetch('http://localhost:5000/api/users/profile', {
+      const response = await fetch('http://localhost:5000/api/users/me', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: formDataToSend,
+        body: JSON.stringify(body),
       });
 
       if (response.ok) {

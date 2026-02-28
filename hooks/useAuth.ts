@@ -1,8 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from '../constants';
-import { validateMockCredentials, mockLoginResponse, mockAdminLoginResponse, mockInspectorLoginResponse } from '../services/mockAuth';
-
 interface LoginCredentials {
   email: string;
   password: string;
@@ -51,43 +49,6 @@ export const useAuth = (): UseAuthReturn => {
       setError(null);
 
       try {
-        // Check for mock credentials (for development/testing)
-        const mockValidation = validateMockCredentials(credentials.email, credentials.password);
-        if (mockValidation.valid) {
-          console.log('🎯 Using MOCK login for testing, role:', mockValidation.role);
-          
-          // Simulate API delay
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          // Store mock tokens and user data based on role
-          let mockResponse;
-          if (mockValidation.role === 'ADMIN') {
-            mockResponse = mockAdminLoginResponse;
-          } else if (mockValidation.role === 'INSPECTOR') {
-            mockResponse = mockInspectorLoginResponse;
-          } else {
-            mockResponse = mockLoginResponse;
-          }
-          
-          localStorage.setItem('accessToken', mockResponse.accessToken);
-          localStorage.setItem('refreshToken', mockResponse.refreshToken);
-          localStorage.setItem('user', JSON.stringify(mockResponse.user));
-          
-          // Dispatch event to notify Layout component
-          window.dispatchEvent(new Event('authChange'));
-          
-          // Redirect based on role
-          if (mockValidation.role === 'ADMIN') {
-            navigate('/admin/dashboard');
-          } else if (mockValidation.role === 'INSPECTOR') {
-            navigate('/inspector/dashboard');
-          } else {
-            navigate('/buyer/dashboard');
-          }
-          return true;
-        }
-
-        // Otherwise, use real API
         const response = await fetch(API_ENDPOINTS.LOGIN, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

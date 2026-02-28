@@ -40,7 +40,6 @@ export const AdminProfile: React.FC = () => {
       district: '',
       city: '',
       province: '',
-      zipCode: '',
     },
   });
 
@@ -76,7 +75,6 @@ export const AdminProfile: React.FC = () => {
             district: profileData.address?.district || '',
             city: profileData.address?.city || '',
             province: profileData.address?.province || '',
-            zipCode: profileData.address?.zipCode || '',
           },
         });
         setAvatarPreview(profileData.avatar || null);
@@ -128,43 +126,24 @@ export const AdminProfile: React.FC = () => {
       setSuccess('');
       const token = localStorage.getItem('accessToken');
 
-      // Prepare form data with files
-      const formDataToSend = new FormData();
-      
-      // Add text fields
-      formDataToSend.append('fullName', formData.fullName);
-      if (formData.phone) {
-        formDataToSend.append('phone', formData.phone);
-      }
-      
-      // Add address fields individually
-      if (formData.address.street) {
-        formDataToSend.append('address[street]', formData.address.street);
-      }
-      if (formData.address.district) {
-        formDataToSend.append('address[district]', formData.address.district);
-      }
-      if (formData.address.city) {
-        formDataToSend.append('address[city]', formData.address.city);
-      }
-      if (formData.address.province) {
-        formDataToSend.append('address[province]', formData.address.province);
-      }
-      if (formData.address.zipCode) {
-        formDataToSend.append('address[zipCode]', formData.address.zipCode);
-      }
-
-      // Add files if changed
-      if (avatarFile) {
-        formDataToSend.append('avatar', avatarFile);
-      }
+      const body = {
+        fullName: formData.fullName,
+        phone: formData.phone || '',
+        address: {
+          street: formData.address.street || '',
+          district: formData.address.district || '',
+          city: formData.address.city || '',
+          province: formData.address.province || '',
+        },
+      };
 
       const response = await fetch(`${API_BASE_URL}/users/me`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: formDataToSend,
+        body: JSON.stringify(body),
       });
 
       if (response.ok) {
@@ -195,7 +174,7 @@ export const AdminProfile: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin h-12 w-12 border-4 border-gray-900 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <div className="animate-spin h-12 w-12 border-4 border-accent border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className="text-gray-600">Loading profile...</p>
         </div>
       </div>
@@ -203,9 +182,8 @@ export const AdminProfile: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Main Content - Horizontal Layout */}
-      <div className="max-w-7xl mx-auto p-6 pt-8">
+    <div className="p-6 pt-8">
+      <div className="max-w-7xl mx-auto">
         {/* Messages */}
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -411,21 +389,6 @@ export const AdminProfile: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Zip Code */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">Zip Code</label>
-                  <input
-                    type="text"
-                    name="address.zipCode"
-                    value={formData.address.zipCode}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                    placeholder="Enter your zip code"
-                    className={`w-full px-4 py-2 border border-gray-300 rounded-lg ${
-                      isEditing ? 'focus:outline-none focus:border-gray-900' : 'bg-gray-50 text-gray-600 cursor-not-allowed'
-                    }`}
-                  />
-                </div>
               </div>
             </div>
 

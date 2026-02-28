@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SellerSidebar } from '../../components/SellerSidebar';
+import { API_BASE_URL } from '../../constants';
+import { handleSessionExpired } from '../../utils/auth';
 
 interface WalletBalance {
   balance: number;
@@ -80,40 +82,87 @@ export const SellerWallet: React.FC = () => {
         return;
       }
 
-      // Fetch balance
-      const balanceRes = await fetch('http://localhost:5000/api/wallet/balance', {
-        headers: { 'Authorization': `Bearer ${token}` },
+      // Balance: GET /api/users/me/wallet (chỉ có balance, currency)
+      const balanceRes = await fetch(`${API_BASE_URL}/users/me/wallet`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
+      if (balanceRes.status === 401) {
+        handleSessionExpired();
+        return;
+      }
       if (balanceRes.ok) {
         const data = await balanceRes.json();
-        setBalance(data.data);
+        const wallet = data.data || {};
+        setBalance({
+          balance: wallet.balance ?? 0,
+          totalEarnings: wallet.totalEarnings ?? 0,
+          totalWithdrawn: wallet.totalWithdrawn ?? 0,
+        });
       }
 
-      // Fetch transactions
-      const transRes = await fetch('http://localhost:5000/api/wallet/transactions', {
-        headers: { 'Authorization': `Bearer ${token}` },
+      // Lịch sử giao dịch seller: GET /api/transactions/my-transactions (chỉ loại liên quan bán hàng)
+      const transRes = await fetch(`${API_BASE_URL}/transactions/my-transactions?page=1&limit=100`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
+      if (transRes.status === 401) {
+        handleSessionExpired();
+        return;
+      }
       if (transRes.ok) {
         const data = await transRes.json();
-        setTransactions(data.data || []);
+        const raw = Array.isArray(data.data) ? data.data : [];
+        const sellerTypes = ['PAYMENT_RELEASE', 'WITHDRAW', 'PLATFORM_FEE'];
+        const list = raw
+          .filter((t: { type?: string }) => sellerTypes.includes(t.type))
+          .map((t: { _id: string; type: string; amount: number; status: string; description: string; createdAt: string }) => ({
+            id: t._id,
+            type: t.type,
+            amount: t.amount,
+            status: t.status,
+            description: t.description,
+            createdAt: t.createdAt,
+          }));
+        setTransactions(list);
+        // Tính totalEarnings (PAYMENT_RELEASE) và totalWithdrawn (WITHDRAW) từ list
+        let totalEarnings = 0;
+        let totalWithdrawn = 0;
+        list.forEach((t: { type: string; amount: number }) => {
+          if (t.type === 'PAYMENT_RELEASE') totalEarnings += t.amount;
+          if (t.type === 'WITHDRAW') totalWithdrawn += t.amount;
+        });
+        setBalance((prev) => (prev ? { ...prev, totalEarnings, totalWithdrawn } : { balance: 0, totalEarnings, totalWithdrawn }));
       }
 
-      // Fetch withdrawals history
-      const withdrawRes = await fetch('http://localhost:5000/api/withdrawals', {
-        headers: { 'Authorization': `Bearer ${token}` },
+      // Lịch sử rút tiền: GET /api/wallet/withdrawals
+      const withdrawRes = await fetch(`${API_BASE_URL}/wallet/withdrawals`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
+      if (withdrawRes.status === 401) {
+        handleSessionExpired();
+        return;
+      }
       if (withdrawRes.ok) {
         const data = await withdrawRes.json();
-        setWithdrawals(data.data || []);
+        const list = (data.data || []).map((w: { _id: string; amount: number; fee?: number; status: string; bankAccount?: { accountNumber?: string }; requestedAt: string; processedAt?: string }) => ({
+          id: w._id,
+          amount: w.amount,
+          fee: w.fee ?? 0,
+          status: w.status,
+          bankAccount: w.bankAccount?.accountNumber ? `***${String(w.bankAccount.accountNumber).slice(-4)}` : '-',
+          requestedAt: w.requestedAt,
+          processedAt: w.processedAt,
+        }));
+        setWithdrawals(list);
       }
 
-      // Fetch user profile to get bank account
-      const userRes = await fetch('http://localhost:5000/api/users/me', {
-        headers: { 'Authorization': `Bearer ${token}` },
+      // User profile (bank account)
+      const userRes = await fetch(`${API_BASE_URL}/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
+      if (userRes.status === 401) {
+        handleSessionExpired();
+        return;
+      }
 
       if (userRes.ok) {
         const userData = await userRes.json();
@@ -175,7 +224,7 @@ export const SellerWallet: React.FC = () => {
       setBankAccountLoading(true);
       const token = localStorage.getItem('accessToken');
 
-      const response = await fetch('http://localhost:5000/api/users/me/bank', {
+      const response = await fetch(`${API_BASE_URL}/users/me/bank`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -261,7 +310,7 @@ export const SellerWallet: React.FC = () => {
       setWithdrawLoading(true);
       const token = localStorage.getItem('accessToken');
 
-      const response = await fetch('http://localhost:5000/api/wallet/withdraw', {
+      const response = await fetch(`${API_BASE_URL}/wallet/withdraw`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -281,7 +330,7 @@ export const SellerWallet: React.FC = () => {
         // Success - Auto save bank account if not saved yet
         if (!savedBankAccount) {
           try {
-            const saveResponse = await fetch('http://localhost:5000/api/users/me/bank', {
+            const saveResponse = await fetch(`${API_BASE_URL}/users/me/bank`, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${token}`,
@@ -511,7 +560,7 @@ export const SellerWallet: React.FC = () => {
 
           {/* Transaction History */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-6">Transaction History</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-6">Lịch sử giao dịch (ví bán hàng)</h2>
             {transactions.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">

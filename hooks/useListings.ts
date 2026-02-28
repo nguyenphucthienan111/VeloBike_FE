@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { API_BASE_URL } from '../constants';
+import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../constants';
 
 export interface Listing {
   id: string;
@@ -237,9 +237,9 @@ export const useListings = (): UseListingsReturn => {
           console.log('📦 Sample raw listing:', data.data[0]);
         }
       } catch (err: any) {
-        const errorMsg = err.message || 'An error occurred while fetching listings';
+        const errorMsg = isConnectionError(err) ? CONNECTION_ERROR_MESSAGE : (err.message || 'An error occurred while fetching listings');
         setError(errorMsg);
-        console.error('❌ Fetch error:', errorMsg);
+        if (!isConnectionError(err)) console.error('❌ Fetch error:', err.message);
         setListings([]);
       } finally {
         setLoading(false);
@@ -256,16 +256,17 @@ export const useListings = (): UseListingsReturn => {
       const data = await response.json();
 
       if (data.data) {
-        // Extract brand names - handle both string and object formats
-        const brands = Array.isArray(data.data.brands) 
-          ? data.data.brands
-              .map((b: any) => typeof b === 'string' ? b : (b?.name || b?._id || ''))
-              .filter((b: string) => b)
-          : [];
-        
+        // BE trả về {_id, count}[] - extract _id thành string[]
+        const toStrings = (arr: any[]) =>
+          Array.isArray(arr)
+            ? arr.map((x: any) => (typeof x === 'string' ? x : (x?.name ?? x?._id ?? ''))).filter(Boolean)
+            : [];
+        const brands = toStrings(data.data.brands || []);
+        const types = toStrings(data.data.types || []);
+
         setFacets({
-          types: data.data.types || [],
-          brands: brands,
+          types: types.length ? types : ['ROAD', 'MTB', 'GRAVEL', 'TRIATHLON', 'E_BIKE'],
+          brands: brands.length ? brands : ['Specialized', 'Trek', 'Cervélo', 'Pinarello', 'Santa Cruz', 'Giant', 'Colnago'],
           priceRange: data.data.priceRange || { min: 0, max: 500000000 },
         });
         console.log('✅ Facets fetched:', { brands });
@@ -278,8 +279,9 @@ export const useListings = (): UseListingsReturn => {
         });
       }
     } catch (err: any) {
-      console.error('❌ Error fetching facets:', err.message);
-      // Use fallback facets
+      // Connection refused → dùng fallback, không log rác
+      if (!isConnectionError(err)) console.error('❌ Error fetching facets:', err.message);
+      // Fallback facets
       setFacets({
         types: ['ROAD', 'MTB', 'GRAVEL', 'TRIATHLON', 'E_BIKE'],
         brands: ['Specialized', 'Trek', 'Cervélo', 'Pinarello', 'Santa Cruz', 'Giant', 'Colnago'],

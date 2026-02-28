@@ -14,6 +14,9 @@ import { BuyerDashboard } from './pages/buyer/BuyerDashboard';
 import { BuyerOrders } from './pages/buyer/BuyerOrders';
 import { BuyerWishlist } from './pages/buyer/BuyerWishlist';
 import { BuyerProfile } from './pages/buyer/BuyerProfile';
+import { BuyerMessages } from './pages/buyer/BuyerMessages';
+import { BuyerNotifications } from './pages/buyer/BuyerNotifications';
+import { BuyerPaymentHistory } from './pages/buyer/BuyerPaymentHistory';
 import { SellerDashboard } from './pages/seller/SellerDashboard';
 import { SellerInventory } from './pages/seller/SellerInventory';
 import { SellerAnalytics } from './pages/seller/SellerAnalytics';
@@ -24,6 +27,7 @@ import { SellerReviews } from './pages/seller/SellerReviews';
 import { SellerProfile } from './pages/seller/SellerProfile';
 import { SellerSubscription } from './pages/seller/SellerSubscription';
 import { SellerNotifications } from './pages/seller/SellerNotifications';
+import { SellerKyc } from './pages/seller/SellerKyc';
 import { AddProduct } from './pages/seller/AddProduct';
 import { EditProduct } from './pages/seller/EditProduct';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
@@ -34,6 +38,7 @@ import { AdminAnalytics } from './pages/admin/AdminAnalytics';
 import { AdminInspectors } from './pages/admin/AdminInspectors';
 import { AdminProfile } from './pages/admin/AdminProfile';
 import { AdminCatalog } from './pages/admin/AdminCatalog';
+import { AdminLayout } from './components/AdminLayout';
 import { InspectorDashboard } from './pages/inspector/InspectorDashboard';
 import { PendingInspections } from './pages/inspector/PendingInspections';
 import { InspectionForm } from './pages/inspector/InspectionForm';
@@ -63,8 +68,12 @@ const App: React.FC = () => {
           <Route path="/buyer/orders" element={<BuyerOrders />} />
           <Route path="/buyer/wishlist" element={<BuyerWishlist />} />
           <Route path="/buyer/profile" element={<BuyerProfile />} />
+          <Route path="/buyer/messages" element={<BuyerMessages />} />
+          <Route path="/buyer/notifications" element={<BuyerNotifications />} />
+          <Route path="/buyer/payment-history" element={<BuyerPaymentHistory />} />
           
           {/* Seller Routes */}
+          <Route path="/seller/kyc" element={<SellerKyc />} />
           <Route path="/seller/dashboard" element={<SellerDashboard />} />
           <Route path="/seller/inventory" element={<SellerInventory />} />
           <Route path="/seller/add-product" element={<AddProduct />} />
@@ -78,15 +87,18 @@ const App: React.FC = () => {
           <Route path="/seller/subscription" element={<SellerSubscription />} />
           <Route path="/seller/notifications" element={<SellerNotifications />} />
           
-          {/* Admin Routes */}
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/users" element={<AdminUsers />} />
-          <Route path="/admin/listings" element={<AdminListings />} />
-          <Route path="/admin/catalog" element={<AdminCatalog />} />
-          <Route path="/admin/orders" element={<AdminOrders />} />
-          <Route path="/admin/analytics" element={<AdminAnalytics />} />
-          <Route path="/admin/inspectors" element={<AdminInspectors />} />
-          <Route path="/admin/profile" element={<AdminProfile />} />
+          {/* Admin Routes: sidebar cố định trái, nội dung đổi bên phải (không mở trang mới) */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="listings" element={<AdminListings />} />
+            <Route path="catalog" element={<AdminCatalog />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="analytics" element={<AdminAnalytics />} />
+            <Route path="inspectors" element={<AdminInspectors />} />
+            <Route path="profile" element={<AdminProfile />} />
+          </Route>
           
           {/* Inspector Routes */}
           <Route path="/inspector/dashboard" element={<InspectorDashboard />} />

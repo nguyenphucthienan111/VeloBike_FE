@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_BASE_URL, isMockToken } from '../constants';
+import { API_BASE_URL } from '../constants';
 
 interface Notification {
   id: string;
@@ -29,7 +29,7 @@ export const InspectorHeader: React.FC = () => {
   const fetchNotifications = async () => {
     try {
       const token = localStorage.getItem('accessToken');
-      if (!token || isMockToken()) return; // Mock token: skip API, notifications stay empty
+      if (!token) return;
 
       const response = await fetch(`${API_BASE_URL}/notifications`, {
         headers: { 'Authorization': `Bearer ${token}` },

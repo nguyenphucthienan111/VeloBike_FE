@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { InspectorSidebar } from '../../components/InspectorSidebar';
 import { InspectorHeader } from '../../components/InspectorHeader';
-import { API_BASE_URL, isMockToken } from '../../constants';
+import { API_BASE_URL } from '../../constants';
 
 interface Inspection {
   id: string;
@@ -36,13 +36,6 @@ export const MyInspections: React.FC = () => {
       setLoading(true);
       const token = localStorage.getItem('accessToken');
       if (!token) return;
-
-      if (isMockToken()) {
-        setInspections([]);
-        setPagination(p => ({ ...p, total: 0, pages: 0 }));
-        setLoading(false);
-        return;
-      }
 
       const params = new URLSearchParams({
         page: pagination.page.toString(),

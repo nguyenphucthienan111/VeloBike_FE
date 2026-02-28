@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { InspectorSidebar } from '../../components/InspectorSidebar';
 import { InspectorHeader } from '../../components/InspectorHeader';
-import { API_BASE_URL, isMockToken } from '../../constants';
+import { API_BASE_URL } from '../../constants';
 
 interface Stats {
   totalInspections: number;
@@ -41,14 +41,6 @@ export const InspectorDashboard: React.FC = () => {
       const token = localStorage.getItem('accessToken');
       if (!token) {
         setError('Not authenticated');
-        setLoading(false);
-        return;
-      }
-
-      // Mock token (ins/1) won't work with real BE - use default data
-      if (isMockToken()) {
-        setStats({ totalInspections: 0, pendingInspections: 0, completedInspections: 0, passRate: 0, averageScore: 0 });
-        setEarnings({ totalEarnings: 0, pendingEarnings: 0, completedEarnings: 0, currency: 'VND' });
         setLoading(false);
         return;
       }

@@ -8,9 +8,13 @@ interface UserProfile {
   phone?: string;
   avatar?: string;
   bio?: string;
-  address?: string;
+  role?: string;
+  address?: string | { street?: string; city?: string; province?: string };
   city?: string;
   country?: string;
+  isActive?: boolean;
+  emailVerified?: boolean;
+  createdAt?: string;
 }
 
 export const BuyerProfile: React.FC = () => {
@@ -48,7 +52,7 @@ export const BuyerProfile: React.FC = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/users/profile', {
+      const response = await fetch('http://localhost:5000/api/users/me', {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
@@ -56,13 +60,14 @@ export const BuyerProfile: React.FC = () => {
         const data = await response.json();
         const profileData = data.data;
         setProfile(profileData);
+        const addr = profileData.address || {};
         setFormData({
           fullName: profileData.fullName || '',
           phone: profileData.phone || '',
           bio: profileData.bio || '',
-          address: profileData.address || '',
-          city: profileData.city || '',
-          country: profileData.country || '',
+          address: (typeof addr === 'string' ? addr : addr.street) || '',
+          city: (typeof addr === 'object' ? addr.city : '') || profileData.city || '',
+          country: (typeof addr === 'object' ? addr.province : '') || profileData.country || '',
         });
         setAvatarPreview(profileData.avatar || null);
       }
@@ -101,27 +106,24 @@ export const BuyerProfile: React.FC = () => {
       setSuccess('');
       const token = localStorage.getItem('accessToken');
 
-      // Prepare form data with files
-      const formDataToSend = new FormData();
-      
-      // Add text fields
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value) {
-          formDataToSend.append(key, value as string);
-        }
-      });
+      const body = {
+        fullName: formData.fullName,
+        phone: formData.phone || '',
+        bio: formData.bio || '',
+        address: {
+          street: formData.address || '',
+          city: formData.city || '',
+          province: formData.country || '',
+        },
+      };
 
-      // Add files if changed
-      if (avatarFile) {
-        formDataToSend.append('avatar', avatarFile);
-      }
-
-      const response = await fetch('http://localhost:5000/api/users/profile', {
+      const response = await fetch('http://localhost:5000/api/users/me', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: formDataToSend,
+        body: JSON.stringify(body),
       });
 
       if (response.ok) {
@@ -161,8 +163,7 @@ export const BuyerProfile: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <div className="max-w-2xl mx-auto p-6 pt-8">
-        {/* Messages */}
+      <div className="max-w-7xl mx-auto p-6 pt-8">
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-sm text-red-700">{error}</p>
@@ -174,148 +175,178 @@ export const BuyerProfile: React.FC = () => {
           </div>
         )}
 
-        {/* Avatar Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Profile Photo</h2>
-          <div className="flex items-center gap-6">
-            <div className="w-24 h-24 rounded-lg bg-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
-              {avatarPreview ? (
-                <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-gray-400">No photo</span>
-              )}
+        {/* Horizontal layout như Admin: trái = Photo + Status, phải = form */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Cột trái */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Profile Photo */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4">Profile Photo</h2>
+              <div className="flex flex-col items-center">
+                <div className="w-32 h-32 rounded-lg bg-gray-200 flex items-center justify-center overflow-hidden mb-4">
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-gray-400 text-sm">No photo</span>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  className="text-sm w-full"
+                />
+              </div>
             </div>
-            <input
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarChange}
-                className="text-sm"
-              />
-          </div>
-        </div>
 
-        {/* Personal Information */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4 mb-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Personal Information</h2>
-          
-          {/* Email (Read-only) */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">Email</label>
-            <input
-              type="email"
-              value={profile?.email || ''}
-              disabled
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
-            />
-          </div>
-
-          {/* Full Name */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">Full Name</label>
-            <input
-              type="text"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleInputChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
-            />
-          </div>
-
-          {/* Phone */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">Phone</label>
-            <input
-              type="text"
-              name="phone"
-              value={formData.phone}
-              onChange={handleInputChange}
-              placeholder="Enter your phone number"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
-            />
-          </div>
-
-          {/* Bio */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">Bio</label>
-            <textarea
-              name="bio"
-              value={formData.bio}
-              onChange={handleInputChange}
-              placeholder="Tell us about yourself"
-              rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:border-gray-900"
-            />
-          </div>
-        </div>
-
-        {/* Address Information */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4 mb-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Address Information</h2>
-          
-          {/* Address */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">Street Address</label>
-            <input
-              type="text"
-              name="address"
-              value={formData.address}
-              onChange={handleInputChange}
-              placeholder="Enter your address"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
-            />
-          </div>
-
-          {/* City and Country */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">City</label>
-              <input
-                type="text"
-                name="city"
-                value={formData.city}
-                onChange={handleInputChange}
-                placeholder="Enter your city"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
-              />
+            {/* Account Status */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4">Account Status</h2>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Role</span>
+                  <span className="text-sm font-semibold text-gray-900">{profile?.role || 'BUYER'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Status</span>
+                  <span className={`text-sm font-semibold ${profile?.isActive !== false ? 'text-green-600' : 'text-red-600'}`}>
+                    {profile?.isActive !== false ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Email Verified</span>
+                  <span className={`text-sm font-semibold ${profile?.emailVerified ? 'text-green-600' : 'text-red-600'}`}>
+                    {profile?.emailVerified ? 'Yes' : 'No'}
+                  </span>
+                </div>
+                {profile?.createdAt && (
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Member Since</span>
+                    <span className="text-sm font-semibold text-gray-900">
+                      {new Date(profile.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">Country</label>
-              <input
-                type="text"
-                name="country"
-                value={formData.country}
-                onChange={handleInputChange}
-                placeholder="Enter your country"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
-              />
-            </div>
-          </div>
-        </div>
 
-        {/* Save Button */}
-        <div className="flex gap-3 mb-6">
             <button
-              onClick={() => fetchProfile()}
-              className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+              onClick={handleLogout}
+              className="w-full px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
             >
-              Reset
-            </button>
-            <button
-              onClick={handleSaveProfile}
-              disabled={saving}
-              className="flex-1 px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-600 transition-colors font-medium"
-            >
-              {saving ? 'Saving...' : 'Save Changes'}
+              Logout
             </button>
           </div>
 
-        {/* Logout Button */}
-        <button
-          onClick={handleLogout}
-          className="w-full px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-        >
-          Logout
-        </button>
+          {/* Cột phải */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Personal Information */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4">Personal Information</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Email</label>
+                  <input
+                    type="email"
+                    value={profile?.email || ''}
+                    disabled
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Full Name</label>
+                  <input
+                    type="text"
+                    name="fullName"
+                    value={formData.fullName}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Phone</label>
+                  <input
+                    type="text"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    placeholder="Enter your phone number"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Bio</label>
+                  <textarea
+                    name="bio"
+                    value={formData.bio}
+                    onChange={handleInputChange}
+                    placeholder="Tell us about yourself"
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:border-gray-900"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Address Information */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4">Address Information</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Street Address</label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    placeholder="Enter your street address"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">City</label>
+                    <input
+                      type="text"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                      placeholder="Enter your city"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Province / Country</label>
+                    <input
+                      type="text"
+                      name="country"
+                      value={formData.country}
+                      onChange={handleInputChange}
+                      placeholder="Enter province or country"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => fetchProfile()}
+                className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+              >
+                Reset
+              </button>
+              <button
+                onClick={handleSaveProfile}
+                disabled={saving}
+                className="flex-1 px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-600 transition-colors font-medium"
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

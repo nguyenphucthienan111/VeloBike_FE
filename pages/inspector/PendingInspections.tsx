@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { InspectorSidebar } from '../../components/InspectorSidebar';
 import { InspectorHeader } from '../../components/InspectorHeader';
-import { API_BASE_URL, isMockToken } from '../../constants';
+import { API_BASE_URL } from '../../constants';
 
 interface PendingInspection {
   id: string;
@@ -45,12 +45,6 @@ export const PendingInspections: React.FC = () => {
       setLoading(true);
       const token = localStorage.getItem('accessToken');
       if (!token) return;
-
-      if (isMockToken()) {
-        setInspections([]);
-        setLoading(false);
-        return;
-      }
 
       const response = await fetch(`${API_BASE_URL}/inspections/pending`, {
         headers: { 'Authorization': `Bearer ${token}` },
