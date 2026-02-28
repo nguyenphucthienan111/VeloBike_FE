@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 
 interface SellerSidebarProps {
   stats?: {
@@ -19,9 +19,8 @@ export const SellerSidebar: React.FC<SellerSidebarProps> = ({ stats }) => {
     { path: '/seller/analytics', label: 'Sales' },
     { path: '/seller/orders', label: 'Orders' },
     { path: '/seller/wallet', label: 'Wallet' },
-    { path: '/seller/messages', label: 'Messages' },
+    { path: '/messages', label: 'Messages' },
     { path: '/seller/reviews', label: 'Reviews' },
-    { path: '/seller/profile', label: 'My Profile' },
   ];
 
   return (
@@ -34,14 +33,13 @@ export const SellerSidebar: React.FC<SellerSidebarProps> = ({ stats }) => {
         <p className="text-xs text-gray-500">Seller Dashboard</p>
       </div>
 
-      {/* Mua hàng - chuyển về trang chủ/marketplace (vẫn đăng nhập, dùng role buyer) */}
-      <button
-        type="button"
-        onClick={() => navigate('/')}
+      {/* Mua hàng - quay lại trang Marketplace (mua sắm) */}
+      <Link
+        to="/marketplace"
         className="flex items-center justify-center gap-2 w-full px-4 py-3 mb-4 rounded-lg border-2 border-gray-300 text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-400 transition-colors text-sm"
       >
         🛒 Mua hàng / Marketplace
-      </button>
+      </Link>
 
       {/* Navigation */}
       <nav className="space-y-1 mb-8">

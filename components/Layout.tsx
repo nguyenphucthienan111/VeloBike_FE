@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { ShoppingBag, Search, Menu, User, ShieldCheck, Heart, Bell, MessageCircle, ChevronRight, Settings, HelpCircle, LogOut, Store, CreditCard } from 'lucide-react';
+import { ShoppingBag, Menu, User, ShieldCheck, Heart, Bell, MessageCircle, ChevronRight, Settings, HelpCircle, LogOut, Store, CreditCard, LayoutDashboard, Wallet } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../constants';
 import { handleSessionExpired } from '../utils/auth';
@@ -82,9 +82,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     };
   }, [refreshKey]);
 
-  // Số đơn hàng thật cho BUYER (bỏ mock)
+  // Số đơn hàng (mua hàng) - cho cả BUYER và SELLER khi về trang mua hàng
   useEffect(() => {
-    if (!isAuthenticated || userRole !== 'BUYER') {
+    if (!isAuthenticated || (userRole !== 'BUYER' && userRole !== 'SELLER')) {
       setOrderCount(0);
       return;
     }
@@ -181,22 +181,15 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               </Link>
             </div>
 
-            {/* Desktop Nav - căn chính giữa trang (absolute center) */}
+            {/* Desktop Nav: BUYER và SELLER (khi về mua hàng) đều dùng menu buyer: HOME, MARKETPLACE, DASHBOARD, INSPECTION */}
             <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center space-x-6">
-              {userRole === 'SELLER' ? (
-                <>
-                  <Link to="/seller/dashboard" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname.includes('/seller/dashboard') ? 'text-black' : 'text-gray-500'}`}>DASHBOARD</Link>
-                  <Link to="/seller/inventory" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname.includes('/seller/inventory') ? 'text-black' : 'text-gray-500'}`}>INVENTORY</Link>
-                  <Link to="/seller/analytics" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname.includes('/seller/analytics') ? 'text-black' : 'text-gray-500'}`}>ANALYTICS</Link>
-                  <Link to="/" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname === '/' ? 'text-black' : 'text-gray-500'}`}>HOME</Link>
-                </>
-              ) : userRole === 'INSPECTOR' ? (
+              {userRole === 'INSPECTOR' ? (
                 null
               ) : (
                 <>
                   <Link to="/" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname === '/' ? 'text-black' : 'text-gray-500'}`}>HOME</Link>
                   <Link to="/marketplace" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname === '/marketplace' ? 'text-black' : 'text-gray-500'}`}>MARKETPLACE</Link>
-                  {userRole === 'BUYER' && (
+                  {(userRole === 'BUYER' || userRole === 'SELLER') && (
                     <Link to="/buyer/dashboard" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname === '/buyer/dashboard' ? 'text-black' : 'text-gray-500'}`}>DASHBOARD</Link>
                   )}
                   <Link to="/inspection" className="text-xs font-medium text-gray-500 hover:text-accent transition-colors">INSPECTION SERVICE</Link>
@@ -206,15 +199,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
             {/* Icons - sát góc phải (header full width) */}
             <div className="flex items-center gap-3 sm:gap-4 ml-auto flex-shrink-0 z-10">
-              {userRole !== 'SELLER' && userRole !== 'INSPECTOR' && (
-                <button className="text-accent hover:text-accent/80 transition-colors p-1" title="Search">
-                  <Search size={20} />
-                </button>
-              )}
-              
               {isAuthenticated ? (
                 <>
-                  {/* BUYER: Heart → Đơn hàng (bag) → Bell → Liên hệ → Đăng tin → Profile */}
+                  {/* BUYER: đầy đủ icon mua hàng */}
                   {userRole === 'BUYER' && (
                     <>
                       <Link to="/buyer/wishlist" className="text-accent hover:text-accent/80 transition-colors p-1 rounded-full hover:bg-gray-100" title="Wishlist">
@@ -236,27 +223,40 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                           </span>
                         )}
                       </Link>
-                      <Link to="/buyer/messages" className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:border-accent hover:text-accent rounded-full px-3 py-2 text-sm font-medium transition-colors" title="Contact">
+                      <Link to="/messages" className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:border-accent hover:text-accent rounded-full px-3 py-2 text-sm font-medium transition-colors" title="Tin nhắn">
                         <MessageCircle size={18} />
-                        <span>Contact</span>
+                        <span>Tin nhắn</span>
                       </Link>
                       <Link to="/sell" className="flex items-center bg-black text-white hover:bg-gray-800 rounded-full px-4 py-2 text-sm font-medium transition-colors">
                         Post listing
                       </Link>
                     </>
                   )}
-                  {/* SELLER: Liên hệ (seller mess) → Quản lý tin → Đăng tin → Profile */}
+                  {/* SELLER khi về trang mua hàng: giữ đầy đủ tính năng buyer (wishlist, đơn hàng, thông báo) + nút seller */}
                   {userRole === 'SELLER' && (
                     <>
-                      <Link to="/seller/messages" className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:border-accent hover:text-accent rounded-full px-3 py-2 text-sm font-medium transition-colors" title="Liên hệ">
+                      <Link to="/buyer/wishlist" className="text-accent hover:text-accent/80 transition-colors p-1 rounded-full hover:bg-gray-100" title="Danh sách yêu thích">
+                        <Heart size={20} />
+                      </Link>
+                      <Link to="/buyer/orders" className="text-accent hover:text-accent/80 transition-colors relative p-1 rounded-full hover:bg-gray-100" title="Đơn hàng">
+                        <ShoppingBag size={20} />
+                        {orderCount > 0 && (
+                          <span className="absolute -top-0.5 -right-0.5 bg-accent text-white text-[10px] font-bold min-w-[1rem] h-4 px-1 rounded-full flex items-center justify-center">
+                            {orderCount > 99 ? '99+' : orderCount}
+                          </span>
+                        )}
+                      </Link>
+                      <Link to="/buyer/notifications" className="text-accent hover:text-accent/80 transition-colors relative p-1 rounded-full hover:bg-gray-100" title="Thông báo">
+                        <Bell size={20} />
+                        {notificationUnread > 0 && (
+                          <span className="absolute -top-0.5 -right-0.5 bg-accent text-white text-[10px] font-bold min-w-[1rem] h-4 px-1 rounded-full flex items-center justify-center">
+                            {notificationUnread > 99 ? '99+' : notificationUnread}
+                          </span>
+                        )}
+                      </Link>
+                      <Link to="/messages" className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:border-accent hover:text-accent rounded-full px-3 py-2 text-sm font-medium transition-colors" title="Tin nhắn">
                         <MessageCircle size={18} />
-                        <span>Liên hệ</span>
-                      </Link>
-                      <Link to="/seller/dashboard" className="flex items-center bg-white border border-gray-200 text-gray-700 hover:border-accent hover:text-accent rounded-full px-3 py-2 text-sm font-medium transition-colors" title="Quản lý tin">
-                        Quản lý tin
-                      </Link>
-                      <Link to="/seller/add-product" className="flex items-center bg-black text-white hover:bg-gray-800 rounded-full px-4 py-2 text-sm font-medium transition-colors">
-                        Đăng tin
+                        <span>Tin nhắn</span>
                       </Link>
                     </>
                   )}
@@ -283,25 +283,29 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                             </div>
                             <div className="min-w-0">
                               <p className="font-semibold text-gray-900 truncate">{userProfile?.fullName || 'Account'}</p>
-                              <p className="text-xs text-gray-500 capitalize">{userRole?.toLowerCase()}</p>
+                              <p className="text-xs text-gray-500">
+                                {userRole === 'SELLER' ? 'Buyer / Seller' : userRole === 'BUYER' ? 'Buyer' : userRole ? String(userRole).toLowerCase() : ''}
+                              </p>
                             </div>
                           </div>
                         </Link>
-                        {/* Seller: Cửa hàng */}
-                        <div className="py-2 border-t border-gray-100">
-                          <p className="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Seller</p>
-                          <div className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
-                            <Store size={18} className="text-gray-500 flex-shrink-0" />
-                            <span className="flex-1">Cửa hàng / chuyên trang</span>
-                            <Link to="/seller/kyc" onClick={() => setProfileOpen(false)} className="rounded bg-gray-200 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-300">Tạo ngay</Link>
-                          </div>
-                        </div>
-                        {/* Buyer: Lịch sử thanh toán (chỉ khi role BUYER) */}
-                        {userRole === 'BUYER' && (
+                        {/* Seller: chỉ khi role SELLER */}
+                        {userRole === 'SELLER' && (
                           <div className="py-2 border-t border-gray-100">
-                            <Link to="/buyer/payment-history" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
-                              <CreditCard size={18} className="text-gray-500 flex-shrink-0" />
-                              <span className="flex-1">Lịch sử thanh toán</span>
+                            <p className="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Seller</p>
+                            <div className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
+                              <Store size={18} className="text-gray-500 flex-shrink-0" />
+                              <span className="flex-1">Cửa hàng / chuyên trang</span>
+                              <Link to="/seller/kyc" onClick={() => setProfileOpen(false)} className="rounded bg-gray-200 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-300">Tạo ngay</Link>
+                            </div>
+                            <Link to="/seller/dashboard" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
+                              <LayoutDashboard size={18} className="text-gray-500 flex-shrink-0" />
+                              <span className="flex-1">Quản lý tin</span>
+                              <ChevronRight size={16} className="text-gray-400" />
+                            </Link>
+                            <Link to="/seller/wallet" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
+                              <Wallet size={18} className="text-gray-500 flex-shrink-0" />
+                              <span className="flex-1">Ví</span>
                               <ChevronRight size={16} className="text-gray-400" />
                             </Link>
                           </div>

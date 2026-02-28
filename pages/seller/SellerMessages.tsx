@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SellerSidebar } from '../../components/SellerSidebar';
+import { API_BASE_URL } from '../../constants';
+import { handleSessionExpired } from '../../utils/auth';
 
 interface Conversation {
   id: string;
@@ -50,10 +52,13 @@ export const SellerMessages: React.FC = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/messages', {
-        headers: { 'Authorization': `Bearer ${token}` },
+      const response = await fetch(`${API_BASE_URL}/messages`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
+      if (response.status === 401) {
+        handleSessionExpired();
+        return;
+      }
       if (response.ok) {
         const data = await response.json();
         const convos = data.data || [];
@@ -78,10 +83,13 @@ export const SellerMessages: React.FC = () => {
       const token = localStorage.getItem('accessToken');
       if (!token) return;
 
-      const response = await fetch(`http://localhost:5000/api/messages/conversation/${userId}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
+      const response = await fetch(`${API_BASE_URL}/messages/conversation/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
+      if (response.status === 401) {
+        handleSessionExpired();
+        return;
+      }
       if (response.ok) {
         const data = await response.json();
         setMessages(data.data || []);
@@ -105,10 +113,10 @@ export const SellerMessages: React.FC = () => {
       setSendingMessage(true);
       const token = localStorage.getItem('accessToken');
 
-      const response = await fetch('http://localhost:5000/api/messages', {
+      const response = await fetch(`${API_BASE_URL}/messages`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -116,7 +124,10 @@ export const SellerMessages: React.FC = () => {
           content: messageInput,
         }),
       });
-
+      if (response.status === 401) {
+        handleSessionExpired();
+        return;
+      }
       if (response.ok) {
         // Clear input and refresh messages
         setMessageInput('');

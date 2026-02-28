@@ -4,6 +4,7 @@ import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { Marketplace } from './pages/Marketplace';
 import { ProductDetail } from './pages/ProductDetail';
+import { InspectionService } from './pages/InspectionService';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { ForgotPassword } from './pages/ForgotPassword';
@@ -14,7 +15,7 @@ import { BuyerDashboard } from './pages/buyer/BuyerDashboard';
 import { BuyerOrders } from './pages/buyer/BuyerOrders';
 import { BuyerWishlist } from './pages/buyer/BuyerWishlist';
 import { BuyerProfile } from './pages/buyer/BuyerProfile';
-import { BuyerMessages } from './pages/buyer/BuyerMessages';
+import { Messages } from './pages/Messages';
 import { BuyerNotifications } from './pages/buyer/BuyerNotifications';
 import { BuyerPaymentHistory } from './pages/buyer/BuyerPaymentHistory';
 import { SellerDashboard } from './pages/seller/SellerDashboard';
@@ -54,6 +55,8 @@ const App: React.FC = () => {
           <Route path="/" element={<Home />} />
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/bike/:id" element={<ProductDetail />} />
+          <Route path="/inspection" element={<InspectionService />} />
+          <Route path="/messages" element={<Messages />} />
           
           {/* Auth Routes */}
           <Route path="/login" element={<Login />} />
@@ -68,7 +71,7 @@ const App: React.FC = () => {
           <Route path="/buyer/orders" element={<BuyerOrders />} />
           <Route path="/buyer/wishlist" element={<BuyerWishlist />} />
           <Route path="/buyer/profile" element={<BuyerProfile />} />
-          <Route path="/buyer/messages" element={<BuyerMessages />} />
+          <Route path="/buyer/messages" element={<Navigate to="/messages" replace />} />
           <Route path="/buyer/notifications" element={<BuyerNotifications />} />
           <Route path="/buyer/payment-history" element={<BuyerPaymentHistory />} />
           
@@ -81,7 +84,7 @@ const App: React.FC = () => {
           <Route path="/seller/analytics" element={<SellerAnalytics />} />
           <Route path="/seller/orders" element={<SellerOrders />} />
           <Route path="/seller/wallet" element={<SellerWallet />} />
-          <Route path="/seller/messages" element={<SellerMessages />} />
+          <Route path="/seller/messages" element={<Navigate to="/messages" replace />} />
           <Route path="/seller/reviews" element={<SellerReviews />} />
           <Route path="/seller/profile" element={<SellerProfile />} />
           <Route path="/seller/subscription" element={<SellerSubscription />} />

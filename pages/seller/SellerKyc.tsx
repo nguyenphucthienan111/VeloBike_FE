@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
-import { Store, Upload, FileCheck } from 'lucide-react';
+import { Store, Upload } from 'lucide-react';
 
 type KycStatus = 'PENDING' | 'VERIFIED' | 'REJECTED';
 
@@ -31,8 +31,13 @@ export const SellerKyc: React.FC = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
-        if (res.ok && data?.data?.kycStatus) setKycStatus(data.data.kycStatus);
-        else setKycStatus(null);
+        if (res.ok && data?.data?.kycStatus) {
+          if (data.data.kycStatus === 'VERIFIED') {
+            navigate('/seller/dashboard');
+            return;
+          }
+          setKycStatus(data.data.kycStatus);
+        } else setKycStatus(null);
       } catch {
         setKycStatus(null);
       } finally {
@@ -96,14 +101,12 @@ export const SellerKyc: React.FC = () => {
               'KYC đã được xác thực và tài khoản đã được nâng cấp lên Seller. Bạn có thể đăng tin bán xe.'
           );
         } else {
-          // Nếu upgrade không thành công (ví dụ đã là SELLER), vẫn coi eKYC là VERIFIED
           const msg =
             upgradeData?.message ||
             'KYC đã được xác thực, nhưng nâng cấp lên Seller không thành công. Vui lòng liên hệ hỗ trợ hoặc thử lại trong phần tài khoản.';
           setSuccess(msg);
         }
       } catch (upgradeErr: any) {
-        // Không chặn flow nếu upgrade lỗi
         console.error('Upgrade to seller error:', upgradeErr);
         setSuccess(
           'KYC đã được xác thực, nhưng nâng cấp lên Seller gặp lỗi. Vui lòng thử lại trong phần tài khoản hoặc liên hệ hỗ trợ.'
@@ -111,6 +114,7 @@ export const SellerKyc: React.FC = () => {
       }
 
       setKycStatus('VERIFIED');
+      navigate('/seller/dashboard');
       setIdCardFront(null);
       setSelfie(null);
     } catch (err: unknown) {
@@ -124,25 +128,6 @@ export const SellerKyc: React.FC = () => {
     return (
       <div className="max-w-xl mx-auto px-4 py-12 text-center text-gray-500">
         Đang tải...
-      </div>
-    );
-  }
-
-  if (kycStatus === 'VERIFIED') {
-    return (
-      <div className="max-w-xl mx-auto px-4 py-12">
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8 text-center">
-          <FileCheck className="mx-auto w-12 h-12 text-green-500 mb-4" />
-          <h1 className="text-xl font-semibold text-gray-900 mb-2">Đã xác thực KYC</h1>
-          <p className="text-gray-600 mb-6">Tài khoản của bạn đã được xác thực. Bạn có thể quản lý cửa hàng.</p>
-          <button
-            type="button"
-            onClick={() => navigate('/seller/dashboard')}
-            className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
-          >
-            Vào Dashboard
-          </button>
-        </div>
       </div>
     );
   }
