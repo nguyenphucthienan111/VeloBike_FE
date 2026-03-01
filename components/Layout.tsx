@@ -235,6 +235,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                   {/* SELLER khi về trang mua hàng: giữ đầy đủ tính năng buyer (wishlist, đơn hàng, thông báo) + nút seller */}
                   {userRole === 'SELLER' && (
                     <>
+                      <Link to="/messages" className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:border-accent hover:text-accent rounded-full px-3 py-2 text-sm font-medium transition-colors" title="Tin nhắn (chung)">
+                        <MessageCircle size={18} />
+                        <span>Tin nhắn</span>
+                      </Link>
                       <Link to="/buyer/wishlist" className="text-accent hover:text-accent/80 transition-colors p-1 rounded-full hover:bg-gray-100" title="Danh sách yêu thích">
                         <Heart size={20} />
                       </Link>
@@ -253,10 +257,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                             {notificationUnread > 99 ? '99+' : notificationUnread}
                           </span>
                         )}
-                      </Link>
-                      <Link to="/messages" className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:border-accent hover:text-accent rounded-full px-3 py-2 text-sm font-medium transition-colors" title="Tin nhắn">
-                        <MessageCircle size={18} />
-                        <span>Tin nhắn</span>
                       </Link>
                     </>
                   )}
@@ -293,11 +293,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                         {userRole === 'SELLER' && (
                           <div className="py-2 border-t border-gray-100">
                             <p className="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Seller</p>
-                            <div className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
+                            <Link to="/seller/dashboard" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
                               <Store size={18} className="text-gray-500 flex-shrink-0" />
                               <span className="flex-1">Cửa hàng / chuyên trang</span>
-                              <Link to="/seller/kyc" onClick={() => setProfileOpen(false)} className="rounded bg-gray-200 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-300">Tạo ngay</Link>
-                            </div>
+                              <ChevronRight size={16} className="text-gray-400" />
+                            </Link>
                             <Link to="/seller/dashboard" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
                               <LayoutDashboard size={18} className="text-gray-500 flex-shrink-0" />
                               <span className="flex-1">Quản lý tin</span>

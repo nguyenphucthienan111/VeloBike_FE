@@ -22,58 +22,26 @@ interface Message {
   isFromSeller: boolean;
 }
 
-type TabType = 'buyer' | 'seller';
-
+/** Trang tin nhắn chung: cho Buyer và cho Seller (khi xem từ header). Một inbox thống nhất. */
 export const Messages: React.FC = () => {
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabType>('buyer');
-
-  // Buyer section state
-  const [buyerLoading, setBuyerLoading] = useState(true);
-  const [buyerConversations, setBuyerConversations] = useState<Conversation[]>([]);
-  const [buyerSelected, setBuyerSelected] = useState<Conversation | null>(null);
-  const [buyerMessages, setBuyerMessages] = useState<Message[]>([]);
-  const [buyerInput, setBuyerInput] = useState('');
-  const [buyerSending, setBuyerSending] = useState(false);
-  const [buyerMessagesLoading, setBuyerMessagesLoading] = useState(false);
-
-  // Seller section state
-  const [sellerLoading, setSellerLoading] = useState(true);
-  const [sellerConversations, setSellerConversations] = useState<Conversation[]>([]);
-  const [sellerSelected, setSellerSelected] = useState<Conversation | null>(null);
-  const [sellerMessages, setSellerMessages] = useState<Message[]>([]);
-  const [sellerInput, setSellerInput] = useState('');
-  const [sellerSending, setSellerSending] = useState(false);
-  const [sellerMessagesLoading, setSellerMessagesLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [selected, setSelected] = useState<Conversation | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [messageInput, setMessageInput] = useState('');
+  const [sending, setSending] = useState(false);
+  const [messagesLoading, setMessagesLoading] = useState(false);
 
   useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      try {
-        const user = JSON.parse(userData);
-        setUserRole(user.role);
-      } catch {
-        setUserRole(null);
-      }
-    }
+    fetchConversations();
   }, []);
 
-  useEffect(() => {
-    fetchBuyerConversations();
-  }, []);
-
-  useEffect(() => {
-    if (userRole === 'SELLER') {
-      fetchSellerConversations();
-    }
-  }, [userRole]);
-
-  const fetchBuyerConversations = async () => {
+  const fetchConversations = async () => {
     try {
-      setBuyerLoading(true);
+      setLoading(true);
       const token = localStorage.getItem('accessToken');
       if (!token) {
-        setBuyerLoading(false);
+        setLoading(false);
         return;
       }
       const res = await fetch(`${API_BASE_URL}/messages`, {
@@ -86,54 +54,22 @@ export const Messages: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         const convos = data.data || [];
-        setBuyerConversations(convos);
+        setConversations(convos);
         if (convos.length > 0) {
-          setBuyerSelected(convos[0]);
-          fetchMessagesFor(convos[0].userId, 'buyer');
+          setSelected(convos[0]);
+          fetchMessages(convos[0].userId);
         }
       }
     } catch (e) {
-      console.error('Error fetching buyer conversations:', e);
+      console.error('Error fetching conversations:', e);
     } finally {
-      setBuyerLoading(false);
+      setLoading(false);
     }
   };
 
-  const fetchSellerConversations = async () => {
+  const fetchMessages = async (userId: string) => {
     try {
-      setSellerLoading(true);
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        setSellerLoading(false);
-        return;
-      }
-      const res = await fetch(`${API_BASE_URL}/messages`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.status === 401) {
-        handleSessionExpired();
-        return;
-      }
-      if (res.ok) {
-        const data = await res.json();
-        const convos = data.data || [];
-        setSellerConversations(convos);
-        if (convos.length > 0) {
-          setSellerSelected(convos[0]);
-          fetchMessagesFor(convos[0].userId, 'seller');
-        }
-      }
-    } catch (e) {
-      console.error('Error fetching seller conversations:', e);
-    } finally {
-      setSellerLoading(false);
-    }
-  };
-
-  const fetchMessagesFor = async (userId: string, section: TabType) => {
-    try {
-      if (section === 'buyer') setBuyerMessagesLoading(true);
-      else setSellerMessagesLoading(true);
+      setMessagesLoading(true);
       const token = localStorage.getItem('accessToken');
       if (!token) return;
       const res = await fetch(`${API_BASE_URL}/messages/conversation/${userId}`, {
@@ -145,24 +81,17 @@ export const Messages: React.FC = () => {
       }
       if (res.ok) {
         const data = await res.json();
-        if (section === 'buyer') setBuyerMessages(data.data || []);
-        else setSellerMessages(data.data || []);
+        setMessages(data.data || []);
       }
     } catch (e) {
       console.error('Error fetching messages:', e);
     } finally {
-      if (section === 'buyer') setBuyerMessagesLoading(false);
-      else setSellerMessagesLoading(false);
+      setMessagesLoading(false);
     }
   };
 
-  const sendMessage = async (section: TabType) => {
-    const isBuyer = section === 'buyer';
-    const selected = isBuyer ? buyerSelected : sellerSelected;
-    const input = isBuyer ? buyerInput : sellerInput;
-    const setInput = isBuyer ? setBuyerInput : setSellerInput;
-    const setSending = isBuyer ? setBuyerSending : setSellerSending;
-    if (!input.trim() || !selected) return;
+  const handleSendMessage = async () => {
+    if (!messageInput.trim() || !selected) return;
     try {
       setSending(true);
       const token = localStorage.getItem('accessToken');
@@ -173,15 +102,15 @@ export const Messages: React.FC = () => {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ receiverId: selected.userId, content: input.trim() }),
+        body: JSON.stringify({ receiverId: selected.userId, content: messageInput.trim() }),
       });
       if (res.status === 401) {
         handleSessionExpired();
         return;
       }
       if (res.ok) {
-        setInput('');
-        await fetchMessagesFor(selected.userId, section);
+        setMessageInput('');
+        await fetchMessages(selected.userId);
       }
     } catch (e) {
       console.error('Error sending message:', e);
@@ -189,19 +118,6 @@ export const Messages: React.FC = () => {
       setSending(false);
     }
   };
-
-  const showTabs = userRole === 'SELLER';
-  const loading = showTabs ? (activeTab === 'buyer' ? buyerLoading : sellerLoading) : buyerLoading;
-  const conversations = showTabs ? (activeTab === 'buyer' ? buyerConversations : sellerConversations) : buyerConversations;
-  const selected = showTabs ? (activeTab === 'buyer' ? buyerSelected : sellerSelected) : buyerSelected;
-  const messages = showTabs ? (activeTab === 'buyer' ? buyerMessages : sellerMessages) : buyerMessages;
-  const messageInput = showTabs ? (activeTab === 'buyer' ? buyerInput : sellerInput) : buyerInput;
-  const setMessageInput = showTabs ? (activeTab === 'buyer' ? setBuyerInput : setSellerInput) : setBuyerInput;
-  const sending = showTabs ? (activeTab === 'buyer' ? buyerSending : sellerSending) : buyerSending;
-  const messagesLoading = showTabs ? (activeTab === 'buyer' ? buyerMessagesLoading : sellerMessagesLoading) : buyerMessagesLoading;
-  const setSelected = showTabs ? (activeTab === 'buyer' ? setBuyerSelected : setSellerSelected) : setBuyerSelected;
-  const otherLabel = activeTab === 'buyer' || !showTabs ? 'Người bán' : 'Người mua';
-  const fetchMessages = (userId: string) => fetchMessagesFor(userId, showTabs ? activeTab : 'buyer');
 
   if (loading) {
     return (
@@ -215,33 +131,11 @@ export const Messages: React.FC = () => {
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
       <h1 className="text-2xl font-bold text-gray-900 mb-4">Tin nhắn</h1>
-
-      {showTabs && (
-        <div className="flex gap-1 p-1 bg-gray-100 rounded-lg mb-4 w-fit">
-          <button
-            type="button"
-            onClick={() => setActiveTab('buyer')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'buyer' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
-          >
-            Tin mua hàng
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('seller')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'seller' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
-          >
-            Tin cửa hàng
-          </button>
-        </div>
-      )}
-
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col" style={{ minHeight: '480px' }}>
         <div className="flex flex-1 min-h-0">
           <div className="w-64 sm:w-72 border-r border-gray-200 flex flex-col flex-shrink-0">
             <div className="p-4 border-b border-gray-100">
-              <p className="text-sm font-semibold text-gray-700">
-                {showTabs && activeTab === 'seller' ? 'Khách nhắn với bạn' : 'Cuộc trò chuyện'}
-              </p>
+              <p className="text-sm font-semibold text-gray-700">Cuộc trò chuyện</p>
             </div>
             <div className="flex-1 overflow-y-auto">
               {conversations.length > 0 ? (
@@ -267,12 +161,8 @@ export const Messages: React.FC = () => {
               ) : (
                 <div className="p-6 text-center text-gray-500">
                   <MessageCircle className="w-10 h-10 mx-auto mb-2 text-gray-300" />
-                  <p className="text-sm">
-                    {showTabs && activeTab === 'seller' ? 'Chưa có tin nhắn từ khách' : 'Chưa có cuộc trò chuyện'}
-                  </p>
-                  <p className="text-xs mt-1">
-                    {showTabs && activeTab === 'seller' ? 'Tin nhắn sẽ hiện khi có khách liên hệ.' : 'Liên hệ người bán từ trang chi tiết xe.'}
-                  </p>
+                  <p className="text-sm">Chưa có cuộc trò chuyện</p>
+                  <p className="text-xs mt-1">Liên hệ từ trang chi tiết xe hoặc đơn hàng.</p>
                 </div>
               )}
             </div>
@@ -282,7 +172,6 @@ export const Messages: React.FC = () => {
             <div className="flex-1 flex flex-col min-w-0">
               <div className="p-4 border-b border-gray-200 bg-gray-50/50">
                 <p className="font-semibold text-gray-900">{selected.userName}</p>
-                <p className="text-xs text-gray-500">{otherLabel}</p>
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {messagesLoading ? (
@@ -320,7 +209,7 @@ export const Messages: React.FC = () => {
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
-                        sendMessage(showTabs ? activeTab : 'buyer');
+                        handleSendMessage();
                       }
                     }}
                     placeholder="Nhập tin nhắn..."
@@ -328,7 +217,7 @@ export const Messages: React.FC = () => {
                   />
                   <button
                     type="button"
-                    onClick={() => sendMessage(showTabs ? activeTab : 'buyer')}
+                    onClick={handleSendMessage}
                     disabled={!messageInput.trim() || sending}
                     className="px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 disabled:opacity-50"
                   >

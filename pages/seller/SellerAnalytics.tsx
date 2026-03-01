@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { SellerSidebar } from '../../components/SellerSidebar';
+import { SellerHeaderUserMenu } from '../../components/SellerHeaderUserMenu';
 
 interface PerformanceData {
   date: string;
@@ -209,18 +210,7 @@ export const SellerAnalytics: React.FC = () => {
               </div>
 
               {/* Profile Section */}
-              <button 
-                onClick={() => navigate('/seller/profile')}
-                className="flex items-center gap-3 pl-4 border-l border-gray-300 hover:opacity-80 transition-opacity"
-              >
-                <div className="text-right">
-                  <p className="text-sm font-bold text-gray-900">{user?.fullName || 'User'}</p>
-                  <p className="text-xs text-gray-500">SELLER</p>
-                </div>
-                <div className="w-10 h-10 rounded-full bg-purple-400 flex items-center justify-center font-bold text-white text-sm">
-                  {user?.fullName?.charAt(0) || 'S'}
-                </div>
-              </button>
+              <SellerHeaderUserMenu user={user} />
             </div>
           </div>
 

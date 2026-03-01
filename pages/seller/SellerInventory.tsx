@@ -294,17 +294,6 @@ export const SellerInventory: React.FC = () => {
           </button>
         </nav>
 
-        {/* Storage Status */}
-        <div className="border-t border-gray-200 pt-6 mb-6">
-          <p className="text-xs text-gray-500 font-semibold mb-3">STORAGE STATUS</p>
-          <div className="space-y-2">
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-gray-600 h-2 rounded-full" style={{ width: '65%' }}></div>
-            </div>
-            <p className="text-xs text-gray-500">{listings.length} of 100 listings</p>
-          </div>
-        </div>
-
         {/* Add Inventory Button */}
         <button 
           onClick={() => navigate('/seller/add-product')}

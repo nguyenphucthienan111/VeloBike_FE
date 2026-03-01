@@ -19,7 +19,7 @@ export const SellerSidebar: React.FC<SellerSidebarProps> = ({ stats }) => {
     { path: '/seller/analytics', label: 'Sales' },
     { path: '/seller/orders', label: 'Orders' },
     { path: '/seller/wallet', label: 'Wallet' },
-    { path: '/messages', label: 'Messages' },
+    { path: '/seller/messages', label: 'Messages' },
     { path: '/seller/reviews', label: 'Reviews' },
   ];
 
@@ -58,17 +58,6 @@ export const SellerSidebar: React.FC<SellerSidebarProps> = ({ stats }) => {
         ))}
       </nav>
 
-      {/* Storage Status */}
-      <div className="border-t border-gray-200 pt-6 mb-6">
-        <p className="text-xs text-gray-500 font-semibold mb-3">STORAGE STATUS</p>
-        <div className="space-y-2">
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div className="bg-gray-600 h-2 rounded-full" style={{ width: `${Math.min((stats?.totalListings || 0) / 100 * 100, 100)}%` }}></div>
-          </div>
-          <p className="text-xs text-gray-500">{stats?.totalListings || 0} of 100 listings</p>
-        </div>
-      </div>
-
       {/* Add Inventory Button */}
       <button 
         onClick={() => navigate('/seller/add-product')}
@@ -77,19 +66,6 @@ export const SellerSidebar: React.FC<SellerSidebarProps> = ({ stats }) => {
         + ADD INVENTORY
       </button>
 
-      {/* Logout Button */}
-      <button 
-        onClick={() => {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('user');
-          window.dispatchEvent(new Event('authChange'));
-          navigate('/login');
-        }}
-        className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-      >
-        Logout
-      </button>
     </div>
   );
 };

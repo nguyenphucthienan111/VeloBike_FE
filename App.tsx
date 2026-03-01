@@ -84,7 +84,7 @@ const App: React.FC = () => {
           <Route path="/seller/analytics" element={<SellerAnalytics />} />
           <Route path="/seller/orders" element={<SellerOrders />} />
           <Route path="/seller/wallet" element={<SellerWallet />} />
-          <Route path="/seller/messages" element={<Navigate to="/messages" replace />} />
+          <Route path="/seller/messages" element={<SellerMessages />} />
           <Route path="/seller/reviews" element={<SellerReviews />} />
           <Route path="/seller/profile" element={<SellerProfile />} />
           <Route path="/seller/subscription" element={<SellerSubscription />} />
