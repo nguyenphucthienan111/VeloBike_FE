@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 
 interface SellerSidebarProps {
   stats?: {
@@ -21,7 +21,6 @@ export const SellerSidebar: React.FC<SellerSidebarProps> = ({ stats }) => {
     { path: '/seller/wallet', label: 'Wallet' },
     { path: '/seller/messages', label: 'Messages' },
     { path: '/seller/reviews', label: 'Reviews' },
-    { path: '/seller/profile', label: 'My Profile' },
   ];
 
   return (
@@ -34,14 +33,13 @@ export const SellerSidebar: React.FC<SellerSidebarProps> = ({ stats }) => {
         <p className="text-xs text-gray-500">Seller Dashboard</p>
       </div>
 
-      {/* Mua hàng - chuyển về trang chủ/marketplace (vẫn đăng nhập, dùng role buyer) */}
-      <button
-        type="button"
-        onClick={() => navigate('/')}
+      {/* Mua hàng - quay lại trang Marketplace (mua sắm) */}
+      <Link
+        to="/marketplace"
         className="flex items-center justify-center gap-2 w-full px-4 py-3 mb-4 rounded-lg border-2 border-gray-300 text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-400 transition-colors text-sm"
       >
         🛒 Mua hàng / Marketplace
-      </button>
+      </Link>
 
       {/* Navigation */}
       <nav className="space-y-1 mb-8">
@@ -60,17 +58,6 @@ export const SellerSidebar: React.FC<SellerSidebarProps> = ({ stats }) => {
         ))}
       </nav>
 
-      {/* Storage Status */}
-      <div className="border-t border-gray-200 pt-6 mb-6">
-        <p className="text-xs text-gray-500 font-semibold mb-3">STORAGE STATUS</p>
-        <div className="space-y-2">
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div className="bg-gray-600 h-2 rounded-full" style={{ width: `${Math.min((stats?.totalListings || 0) / 100 * 100, 100)}%` }}></div>
-          </div>
-          <p className="text-xs text-gray-500">{stats?.totalListings || 0} of 100 listings</p>
-        </div>
-      </div>
-
       {/* Add Inventory Button */}
       <button 
         onClick={() => navigate('/seller/add-product')}
@@ -79,19 +66,6 @@ export const SellerSidebar: React.FC<SellerSidebarProps> = ({ stats }) => {
         + ADD INVENTORY
       </button>
 
-      {/* Logout Button */}
-      <button 
-        onClick={() => {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('user');
-          window.dispatchEvent(new Event('authChange'));
-          navigate('/login');
-        }}
-        className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-      >
-        Logout
-      </button>
     </div>
   );
 };

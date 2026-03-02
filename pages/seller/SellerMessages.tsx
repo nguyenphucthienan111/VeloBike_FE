@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SellerSidebar } from '../../components/SellerSidebar';
+import { SellerHeaderUserMenu } from '../../components/SellerHeaderUserMenu';
+import { API_BASE_URL } from '../../constants';
+import { handleSessionExpired } from '../../utils/auth';
 
 interface Conversation {
   id: string;
@@ -50,10 +52,13 @@ export const SellerMessages: React.FC = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/messages', {
-        headers: { 'Authorization': `Bearer ${token}` },
+      const response = await fetch(`${API_BASE_URL}/messages`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
+      if (response.status === 401) {
+        handleSessionExpired();
+        return;
+      }
       if (response.ok) {
         const data = await response.json();
         const convos = data.data || [];
@@ -78,10 +83,13 @@ export const SellerMessages: React.FC = () => {
       const token = localStorage.getItem('accessToken');
       if (!token) return;
 
-      const response = await fetch(`http://localhost:5000/api/messages/conversation/${userId}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
+      const response = await fetch(`${API_BASE_URL}/messages/conversation/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
+      if (response.status === 401) {
+        handleSessionExpired();
+        return;
+      }
       if (response.ok) {
         const data = await response.json();
         setMessages(data.data || []);
@@ -105,10 +113,10 @@ export const SellerMessages: React.FC = () => {
       setSendingMessage(true);
       const token = localStorage.getItem('accessToken');
 
-      const response = await fetch('http://localhost:5000/api/messages', {
+      const response = await fetch(`${API_BASE_URL}/messages`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -116,7 +124,10 @@ export const SellerMessages: React.FC = () => {
           content: messageInput,
         }),
       });
-
+      if (response.status === 401) {
+        handleSessionExpired();
+        return;
+      }
       if (response.ok) {
         // Clear input and refresh messages
         setMessageInput('');
@@ -131,7 +142,7 @@ export const SellerMessages: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center">
           <div className="animate-spin h-12 w-12 border-4 border-accent border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className="text-gray-600">Loading messages...</p>
@@ -141,12 +152,7 @@ export const SellerMessages: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
-      {/* Sidebar */}
-      <SellerSidebar />
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto flex flex-col">
+    <div className="flex-1 flex flex-col min-h-0">
         <div className="flex-1 flex min-h-0">
           {/* Conversations List */}
           <div className="w-72 bg-white border-r border-gray-200 flex flex-col">
@@ -197,18 +203,7 @@ export const SellerMessages: React.FC = () => {
                   <h3 className="text-lg font-bold text-gray-900">{selectedConversation.userName}</h3>
                   <p className="text-xs text-gray-500">Buyer</p>
                 </div>
-                <button 
-                  onClick={() => navigate('/seller/profile')}
-                  className="flex items-center gap-3 pl-4 border-l border-gray-300 hover:opacity-80 transition-opacity"
-                >
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-gray-900">{user?.fullName || 'User'}</p>
-                    <p className="text-xs text-gray-500">SELLER</p>
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-purple-400 flex items-center justify-center font-bold text-white text-sm">
-                    {user?.fullName?.charAt(0) || 'S'}
-                  </div>
-                </button>
+                <SellerHeaderUserMenu user={user} />
               </div>
 
               {/* Messages */}
@@ -280,6 +275,5 @@ export const SellerMessages: React.FC = () => {
           )}
         </div>
       </div>
-    </div>
   );
 };

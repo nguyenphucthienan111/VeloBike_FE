@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MessageCircle } from 'lucide-react';
-import { API_BASE_URL } from '../../constants';
-import { handleSessionExpired } from '../../utils/auth';
+import { API_BASE_URL } from '../constants';
+import { handleSessionExpired } from '../utils/auth';
 
 interface Conversation {
   id: string;
@@ -22,14 +22,15 @@ interface Message {
   isFromSeller: boolean;
 }
 
-export const BuyerMessages: React.FC = () => {
+/** Trang tin nhắn chung: cho Buyer và cho Seller (khi xem từ header). Một inbox thống nhất. */
+export const Messages: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  const [selected, setSelected] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState('');
-  const [sendingMessage, setSendingMessage] = useState(false);
-  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [messagesLoading, setMessagesLoading] = useState(false);
 
   useEffect(() => {
     fetchConversations();
@@ -55,7 +56,7 @@ export const BuyerMessages: React.FC = () => {
         const convos = data.data || [];
         setConversations(convos);
         if (convos.length > 0) {
-          setSelectedConversation(convos[0]);
+          setSelected(convos[0]);
           fetchMessages(convos[0].userId);
         }
       }
@@ -68,7 +69,7 @@ export const BuyerMessages: React.FC = () => {
 
   const fetchMessages = async (userId: string) => {
     try {
-      setLoadingMessages(true);
+      setMessagesLoading(true);
       const token = localStorage.getItem('accessToken');
       if (!token) return;
       const res = await fetch(`${API_BASE_URL}/messages/conversation/${userId}`, {
@@ -85,19 +86,14 @@ export const BuyerMessages: React.FC = () => {
     } catch (e) {
       console.error('Error fetching messages:', e);
     } finally {
-      setLoadingMessages(false);
+      setMessagesLoading(false);
     }
   };
 
-  const handleSelectConversation = (c: Conversation) => {
-    setSelectedConversation(c);
-    fetchMessages(c.userId);
-  };
-
   const handleSendMessage = async () => {
-    if (!messageInput.trim() || !selectedConversation) return;
+    if (!messageInput.trim() || !selected) return;
     try {
-      setSendingMessage(true);
+      setSending(true);
       const token = localStorage.getItem('accessToken');
       if (!token) return;
       const res = await fetch(`${API_BASE_URL}/messages`, {
@@ -106,10 +102,7 @@ export const BuyerMessages: React.FC = () => {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          receiverId: selectedConversation.userId,
-          content: messageInput,
-        }),
+        body: JSON.stringify({ receiverId: selected.userId, content: messageInput.trim() }),
       });
       if (res.status === 401) {
         handleSessionExpired();
@@ -117,12 +110,12 @@ export const BuyerMessages: React.FC = () => {
       }
       if (res.ok) {
         setMessageInput('');
-        await fetchMessages(selectedConversation.userId);
+        await fetchMessages(selected.userId);
       }
     } catch (e) {
       console.error('Error sending message:', e);
     } finally {
-      setSendingMessage(false);
+      setSending(false);
     }
   };
 
@@ -137,10 +130,9 @@ export const BuyerMessages: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">Tin nhắn (mua hàng)</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-4">Tin nhắn</h1>
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col" style={{ minHeight: '480px' }}>
         <div className="flex flex-1 min-h-0">
-          {/* Danh sách hội thoại */}
           <div className="w-64 sm:w-72 border-r border-gray-200 flex flex-col flex-shrink-0">
             <div className="p-4 border-b border-gray-100">
               <p className="text-sm font-semibold text-gray-700">Cuộc trò chuyện</p>
@@ -151,8 +143,11 @@ export const BuyerMessages: React.FC = () => {
                   <button
                     key={c.id}
                     type="button"
-                    onClick={() => handleSelectConversation(c)}
-                    className={`w-full text-left p-3 border-b border-gray-50 hover:bg-gray-50 transition-colors ${selectedConversation?.id === c.id ? 'bg-gray-100' : ''}`}
+                    onClick={() => {
+                      setSelected(c);
+                      fetchMessages(c.userId);
+                    }}
+                    className={`w-full text-left p-3 border-b border-gray-50 hover:bg-gray-50 transition-colors ${selected?.id === c.id ? 'bg-gray-100' : ''}`}
                   >
                     <p className="font-medium text-gray-900 text-sm truncate">{c.userName}</p>
                     <p className="text-xs text-gray-500 truncate mt-0.5">{c.lastMessage}</p>
@@ -167,20 +162,19 @@ export const BuyerMessages: React.FC = () => {
                 <div className="p-6 text-center text-gray-500">
                   <MessageCircle className="w-10 h-10 mx-auto mb-2 text-gray-300" />
                   <p className="text-sm">Chưa có cuộc trò chuyện</p>
-                  <p className="text-xs mt-1">Liên hệ người bán từ trang chi tiết xe.</p>
+                  <p className="text-xs mt-1">Liên hệ từ trang chi tiết xe hoặc đơn hàng.</p>
                 </div>
               )}
             </div>
           </div>
-          {/* Khung chat */}
-          {selectedConversation ? (
+
+          {selected ? (
             <div className="flex-1 flex flex-col min-w-0">
               <div className="p-4 border-b border-gray-200 bg-gray-50/50">
-                <p className="font-semibold text-gray-900">{selectedConversation.userName}</p>
-                <p className="text-xs text-gray-500">Người bán</p>
+                <p className="font-semibold text-gray-900">{selected.userName}</p>
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {loadingMessages ? (
+                {messagesLoading ? (
                   <p className="text-sm text-gray-500 text-center py-4">Đang tải...</p>
                 ) : messages.length > 0 ? (
                   messages.map((msg) => (
@@ -224,7 +218,7 @@ export const BuyerMessages: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleSendMessage}
-                    disabled={!messageInput.trim() || sendingMessage}
+                    disabled={!messageInput.trim() || sending}
                     className="px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 disabled:opacity-50"
                   >
                     Gửi
@@ -234,7 +228,7 @@ export const BuyerMessages: React.FC = () => {
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center text-gray-500 p-6">
-              <p className="text-sm">Chọn một cuộc trò chuyện hoặc liên hệ người bán từ trang xe.</p>
+              <p className="text-sm">Chọn một cuộc trò chuyện hoặc liên hệ từ trang xe.</p>
             </div>
           )}
         </div>
