@@ -1,12 +1,59 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, Shield, RefreshCw, Zap } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { MOCK_LISTINGS } from '../constants';
 import { BikeCard } from '../components/BikeCard';
+import { API_BASE_URL } from '../constants';
 
 export const Home: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const navigate = useNavigate();
+
+  // Handle payment cancellation redirect FIRST (before any rendering)
+  useEffect(() => {
+    const handlePaymentCancel = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const cancelled = urlParams.get('cancelled');
+      const listingId = urlParams.get('listingId');
+      const pendingOrderId = localStorage.getItem('pendingOrderId');
+
+      if (cancelled === 'true' && listingId) {
+        setIsRedirecting(true);
+        console.log('Payment cancelled, cancelling order and redirecting...');
+        
+        const token = localStorage.getItem('accessToken');
+        if (token && pendingOrderId) {
+          try {
+            // Cancel the order (don't wait for response)
+            fetch(`${API_BASE_URL}/orders/${pendingOrderId}/status`, {
+              method: 'PUT',
+              headers: {
+                'Authorization': `Bearer ${token.trim()}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                status: 'CANCELLED',
+                note: 'Người dùng hủy thanh toán trên PayOS',
+              }),
+            }).then(() => {
+              localStorage.removeItem('pendingOrderId');
+            }).catch(err => {
+              console.error('Error cancelling order:', err);
+            });
+          } catch (err) {
+            console.error('Error cancelling order:', err);
+          }
+        }
+
+        // Redirect immediately without waiting for API
+        navigate(`/bike/${listingId}`, { replace: true });
+      }
+    };
+
+    handlePaymentCancel();
+  }, [navigate]);
 
   useEffect(() => {
     // Check if user is logged in
@@ -24,6 +71,18 @@ export const Home: React.FC = () => {
       }
     }
   }, []);
+
+  // Show loading screen while redirecting
+  if (isRedirecting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Đang chuyển hướng...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white">

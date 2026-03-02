@@ -279,6 +279,10 @@ export const ProductDetail: React.FC = () => {
       }
 
       const orderId = orderData.data._id;
+      
+      // Save orderId to localStorage for cancel handling
+      localStorage.setItem('pendingOrderId', orderId);
+      
       showToast('Order created! Redirecting to payment...', 'success');
 
       // Step 2: Create payment link
