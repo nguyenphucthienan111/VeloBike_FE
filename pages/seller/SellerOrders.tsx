@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SellerSidebar } from '../../components/SellerSidebar';
+import { SellerHeaderUserMenu } from '../../components/SellerHeaderUserMenu';
 
 interface Order {
   _id: string;
@@ -25,6 +25,7 @@ export const SellerOrders: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
   const statuses = ['ALL', 'CREATED', 'ESCROW_LOCKED', 'IN_INSPECTION', 'INSPECTION_PASSED', 'SHIPPING', 'DELIVERED', 'COMPLETED'];
   
@@ -39,6 +40,8 @@ export const SellerOrders: React.FC = () => {
   };
 
   useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (userData) setUser(JSON.parse(userData));
     fetchOrders();
   }, []);
 
@@ -105,7 +108,7 @@ export const SellerOrders: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center">
           <p className="text-gray-600">Loading orders...</p>
         </div>
@@ -114,18 +117,14 @@ export const SellerOrders: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
-      {/* Sidebar */}
-      <SellerSidebar />
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="bg-white px-8 py-4 border-b border-gray-200">
+    <div className="flex-1 flex flex-col">
+        <div className="bg-white px-8 py-4 border-b border-gray-200 flex justify-between items-center">
           <div className="flex items-center text-sm text-gray-600">
             <span className="cursor-pointer hover:text-gray-900" onClick={() => navigate('/seller/dashboard')}>Dashboard</span>
             <span className="mx-3">/</span>
             <span className="font-medium text-gray-900">Orders</span>
           </div>
+          <SellerHeaderUserMenu user={user} />
         </div>
 
         <div className="max-w-7xl mx-auto px-8 py-8">
@@ -319,7 +318,7 @@ export const SellerOrders: React.FC = () => {
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 };
+

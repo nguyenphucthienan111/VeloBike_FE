@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SellerSidebar } from '../../components/SellerSidebar';
 
 interface UserProfile {
   id: string;
@@ -174,7 +173,7 @@ export const SellerProfile: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center">
           <div className="animate-spin h-12 w-12 border-4 border-accent border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className="text-gray-600">Loading profile...</p>
@@ -184,13 +183,7 @@ export const SellerProfile: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
-      {/* Sidebar */}
-      <SellerSidebar />
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="p-8">
+    <div className="p-8">
           {/* Messages */}
           {error && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -445,8 +438,6 @@ export const SellerProfile: React.FC = () => {
                 </div>
             </div>
           </div>
-        </div>
-      </div>
     </div>
   );
 };

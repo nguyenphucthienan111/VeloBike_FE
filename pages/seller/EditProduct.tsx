@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { SellerSidebar } from '../../components/SellerSidebar';
 import { Toast, useToast } from '../../components/Toast';
 
 export const EditProduct: React.FC = () => {
@@ -290,25 +289,17 @@ export const EditProduct: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
-        <SellerSidebar />
-        <div className="flex-1 overflow-auto bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin h-12 w-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading product information...</p>
-          </div>
+      <div className="flex-1 overflow-auto bg-gray-50 flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin h-12 w-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading product information...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <SellerSidebar />
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto bg-gray-50 flex items-center justify-center p-8">
+    <div className="flex-1 overflow-auto bg-gray-50 flex items-center justify-center p-8">
         <div className="w-full max-w-3xl">
           {/* Header */}
           <div className="mb-6">
@@ -535,7 +526,6 @@ export const EditProduct: React.FC = () => {
             </div>
           </form>
         </div>
-      </div>
 
       {/* Toast Notification */}
       <Toast

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SellerSidebar } from '../../components/SellerSidebar';
 import { SellerHeaderUserMenu } from '../../components/SellerHeaderUserMenu';
 import { API_BASE_URL } from '../../constants';
 import { handleSessionExpired } from '../../utils/auth';
@@ -143,7 +142,7 @@ export const SellerMessages: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center">
           <div className="animate-spin h-12 w-12 border-4 border-accent border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className="text-gray-600">Loading messages...</p>
@@ -153,12 +152,7 @@ export const SellerMessages: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
-      {/* Sidebar */}
-      <SellerSidebar />
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto flex flex-col">
+    <div className="flex-1 flex flex-col min-h-0">
         <div className="flex-1 flex min-h-0">
           {/* Conversations List */}
           <div className="w-72 bg-white border-r border-gray-200 flex flex-col">
@@ -281,6 +275,5 @@ export const SellerMessages: React.FC = () => {
           )}
         </div>
       </div>
-    </div>
   );
 };

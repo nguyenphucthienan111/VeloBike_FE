@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SellerSidebar } from '../../components/SellerSidebar';
+import { SellerHeaderUserMenu } from '../../components/SellerHeaderUserMenu';
 import { Toast, useToast } from '../../components/Toast';
 
 interface Listing {
@@ -221,7 +221,7 @@ export const SellerInventory: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center">
           <div className="animate-spin h-12 w-12 border-4 border-red-500 border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
@@ -231,93 +231,23 @@ export const SellerInventory: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
-      {/* Sidebar */}
-      <div className="w-56 bg-white text-gray-900 p-6 sticky top-0 h-screen overflow-y-auto border-r border-gray-200">
-        {/* Logo */}
-        <div className="mb-8 cursor-pointer" onClick={() => navigate('/')}>
-          <div className="text-xl font-extrabold tracking-tighter italic mb-2">
-            VELO<span className="text-red-600">BIKE</span>
-          </div>
-          <p className="text-xs text-gray-500">Seller Dashboard</p>
-        </div>
-
-        {/* Navigation */}
-        <nav className="space-y-1 mb-8">
-          <button
-            onClick={() => navigate('/seller/dashboard')}
-            className="w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            Dashboard
-          </button>
-          <button
-            onClick={() => navigate('/seller/inventory')}
-            className="w-full text-left px-4 py-3 rounded-lg bg-gray-900 text-white font-medium hover:bg-gray-800 transition-colors"
-          >
-            Inventory
-          </button>
-          <button
-            onClick={() => navigate('/seller/analytics')}
-            className="w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            Sales
-          </button>
-          <button
-            onClick={() => navigate('/seller/orders')}
-            className="w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            Orders
-          </button>
-          <button
-            onClick={() => navigate('/seller/wallet')}
-            className="w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            Wallet
-          </button>
-          <button
-            onClick={() => navigate('/seller/messages')}
-            className="w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            Messages
-          </button>
-          <button
-            onClick={() => navigate('/seller/reviews')}
-            className="w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            Reviews
-          </button>
-          <button
-            onClick={() => navigate('/seller/profile')}
-            className="w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            Settings
-          </button>
-        </nav>
-
-        {/* Add Inventory Button */}
-        <button 
-          onClick={() => navigate('/seller/add-product')}
-          className="w-full px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-bold"
-        >
-          + ADD INVENTORY
-        </button>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="p-8">
+    <div>
+    <div className="p-8">
           {/* Header */}
           <div className="flex justify-between items-start mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Inventory</h1>
               <p className="text-sm text-gray-600 mt-1">Total: {listings.length} products</p>
             </div>
-            <button
-              onClick={() => navigate('/seller/add-product')}
-              className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-semibold"
-            >
-              + Add Product
-            </button>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate('/seller/add-product')}
+                className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-semibold"
+              >
+                + Add Product
+              </button>
+              <SellerHeaderUserMenu user={user} />
+            </div>
           </div>
 
           {/* Bulk Actions */}
@@ -543,16 +473,13 @@ export const SellerInventory: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Toast Notification */}
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.isVisible}
-        onClose={hideToast}
-        duration={3000}
-      />
+    <Toast
+      message={toast.message}
+      type={toast.type}
+      isVisible={toast.isVisible}
+      onClose={hideToast}
+      duration={3000}
+    />
     </div>
   );
 };

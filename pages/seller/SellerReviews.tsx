@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SellerSidebar } from '../../components/SellerSidebar';
 import { SellerHeaderUserMenu } from '../../components/SellerHeaderUserMenu';
 
 interface Review {
@@ -129,7 +128,7 @@ export const SellerReviews: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center">
           <div className="animate-spin h-12 w-12 border-4 border-accent border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className="text-gray-600">Loading reviews...</p>
@@ -139,13 +138,7 @@ export const SellerReviews: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
-      {/* Sidebar */}
-      <SellerSidebar />
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="p-8">
+    <div className="p-8">
           {/* Header */}
           <div className="flex justify-between items-start mb-8">
             <div>
@@ -322,8 +315,6 @@ export const SellerReviews: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
-      </div>
     </div>
   );
 };

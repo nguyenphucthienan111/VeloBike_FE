@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SellerSidebar } from '../../components/SellerSidebar';
 import { Toast, useToast } from '../../components/Toast';
 
 export const AddProduct: React.FC = () => {
@@ -212,12 +211,7 @@ export const AddProduct: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <SellerSidebar />
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto bg-gray-50 flex items-center justify-center p-8">
+    <div className="flex-1 overflow-auto bg-gray-50 flex items-center justify-center p-8">
         <div className="w-full max-w-3xl">
           {/* Header */}
           <div className="mb-6">
@@ -444,9 +438,7 @@ export const AddProduct: React.FC = () => {
             </div>
           </form>
         </div>
-      </div>
 
-      {/* Toast Notification */}
       <Toast
         message={toast.message}
         type={toast.type}

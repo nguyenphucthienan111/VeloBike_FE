@@ -1,6 +1,7 @@
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
+import { SellerLayout } from './components/SellerLayout';
 import { Home } from './pages/Home';
 import { Marketplace } from './pages/Marketplace';
 import { ProductDetail } from './pages/ProductDetail';
@@ -75,20 +76,23 @@ const App: React.FC = () => {
           <Route path="/buyer/notifications" element={<BuyerNotifications />} />
           <Route path="/buyer/payment-history" element={<BuyerPaymentHistory />} />
           
-          {/* Seller Routes */}
+          {/* Seller Routes: KYC full page (không sidebar), còn lại dùng SellerLayout như Admin */}
           <Route path="/seller/kyc" element={<SellerKyc />} />
-          <Route path="/seller/dashboard" element={<SellerDashboard />} />
-          <Route path="/seller/inventory" element={<SellerInventory />} />
-          <Route path="/seller/add-product" element={<AddProduct />} />
-          <Route path="/seller/edit-listing/:id" element={<EditProduct />} />
-          <Route path="/seller/analytics" element={<SellerAnalytics />} />
-          <Route path="/seller/orders" element={<SellerOrders />} />
-          <Route path="/seller/wallet" element={<SellerWallet />} />
-          <Route path="/seller/messages" element={<SellerMessages />} />
-          <Route path="/seller/reviews" element={<SellerReviews />} />
-          <Route path="/seller/profile" element={<SellerProfile />} />
-          <Route path="/seller/subscription" element={<SellerSubscription />} />
-          <Route path="/seller/notifications" element={<SellerNotifications />} />
+          <Route path="/seller" element={<SellerLayout />}>
+            <Route index element={<Navigate to="/seller/dashboard" replace />} />
+            <Route path="dashboard" element={<SellerDashboard />} />
+            <Route path="inventory" element={<SellerInventory />} />
+            <Route path="add-product" element={<AddProduct />} />
+            <Route path="edit-listing/:id" element={<EditProduct />} />
+            <Route path="analytics" element={<SellerAnalytics />} />
+            <Route path="orders" element={<SellerOrders />} />
+            <Route path="wallet" element={<SellerWallet />} />
+            <Route path="messages" element={<SellerMessages />} />
+            <Route path="reviews" element={<SellerReviews />} />
+            <Route path="profile" element={<SellerProfile />} />
+            <Route path="subscription" element={<SellerSubscription />} />
+            <Route path="notifications" element={<SellerNotifications />} />
+          </Route>
           
           {/* Admin Routes: sidebar cố định trái, nội dung đổi bên phải (không mở trang mới) */}
           <Route path="/admin" element={<AdminLayout />}>
