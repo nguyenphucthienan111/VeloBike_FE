@@ -166,65 +166,17 @@ export const EditProduct: React.FC = () => {
     setSaving(true);
     try {
       const token = localStorage.getItem('accessToken');
-      
-      // Upload new images if any
-      const newImageUrls: string[] = [];
-      for (let i = 0; i < uploadedImages.length; i++) {
-        const formDataImg = new FormData();
-        formDataImg.append('image', uploadedImages[i]);
-        
-        try {
-          const uploadRes = await fetch('http://localhost:5000/api/upload', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-            body: formDataImg,
-          });
-          
-          if (uploadRes.ok) {
-            const uploadData = await uploadRes.json();
-            newImageUrls.push(uploadData.data?.url || '');
-            setUploadProgress(prev => ({ ...prev, [`image-${i}`]: 100 }));
-          } else {
-            const errorData = await uploadRes.json();
-            console.error('Upload failed:', errorData);
-          }
-        } catch (err) {
-          console.error('Error uploading image:', err);
-        }
+
+      // Dùng imagePreviews: existing URLs + base64 data URLs (tránh gọi upload API / Cloudinary)
+      const allThumbnails = imagePreviews.filter((url) => url && url.trim());
+
+      if (allThumbnails.length === 0) {
+        showToast('Cần có ít nhất 1 ảnh', 'error');
+        setSaving(false);
+        return;
       }
 
-      // Upload video if new
       let videoUrl = existingVideo;
-      if (uploadedVideo) {
-        const formDataVideo = new FormData();
-        formDataVideo.append('image', uploadedVideo);
-        
-        try {
-          const uploadRes = await fetch('http://localhost:5000/api/upload', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-            body: formDataVideo,
-          });
-          
-          if (uploadRes.ok) {
-            const uploadData = await uploadRes.json();
-            videoUrl = uploadData.data?.url || '';
-            setUploadProgress(prev => ({ ...prev, 'video': 100 }));
-          } else {
-            const errorData = await uploadRes.json();
-            console.error('Video upload failed:', errorData);
-          }
-        } catch (err) {
-          console.error('Error uploading video:', err);
-        }
-      }
-
-      // Combine existing and new images
-      const allThumbnails = [...existingImages, ...newImageUrls].filter(url => url);
 
       // Update listing
       const payload = {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Toast, useToast } from '../../components/Toast';
+import { API_BASE_URL } from '../../constants';
 
 export const AddProduct: React.FC = () => {
   const navigate = useNavigate();
@@ -90,64 +91,17 @@ export const AddProduct: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('accessToken');
-      
-      // Upload images
-      const thumbnails: string[] = [];
-      for (let i = 0; i < uploadedImages.length; i++) {
-        const formDataImg = new FormData();
-        formDataImg.append('image', uploadedImages[i]); // API expects 'image' field
-        
-        try {
-          const uploadRes = await fetch('http://localhost:5000/api/upload', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-            body: formDataImg,
-          });
-          
-          if (uploadRes.ok) {
-            const uploadData = await uploadRes.json();
-            // API returns: { success: true, data: { url, public_id } }
-            thumbnails.push(uploadData.data?.url || '');
-            setUploadProgress(prev => ({ ...prev, [`image-${i}`]: 100 }));
-          } else {
-            const errorData = await uploadRes.json();
-            console.error('Upload failed:', errorData);
-          }
-        } catch (err) {
-          console.error('Error uploading image:', err);
-        }
+
+      // Dùng base64 data URL từ imagePreviews (tránh gọi upload API / Cloudinary)
+      const thumbnails = imagePreviews.filter((url) => url && url.startsWith('data:'));
+
+      if (thumbnails.length === 0) {
+        showToast('Vui lòng chọn ảnh sản phẩm', 'error');
+        setLoading(false);
+        return;
       }
 
-      // Upload video (if needed - note: API might not support video, check backend)
       let videoUrl = formData.videoUrl;
-      if (uploadedVideo) {
-        const formDataVideo = new FormData();
-        formDataVideo.append('image', uploadedVideo); // API expects 'image' field
-        
-        try {
-          const uploadRes = await fetch('http://localhost:5000/api/upload', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-            body: formDataVideo,
-          });
-          
-          if (uploadRes.ok) {
-            const uploadData = await uploadRes.json();
-            // API returns: { success: true, data: { url, public_id } }
-            videoUrl = uploadData.data?.url || '';
-            setUploadProgress(prev => ({ ...prev, 'video': 100 }));
-          } else {
-            const errorData = await uploadRes.json();
-            console.error('Video upload failed:', errorData);
-          }
-        } catch (err) {
-          console.error('Error uploading video:', err);
-        }
-      }
 
       // Create listing
       const payload = {
@@ -177,7 +131,7 @@ export const AddProduct: React.FC = () => {
         inspectionRequired: false,
       };
 
-      const response = await fetch('http://localhost:5000/api/listings', {
+      const response = await fetch(`${API_BASE_URL}/listings`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
