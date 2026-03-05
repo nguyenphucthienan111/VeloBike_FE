@@ -74,6 +74,7 @@ export const ProductDetail: React.FC = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [orderLoading, setOrderLoading] = useState(false);
   const [hasActiveOrder, setHasActiveOrder] = useState(false);
+  const [requestInspection, setRequestInspection] = useState(true); // Default to true if available
   const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
@@ -244,8 +245,8 @@ export const ProductDetail: React.FC = () => {
       // Step 1: Create order
       // Logic theo BE:
       // - If listing.inspectionRequired = false → Buyer MUST send false (cannot request inspection)
-      // - If listing.inspectionRequired = true → Buyer can choose true/false (default to true)
-      const inspectionRequired = listing.inspectionRequired === false ? false : true;
+      // - If listing.inspectionRequired = true → Buyer can choose true/false (use requestInspection state)
+      const inspectionRequired = listing.inspectionRequired === false ? false : requestInspection;
       
       console.log('🔍 Order creation:', {
         listingId: listing._id,
@@ -523,6 +524,72 @@ export const ProductDetail: React.FC = () => {
                         <p className="text-xs text-yellow-700 mt-1">
                           Vui lòng chọn sản phẩm khác hoặc quay lại sau
                         </p>
+                      </div>
+                    )}
+
+                    {/* Inspection Option Section */}
+                    {!hasActiveOrder && listing?.status === 'PUBLISHED' && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-3">
+                        <div className="flex items-start gap-3">
+                          <ShieldCheck className="text-blue-600 mt-0.5 flex-shrink-0" size={20} />
+                          <div className="flex-1">
+                            <h4 className="font-bold text-sm text-blue-900 mb-2">
+                              Dịch vụ kiểm định chuyên nghiệp
+                            </h4>
+                            
+                            {listing.inspectionRequired ? (
+                              <>
+                                <p className="text-xs text-blue-800 mb-3">
+                                  Seller cho phép bạn lựa chọn dịch vụ kiểm định. Phí kiểm định: <span className="font-bold">500,000 VND</span>
+                                </p>
+                                
+                                <div className="space-y-2">
+                                  <label className="flex items-start gap-2 cursor-pointer group">
+                                    <input
+                                      type="radio"
+                                      name="inspection"
+                                      checked={requestInspection === true}
+                                      onChange={() => setRequestInspection(true)}
+                                      className="mt-0.5 cursor-pointer"
+                                    />
+                                    <div className="flex-1">
+                                      <span className="text-sm font-medium text-blue-900 group-hover:text-blue-700">
+                                        ✅ Có, tôi muốn thuê inspector kiểm định
+                                      </span>
+                                      <p className="text-xs text-blue-700 mt-0.5">
+                                        Inspector sẽ kiểm tra xe trước khi giao hàng (khuyến nghị)
+                                      </p>
+                                    </div>
+                                  </label>
+                                  
+                                  <label className="flex items-start gap-2 cursor-pointer group">
+                                    <input
+                                      type="radio"
+                                      name="inspection"
+                                      checked={requestInspection === false}
+                                      onChange={() => setRequestInspection(false)}
+                                      className="mt-0.5 cursor-pointer"
+                                    />
+                                    <div className="flex-1">
+                                      <span className="text-sm font-medium text-blue-900 group-hover:text-blue-700">
+                                        ⚠️ Không, tôi bỏ qua kiểm định
+                                      </span>
+                                      <p className="text-xs text-blue-700 mt-0.5">
+                                        Xe sẽ được giao trực tiếp mà không qua kiểm định
+                                      </p>
+                                    </div>
+                                  </label>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="bg-amber-50 border border-amber-200 rounded p-2">
+                                <p className="text-xs text-amber-800">
+                                  ⚠️ Seller không yêu cầu kiểm định cho listing này. Xe sẽ được giao trực tiếp mà không qua inspector.
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     )}
                     
