@@ -56,6 +56,7 @@ interface ListingData {
       reviewCount: number;
     };
     badge?: string;
+    planType?: string;
   } | null;
   inspectionRequired: boolean;
   inspectionScore?: number;
@@ -63,6 +64,8 @@ interface ListingData {
   createdAt: string;
   boostedUntil?: string;
   boostCount?: number;
+  sellerHasFreeInspection?: boolean;
+  sellerPlanType?: string;
 }
 
 export const ProductDetail: React.FC = () => {
@@ -288,6 +291,12 @@ export const ProductDetail: React.FC = () => {
       }
 
       const orderId = orderData.data._id;
+      const actualInspectionFee = orderData.data.financials?.inspectionFee || 0;
+      
+      // Show message about inspection fee
+      if (inspectionRequired && actualInspectionFee === 0) {
+        showToast('🎉 Miễn phí kiểm định! Seller có gói ưu đãi.', 'success');
+      }
       
       // Save orderId to localStorage for cancel handling
       localStorage.setItem('pendingOrderId', orderId);
@@ -539,9 +548,24 @@ export const ProductDetail: React.FC = () => {
                             
                             {listing.inspectionRequired ? (
                               <>
-                                <p className="text-xs text-blue-800 mb-3">
-                                  Seller cho phép bạn lựa chọn dịch vụ kiểm định. Phí kiểm định: <span className="font-bold">500,000 VND</span>
-                                </p>
+                                {listing.sellerHasFreeInspection ? (
+                                  <div className="bg-green-50 border-2 border-green-300 rounded-lg p-3 mb-3">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <span className="text-2xl">🎉</span>
+                                      <span className="font-bold text-green-900 text-sm">
+                                        MIỄN PHÍ KIỂM ĐỊNH!
+                                      </span>
+                                    </div>
+                                    <p className="text-xs text-green-800">
+                                      Seller {listing.sellerId?.planType || 'Premium'} tài trợ phí kiểm định cho bạn. 
+                                      Tiết kiệm <span className="font-bold">500,000 VND</span>!
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-blue-800 mb-3">
+                                    Seller cho phép bạn lựa chọn dịch vụ kiểm định. Phí kiểm định: <span className="font-bold">500,000 VND</span>
+                                  </p>
+                                )}
                                 
                                 <div className="space-y-2">
                                   <label className="flex items-start gap-2 cursor-pointer group">
@@ -554,7 +578,12 @@ export const ProductDetail: React.FC = () => {
                                     />
                                     <div className="flex-1">
                                       <span className="text-sm font-medium text-blue-900 group-hover:text-blue-700">
-                                        ✅ Có, tôi muốn thuê inspector kiểm định
+                                        ✅ Có, tôi muốn thuê inspector kiểm định 
+                                        {listing.sellerHasFreeInspection ? (
+                                          <span className="text-green-600"> (MIỄN PHÍ)</span>
+                                        ) : (
+                                          <span className="text-gray-600"> (+500,000 VND)</span>
+                                        )}
                                       </span>
                                       <p className="text-xs text-blue-700 mt-0.5">
                                         Inspector sẽ kiểm tra xe trước khi giao hàng (khuyến nghị)
@@ -573,6 +602,9 @@ export const ProductDetail: React.FC = () => {
                                     <div className="flex-1">
                                       <span className="text-sm font-medium text-blue-900 group-hover:text-blue-700">
                                         ⚠️ Không, tôi bỏ qua kiểm định
+                                        {!listing.sellerHasFreeInspection && (
+                                          <span className="text-gray-600"> (tiết kiệm 500,000 VND)</span>
+                                        )}
                                       </span>
                                       <p className="text-xs text-blue-700 mt-0.5">
                                         Xe sẽ được giao trực tiếp mà không qua kiểm định
@@ -580,12 +612,63 @@ export const ProductDetail: React.FC = () => {
                                     </div>
                                   </label>
                                 </div>
+
+                                {/* Price Breakdown */}
+                                <div className="mt-3 pt-3 border-t border-blue-200 text-xs space-y-1">
+                                  <div className="flex justify-between text-blue-800">
+                                    <span>Giá xe:</span>
+                                    <span className="font-medium">{formatPrice(bike.price)}</span>
+                                  </div>
+                                  <div className="flex justify-between text-blue-800">
+                                    <span>Phí kiểm định:</span>
+                                    <span className="font-medium">
+                                      {requestInspection ? (
+                                        listing.sellerHasFreeInspection ? (
+                                          <span className="text-green-600 font-bold">MIỄN PHÍ</span>
+                                        ) : (
+                                          '500,000 VND'
+                                        )
+                                      ) : (
+                                        '0 VND'
+                                      )}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between text-blue-800">
+                                    <span>Phí vận chuyển:</span>
+                                    <span className="font-medium">150,000 VND</span>
+                                  </div>
+                                  <div className="flex justify-between text-blue-900 font-bold pt-1 border-t border-blue-300">
+                                    <span>Tổng thanh toán:</span>
+                                    <span>
+                                      {formatPrice(
+                                        bike.price + 
+                                        (requestInspection && !listing.sellerHasFreeInspection ? 500000 : 0) + 
+                                        150000
+                                      )}
+                                    </span>
+                                  </div>
+                                </div>
                               </>
                             ) : (
                               <div className="bg-amber-50 border border-amber-200 rounded p-2">
-                                <p className="text-xs text-amber-800">
+                                <p className="text-xs text-amber-800 mb-2">
                                   ⚠️ Seller không yêu cầu kiểm định cho listing này. Xe sẽ được giao trực tiếp mà không qua inspector.
                                 </p>
+                                {/* Price Breakdown for non-inspection */}
+                                <div className="mt-2 pt-2 border-t border-amber-200 text-xs space-y-1">
+                                  <div className="flex justify-between text-amber-800">
+                                    <span>Giá xe:</span>
+                                    <span className="font-medium">{formatPrice(bike.price)}</span>
+                                  </div>
+                                  <div className="flex justify-between text-amber-800">
+                                    <span>Phí vận chuyển:</span>
+                                    <span className="font-medium">150,000 VND</span>
+                                  </div>
+                                  <div className="flex justify-between text-amber-900 font-bold pt-1 border-t border-amber-300">
+                                    <span>Tổng thanh toán:</span>
+                                    <span>{formatPrice(bike.price + 150000)}</span>
+                                  </div>
+                                </div>
                               </div>
                             )}
                           </div>
