@@ -219,9 +219,9 @@ export const ProductDetail: React.FC = () => {
     try {
       const user = JSON.parse(userStr);
       
-      // Check if user is buyer
-      if (user.role !== 'BUYER') {
-        showToast('Only buyers can purchase items', 'error');
+      // Allow both BUYER and SELLER to purchase (but not ADMIN or INSPECTOR)
+      if (user.role === 'ADMIN' || user.role === 'INSPECTOR') {
+        showToast('Admins and Inspectors cannot purchase items', 'error');
         return;
       }
 
@@ -511,9 +511,6 @@ export const ProductDetail: React.FC = () => {
                       className="w-full bg-accent hover:bg-red-600 text-white py-4 font-bold uppercase tracking-widest transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {orderLoading ? 'PROCESSING...' : listing?.status === 'SOLD' ? 'ĐÃ BÁN' : 'BUY NOW (ESCROW)'}
-                    </button>
-                    <button className="w-full border-2 border-black hover:bg-black hover:text-white text-black py-4 font-bold uppercase tracking-widest transition-colors">
-                        MAKE AN OFFER
                     </button>
                 </div>
                 

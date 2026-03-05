@@ -12,6 +12,8 @@ import { ForgotPassword } from './pages/ForgotPassword';
 import { Cart } from './pages/Cart';
 import { Sell } from './pages/Sell';
 import { UserProfile } from './pages/UserProfile';
+import { PaymentSuccess } from './pages/PaymentSuccess';
+import { PaymentCancel } from './pages/PaymentCancel';
 import { BuyerDashboard } from './pages/buyer/BuyerDashboard';
 import { BuyerOrders } from './pages/buyer/BuyerOrders';
 import { BuyerWishlist } from './pages/buyer/BuyerWishlist';
@@ -59,6 +61,10 @@ const App: React.FC = () => {
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/inspection" element={<InspectionService />} />
           <Route path="/messages" element={<Messages />} />
+          
+          {/* Payment Routes */}
+          <Route path="/payment/success" element={<PaymentSuccess />} />
+          <Route path="/payment/cancel" element={<PaymentCancel />} />
           
           {/* Auth Routes */}
           <Route path="/login" element={<Login />} />
