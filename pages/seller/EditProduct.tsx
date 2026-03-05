@@ -20,6 +20,7 @@ export const EditProduct: React.FC = () => {
     size: '',
     amount: '',
     videoUrl: '',
+    inspectionRequired: true,
   });
 
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
@@ -63,6 +64,7 @@ export const EditProduct: React.FC = () => {
             size: listing.generalInfo?.size || '',
             amount: listing.pricing?.amount?.toString() || '',
             videoUrl: listing.media?.videoUrl || '',
+            inspectionRequired: listing.inspectionRequired !== undefined ? listing.inspectionRequired : true,
           });
           
           // Set existing images
@@ -203,7 +205,7 @@ export const EditProduct: React.FC = () => {
           coordinates: [106.6297, 10.8231],
           address: 'Ho Chi Minh City',
         },
-        inspectionRequired: false,
+        inspectionRequired: formData.inspectionRequired,
       };
 
       const response = await fetch(`http://localhost:5000/api/listings/${id}`, {
@@ -324,6 +326,28 @@ export const EditProduct: React.FC = () => {
                 />
                 <p className="text-xs text-gray-500 mt-1">Example: 120000000 (120 million VND)</p>
               </div>
+            </div>
+
+            {/* Inspection Required */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <label className="flex items-start cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.inspectionRequired}
+                  onChange={(e) => setFormData(prev => ({ ...prev, inspectionRequired: e.target.checked }))}
+                  className="mt-1 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div className="ml-3">
+                  <span className="text-sm font-medium text-gray-900">Yêu cầu kiểm định (Inspection Required)</span>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Nếu bật, buyer sẽ phải trả thêm 500,000 VNĐ phí kiểm định. 
+                    Xe sẽ được inspector kiểm tra trước khi giao hàng, tăng độ tin cậy.
+                  </p>
+                  <p className="text-xs text-blue-700 mt-1 font-medium">
+                    ✓ Khuyến nghị bật để tăng uy tín và bảo vệ cả buyer lẫn seller
+                  </p>
+                </div>
+              </label>
             </div>
 
             {/* Brand & Model */}

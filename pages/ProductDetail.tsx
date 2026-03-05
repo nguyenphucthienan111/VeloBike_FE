@@ -73,6 +73,7 @@ export const ProductDetail: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [orderLoading, setOrderLoading] = useState(false);
+  const [hasActiveOrder, setHasActiveOrder] = useState(false);
   const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
@@ -271,6 +272,13 @@ export const ProductDetail: React.FC = () => {
           handleSessionExpired();
           return;
         }
+        
+        // Check if error is about existing order
+        if (orderData.message?.includes('đã có người đặt mua') || 
+            orderData.message?.includes('already')) {
+          setHasActiveOrder(true);
+        }
+        
         throw new Error(orderData.message || 'Failed to create order');
       }
 
@@ -473,6 +481,8 @@ export const ProductDetail: React.FC = () => {
                     {/* Availability badge */}
                     {listing.status === 'SOLD' ? (
                       <span className="text-xs font-bold bg-gray-500 text-white px-2 py-1 rounded">ĐÃ BÁN</span>
+                    ) : listing.status === 'RESERVED' ? (
+                      <span className="text-xs font-bold bg-amber-500 text-white px-2 py-1 rounded">ĐÃ CÓ NGƯỜI ĐẶT</span>
                     ) : listing.status === 'PUBLISHED' ? (
                       <span className="text-xs font-bold bg-green-600 text-white px-2 py-1 rounded">CÒN HÀNG</span>
                     ) : listing.status ? (
@@ -505,12 +515,27 @@ export const ProductDetail: React.FC = () => {
                 </div>
 
                 <div className="space-y-3">
+                    {hasActiveOrder && (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
+                        <p className="text-sm text-yellow-800 font-medium">
+                          ⚠️ Sản phẩm này đã có người đặt mua
+                        </p>
+                        <p className="text-xs text-yellow-700 mt-1">
+                          Vui lòng chọn sản phẩm khác hoặc quay lại sau
+                        </p>
+                      </div>
+                    )}
+                    
                     <button 
                       onClick={handleBuyNow}
-                      disabled={orderLoading || listing?.status !== 'PUBLISHED'}
+                      disabled={orderLoading || listing?.status !== 'PUBLISHED' || hasActiveOrder}
                       className="w-full bg-accent hover:bg-red-600 text-white py-4 font-bold uppercase tracking-widest transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {orderLoading ? 'PROCESSING...' : listing?.status === 'SOLD' ? 'ĐÃ BÁN' : 'BUY NOW (ESCROW)'}
+                        {orderLoading ? 'PROCESSING...' : 
+                         hasActiveOrder ? 'KHÔNG KHẢ DỤNG' :
+                         listing?.status === 'SOLD' ? 'ĐÃ BÁN' :
+                         listing?.status === 'RESERVED' ? 'ĐÃ CÓ NGƯỜI ĐẶT' :
+                         'BUY NOW (ESCROW)'}
                     </button>
                 </div>
                 

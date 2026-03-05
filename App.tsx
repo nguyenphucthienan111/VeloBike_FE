@@ -49,6 +49,7 @@ import { InspectionForm } from './pages/inspector/InspectionForm';
 import { MyInspections } from './pages/inspector/MyInspections';
 import { InspectionDetail } from './pages/inspector/InspectionDetail';
 import { InspectorProfile } from './pages/inspector/InspectorProfile';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 const App: React.FC = () => {
   return (
@@ -75,17 +76,49 @@ const App: React.FC = () => {
           <Route path="/profile" element={<UserProfile />} />
           
           {/* Buyer Routes */}
-          <Route path="/buyer/dashboard" element={<BuyerDashboard />} />
-          <Route path="/buyer/orders" element={<BuyerOrders />} />
-          <Route path="/buyer/wishlist" element={<BuyerWishlist />} />
-          <Route path="/buyer/profile" element={<BuyerProfile />} />
+          <Route path="/buyer/dashboard" element={
+            <ProtectedRoute allowedRoles={['BUYER', 'SELLER']}>
+              <BuyerDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/buyer/orders" element={
+            <ProtectedRoute allowedRoles={['BUYER', 'SELLER']}>
+              <BuyerOrders />
+            </ProtectedRoute>
+          } />
+          <Route path="/buyer/wishlist" element={
+            <ProtectedRoute allowedRoles={['BUYER', 'SELLER']}>
+              <BuyerWishlist />
+            </ProtectedRoute>
+          } />
+          <Route path="/buyer/profile" element={
+            <ProtectedRoute allowedRoles={['BUYER', 'SELLER']}>
+              <BuyerProfile />
+            </ProtectedRoute>
+          } />
           <Route path="/buyer/messages" element={<Navigate to="/messages" replace />} />
-          <Route path="/buyer/notifications" element={<BuyerNotifications />} />
-          <Route path="/buyer/payment-history" element={<BuyerPaymentHistory />} />
+          <Route path="/buyer/notifications" element={
+            <ProtectedRoute allowedRoles={['BUYER', 'SELLER']}>
+              <BuyerNotifications />
+            </ProtectedRoute>
+          } />
+          <Route path="/buyer/payment-history" element={
+            <ProtectedRoute allowedRoles={['BUYER', 'SELLER']}>
+              <BuyerPaymentHistory />
+            </ProtectedRoute>
+          } />
           
           {/* Seller Routes: KYC full page (không sidebar), còn lại dùng SellerLayout như Admin */}
-          <Route path="/seller/kyc" element={<SellerKyc />} />
-          <Route path="/seller" element={<SellerLayout />}>
+          <Route path="/seller/kyc" element={
+            <ProtectedRoute allowedRoles={['SELLER']}>
+              <SellerKyc />
+            </ProtectedRoute>
+          } />
+          <Route path="/seller" element={
+            <ProtectedRoute allowedRoles={['SELLER']}>
+              <SellerLayout />
+            </ProtectedRoute>
+          }>
             <Route index element={<Navigate to="/seller/dashboard" replace />} />
             <Route path="dashboard" element={<SellerDashboard />} />
             <Route path="inventory" element={<SellerInventory />} />
@@ -102,7 +135,11 @@ const App: React.FC = () => {
           </Route>
           
           {/* Admin Routes: sidebar cố định trái, nội dung đổi bên phải (không mở trang mới) */}
-          <Route path="/admin" element={<AdminLayout />}>
+          <Route path="/admin" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminLayout />
+            </ProtectedRoute>
+          }>
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="users" element={<AdminUsers />} />
@@ -115,12 +152,36 @@ const App: React.FC = () => {
           </Route>
           
           {/* Inspector Routes */}
-          <Route path="/inspector/dashboard" element={<InspectorDashboard />} />
-          <Route path="/inspector/pending" element={<PendingInspections />} />
-          <Route path="/inspector/inspect/:orderId" element={<InspectionForm />} />
-          <Route path="/inspector/history" element={<MyInspections />} />
-          <Route path="/inspector/inspection/:orderId" element={<InspectionDetail />} />
-          <Route path="/inspector/profile" element={<InspectorProfile />} />
+          <Route path="/inspector/dashboard" element={
+            <ProtectedRoute allowedRoles={['INSPECTOR']}>
+              <InspectorDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/inspector/pending" element={
+            <ProtectedRoute allowedRoles={['INSPECTOR']}>
+              <PendingInspections />
+            </ProtectedRoute>
+          } />
+          <Route path="/inspector/inspect/:orderId" element={
+            <ProtectedRoute allowedRoles={['INSPECTOR']}>
+              <InspectionForm />
+            </ProtectedRoute>
+          } />
+          <Route path="/inspector/history" element={
+            <ProtectedRoute allowedRoles={['INSPECTOR']}>
+              <MyInspections />
+            </ProtectedRoute>
+          } />
+          <Route path="/inspector/inspection/:orderId" element={
+            <ProtectedRoute allowedRoles={['INSPECTOR']}>
+              <InspectionDetail />
+            </ProtectedRoute>
+          } />
+          <Route path="/inspector/profile" element={
+            <ProtectedRoute allowedRoles={['INSPECTOR']}>
+              <InspectorProfile />
+            </ProtectedRoute>
+          } />
           
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

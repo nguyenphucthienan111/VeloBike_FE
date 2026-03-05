@@ -19,6 +19,7 @@ export const AddProduct: React.FC = () => {
     size: '',
     amount: '',
     videoUrl: '',
+    inspectionRequired: true, // Default to true for safety
   });
 
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
@@ -78,7 +79,18 @@ export const AddProduct: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title || !formData.description || !formData.brand || !formData.model || !formData.amount || !formData.size) {
+    // Frontend validation
+    if (!formData.title || formData.title.length < 5 || formData.title.length > 200) {
+      showToast('Title must be between 5 and 200 characters', 'warning');
+      return;
+    }
+
+    if (!formData.description || formData.description.length < 10) {
+      showToast('Description must be at least 10 characters', 'warning');
+      return;
+    }
+
+    if (!formData.brand || !formData.model || !formData.amount || !formData.size) {
       showToast('Please fill in all required fields', 'warning');
       return;
     }
@@ -128,7 +140,7 @@ export const AddProduct: React.FC = () => {
           coordinates: [106.6297, 10.8231], // Default to Ho Chi Minh City, should be from geolocation or form
           address: 'Ho Chi Minh City', // Default address, should be from form
         },
-        inspectionRequired: false,
+        inspectionRequired: formData.inspectionRequired,
       };
 
       const response = await fetch(`${API_BASE_URL}/listings`, {
@@ -153,7 +165,16 @@ export const AddProduct: React.FC = () => {
       } else {
         const error = await response.json();
         const errorMessage = error.message || error.error || 'Error creating listing';
-        showToast(errorMessage, 'error');
+        
+        // Log validation errors if available
+        if (error.errors && Array.isArray(error.errors)) {
+          console.error('Validation Errors:', error.errors);
+          const errorDetails = error.errors.map((e: any) => e.message || e).join(', ');
+          showToast(`${errorMessage}: ${errorDetails}`, 'error');
+        } else {
+          showToast(errorMessage, 'error');
+        }
+        
         console.error('API Error:', error);
       }
     } catch (error: any) {
@@ -190,7 +211,10 @@ export const AddProduct: React.FC = () => {
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 required
+                minLength={5}
+                maxLength={200}
               />
+              <p className="text-xs text-gray-500 mt-1">5-200 characters</p>
             </div>
 
             {/* Description */}
@@ -204,7 +228,9 @@ export const AddProduct: React.FC = () => {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-y"
                 rows={4}
                 required
+                minLength={10}
               />
+              <p className="text-xs text-gray-500 mt-1">At least 10 characters</p>
             </div>
 
             {/* Category & Price */}
@@ -238,6 +264,28 @@ export const AddProduct: React.FC = () => {
                 />
                 <p className="text-xs text-gray-500 mt-1">Example: 120000000 (120 million VND)</p>
               </div>
+            </div>
+
+            {/* Inspection Required */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <label className="flex items-start cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.inspectionRequired}
+                  onChange={(e) => setFormData(prev => ({ ...prev, inspectionRequired: e.target.checked }))}
+                  className="mt-1 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div className="ml-3">
+                  <span className="text-sm font-medium text-gray-900 cursor-pointer">Yêu cầu kiểm định (Inspection Required)</span>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Nếu bật, buyer sẽ phải trả thêm 500,000 VNĐ phí kiểm định. 
+                    Xe sẽ được inspector kiểm tra trước khi giao hàng, tăng độ tin cậy.
+                  </p>
+                  <p className="text-xs text-blue-700 mt-1 font-medium">
+                    ✓ Khuyến nghị bật để tăng uy tín và bảo vệ cả buyer lẫn seller
+                  </p>
+                </div>
+              </label>
             </div>
 
             {/* Brand & Model */}
