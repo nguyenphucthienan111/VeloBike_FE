@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, Shield, RefreshCw, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { MOCK_LISTINGS } from '../constants';
 import { BikeCard } from '../components/BikeCard';
+import { useListings } from '../hooks/useListings';
+import { BikeListing, InspectionStatus } from '../types';
 
 export const Home: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const { listings, loading: listingsLoading, fetch } = useListings();
 
   useEffect(() => {
     // Check if user is logged in
     const token = localStorage.getItem('accessToken');
     setIsAuthenticated(!!token);
-    
+
     // Get user role (no redirect: seller cũng xem được trang Home như buyer)
     const userData = localStorage.getItem('user');
     if (userData) {
@@ -24,6 +26,47 @@ export const Home: React.FC = () => {
       }
     }
   }, []);
+
+  // Fetch real listings for Trending Arrivals (no mock)
+  useEffect(() => {
+    fetch({ limit: 6, page: 1 });
+  }, [fetch]);
+
+  const mapListingsToBikeCards = (items: any[]): BikeListing[] => {
+    return items
+      .filter((l) => l && (l._id || l.id) && l.status === 'PUBLISHED')
+      .map((listing) => {
+        const hasInspectionScore = typeof listing.inspectionScore === 'number' && listing.inspectionScore > 0;
+        let sellerName = 'Unknown';
+        let isVerified = false;
+        if (listing.sellerId && typeof listing.sellerId === 'object') {
+          sellerName = listing.sellerId.fullName || 'Unknown';
+          isVerified = !!listing.sellerId.badge;
+        }
+        return {
+          id: listing._id || listing.id || '',
+          title: listing.title || 'Untitled',
+          brand: listing.generalInfo?.brand || 'Unknown',
+          model: listing.generalInfo?.model || 'Unknown',
+          year: listing.generalInfo?.year || 0,
+          price: listing.pricing?.amount || 0,
+          originalPrice: listing.pricing?.originalPrice || listing.pricing?.amount || 0,
+          type: (listing.type || 'ROAD') as any,
+          size: listing.generalInfo?.size || 'M',
+          conditionScore: hasInspectionScore ? listing.inspectionScore : 0,
+          inspectionStatus: (hasInspectionScore ? 'PASSED' : 'PENDING') as InspectionStatus,
+          inspectionRequired: !!listing.inspectionRequired,
+          imageUrl: listing.media?.thumbnails?.[0] || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect fill='%23e5e7eb' width='400' height='400'/%3E%3Ctext fill='%239ca3af' x='200' y='200' font-size='20' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E",
+          location: listing.location?.address || 'Unknown',
+          specs: { frameMaterial: '', groupset: listing.specs?.groupset || 'Standard', wheelset: '', brakeType: 'Disc' },
+          geometry: {},
+          description: listing.description || '',
+          sellerName,
+          isVerified,
+        };
+      })
+      .filter((b) => b.id);
+  };
 
   return (
     <div className="bg-white">
@@ -119,9 +162,13 @@ export const Home: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {MOCK_LISTINGS.map(bike => (
-                    <BikeCard key={bike.id} bike={bike} />
-                ))}
+                {listingsLoading ? (
+                    <div className="col-span-full py-12 text-center text-gray-500">Đang tải...</div>
+                ) : (
+                    mapListingsToBikeCards(listings).map(bike => (
+                        <BikeCard key={bike.id} bike={bike} />
+                    ))
+                )}
             </div>
         </div>
       </section>

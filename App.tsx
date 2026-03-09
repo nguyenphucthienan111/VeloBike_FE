@@ -14,6 +14,7 @@ import { Sell } from './pages/Sell';
 import { UserProfile } from './pages/UserProfile';
 import { PaymentSuccess } from './pages/PaymentSuccess';
 import { PaymentCancel } from './pages/PaymentCancel';
+import { Checkout } from './pages/Checkout';
 import { BuyerDashboard } from './pages/buyer/BuyerDashboard';
 import { BuyerOrders } from './pages/buyer/BuyerOrders';
 import { BuyerWishlist } from './pages/buyer/BuyerWishlist';
@@ -51,30 +52,32 @@ import { InspectionDetail } from './pages/inspector/InspectionDetail';
 import { InspectorProfile } from './pages/inspector/InspectorProfile';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { SellerGate } from './components/SellerGate';
+import { BuyerSellerOnlyGate } from './components/BuyerSellerOnlyGate';
 
 const App: React.FC = () => {
   return (
     <HashRouter>
       <Layout>
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/bike/:id" element={<ProductDetail />} />
-          <Route path="/product/:id" element={<ProductDetail />} />
-          <Route path="/inspection" element={<InspectionService />} />
-          <Route path="/messages" element={<Messages />} />
+          <Route path="/" element={<BuyerSellerOnlyGate><Home /></BuyerSellerOnlyGate>} />
+          <Route path="/marketplace" element={<BuyerSellerOnlyGate><Marketplace /></BuyerSellerOnlyGate>} />
+          <Route path="/bike/:id" element={<BuyerSellerOnlyGate><ProductDetail /></BuyerSellerOnlyGate>} />
+          <Route path="/product/:id" element={<BuyerSellerOnlyGate><ProductDetail /></BuyerSellerOnlyGate>} />
+          <Route path="/checkout/:listingId" element={<BuyerSellerOnlyGate><Checkout /></BuyerSellerOnlyGate>} />
+          <Route path="/inspection" element={<BuyerSellerOnlyGate><InspectionService /></BuyerSellerOnlyGate>} />
+          <Route path="/messages" element={<BuyerSellerOnlyGate><Messages /></BuyerSellerOnlyGate>} />
           
           {/* Payment Routes */}
-          <Route path="/payment/success" element={<PaymentSuccess />} />
-          <Route path="/payment/cancel" element={<PaymentCancel />} />
+          <Route path="/payment/success" element={<BuyerSellerOnlyGate><PaymentSuccess /></BuyerSellerOnlyGate>} />
+          <Route path="/payment/cancel" element={<BuyerSellerOnlyGate><PaymentCancel /></BuyerSellerOnlyGate>} />
           
           {/* Auth Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/sell" element={<Sell />} />
-          <Route path="/profile" element={<UserProfile />} />
+          <Route path="/cart" element={<BuyerSellerOnlyGate><Cart /></BuyerSellerOnlyGate>} />
+          <Route path="/sell" element={<BuyerSellerOnlyGate><Sell /></BuyerSellerOnlyGate>} />
+          <Route path="/profile" element={<BuyerSellerOnlyGate><UserProfile /></BuyerSellerOnlyGate>} />
           
           {/* Buyer Routes */}
           <Route path="/buyer/dashboard" element={

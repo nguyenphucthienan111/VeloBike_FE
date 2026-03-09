@@ -3,7 +3,6 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ShieldCheck, Ruler, Truck, ChevronLeft, AlertCircle, CheckCircle, Eye, MapPin } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { API_BASE_URL } from '../constants';
-import { handleSessionExpired } from '../utils/auth';
 import { Toast, useToast } from '../components/Toast';
 
 interface ListingData {
@@ -43,6 +42,11 @@ interface ListingData {
     travelRear?: string;
     wheelSize?: string;
     weight?: number;
+    motor?: string;
+    battery?: string;
+    range?: string;
+    maxSpeed?: string;
+    odometer?: number;
   };
   geometry?: {
     stack?: number;
@@ -63,6 +67,7 @@ interface ListingData {
   views: number;
   createdAt: string;
   boostedUntil?: string;
+  updatedAt?: string;
   boostCount?: number;
   sellerHasFreeInspection?: boolean;
   sellerPlanType?: string;
@@ -75,39 +80,17 @@ export const ProductDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [orderLoading, setOrderLoading] = useState(false);
-  const [hasActiveOrder, setHasActiveOrder] = useState(false);
-  const [requestInspection, setRequestInspection] = useState(true); // Default to true if available
-  const [shippingAddress, setShippingAddress] = useState({
-    fullName: '',
-    phone: '',
-    street: '',
-    district: '',
-    city: '',
-    province: '',
-    zipCode: '',
-  });
   const { toast, showToast, hideToast } = useToast();
 
-  // Pre-fill shipping address from user profile
-  useEffect(() => {
+  // Chỉ BUYER và SELLER mua hàng được — Admin/Inspector không
+  const canPurchase = (() => {
     const userStr = localStorage.getItem('user');
-    if (!userStr) return;
+    if (!userStr) return true;
     try {
-      const user = JSON.parse(userStr);
-      if (!user.fullName) return;
-      setShippingAddress(prev => ({
-        ...prev,
-        fullName: user.fullName || prev.fullName,
-        phone: user.phone || prev.phone,
-        street: user.address?.street || prev.street,
-        district: user.address?.district || prev.district,
-        city: user.address?.city || prev.city,
-        province: user.address?.province || prev.province,
-        zipCode: user.address?.zipCode || prev.zipCode,
-      }));
-    } catch (_) {}
-  }, []);
+      const u = JSON.parse(userStr);
+      return u?.role === 'BUYER' || u?.role === 'SELLER';
+    } catch { return true; }
+  })();
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -155,6 +138,12 @@ export const ProductDetail: React.FC = () => {
 
     fetchListing();
   }, [id]);
+
+  // Tăng view count khi user xem trang (BE: PUT /listings/:id/view)
+  useEffect(() => {
+    if (!id || !listing?._id) return;
+    fetch(`${API_BASE_URL}/listings/${id}/view`, { method: 'PUT' }).catch(() => {});
+  }, [id, listing?._id]);
 
   if (loading) {
     return (
@@ -224,194 +213,28 @@ export const ProductDetail: React.FC = () => {
     return conditionMap[condition || 'GOOD'] || condition || 'Good';
   };
 
-  // Handle Buy Now (Escrow) button
-  const handleBuyNow = async () => {
-    // Check authentication
+  const formatListedAt = (dateStr?: string) => {
+    if (!dateStr) return null;
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return 'Hôm nay';
+    if (diffDays === 1) return 'Hôm qua';
+    if (diffDays < 7) return `${diffDays} ngày trước`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} tuần trước`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} tháng trước`;
+    return `${Math.floor(diffDays / 365)} năm trước`;
+  };
+
+  const handleBuyNow = () => {
     const token = localStorage.getItem('accessToken');
-    const userStr = localStorage.getItem('user');
-    
-    if (!token || !userStr) {
-      showToast('Please login to purchase', 'warning');
-      setTimeout(() => {
-        navigate('/login');
-      }, 1500);
+    if (!token) {
+      showToast('Vui lòng đăng nhập để mua hàng', 'warning');
+      navigate('/login', { state: { from: `/checkout/${listing._id}` } });
       return;
     }
-
-    // Validate token format
-    if (token.trim() === '' || token === 'null' || token === 'undefined') {
-      showToast('Invalid authentication token. Please login again', 'error');
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('user');
-      setTimeout(() => {
-        navigate('/login');
-      }, 1500);
-      return;
-    }
-
-    try {
-      const user = JSON.parse(userStr);
-      
-      // Allow both BUYER and SELLER to purchase (but not ADMIN or INSPECTOR)
-      if (user.role === 'ADMIN' || user.role === 'INSPECTOR') {
-        showToast('Admins and Inspectors cannot purchase items', 'error');
-        return;
-      }
-
-      // Check if listing is available
-      if (listing?.status !== 'PUBLISHED') {
-        showToast('This item is not available for purchase', 'error');
-        return;
-      }
-
-      // Check if user is trying to buy their own listing
-      if (listing?.sellerId?._id === user.id) {
-        showToast('You cannot buy your own listing', 'error');
-        return;
-      }
-
-      // Validate shipping address
-      const { fullName, phone, street, district, city } = shippingAddress;
-      if (!fullName?.trim() || !phone?.trim() || !street?.trim() || !district?.trim() || !city?.trim()) {
-        showToast('Vui lòng nhập đủ địa chỉ giao hàng (Tên, SĐT, Đường, Quận/Huyện, TP)', 'warning');
-        return;
-      }
-
-      setOrderLoading(true);
-      showToast('Creating order...', 'info');
-
-      // Step 1: Create order
-      // Logic theo BE:
-      // - If listing.inspectionRequired = false → Buyer MUST send false (cannot request inspection)
-      // - If listing.inspectionRequired = true → Buyer can choose true/false (use requestInspection state)
-      const inspectionRequired = listing.inspectionRequired === false ? false : requestInspection;
-      
-      console.log('🔍 Order creation:', {
-        listingId: listing._id,
-        listingInspectionRequired: listing.inspectionRequired,
-        sendingInspectionRequired: inspectionRequired,
-      });
-
-      const orderResponse = await fetch(`${API_BASE_URL}/orders`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token.trim()}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          listingId: listing._id,
-          inspectionRequired: inspectionRequired,
-        }),
-      });
-
-      const orderData = await orderResponse.json();
-
-      if (!orderResponse.ok) {
-        if (orderResponse.status === 401) {
-          handleSessionExpired();
-          return;
-        }
-        
-        // Check if error is about existing order
-        if (orderData.message?.includes('đã có người đặt mua') || 
-            orderData.message?.includes('already')) {
-          setHasActiveOrder(true);
-        }
-        
-        throw new Error(orderData.message || 'Failed to create order');
-      }
-
-      if (!orderData.success || !orderData.data) {
-        throw new Error(orderData.message || 'Failed to create order');
-      }
-
-      const orderId = orderData.data._id;
-      const actualInspectionFee = orderData.data.financials?.inspectionFee || 0;
-      
-      // Show message about inspection fee
-      if (inspectionRequired && actualInspectionFee === 0) {
-        showToast('🎉 Miễn phí kiểm định! Seller có gói ưu đãi.', 'success');
-      }
-      
-      // Save orderId to localStorage for cancel handling
-      localStorage.setItem('pendingOrderId', orderId);
-      
-      // Step 2: Update shipping address
-      const shippingPayload = {
-        fullName: shippingAddress.fullName.trim(),
-        phone: shippingAddress.phone.trim(),
-        street: shippingAddress.street.trim(),
-        district: shippingAddress.district.trim(),
-        city: shippingAddress.city.trim(),
-        ...(shippingAddress.province?.trim() && { province: shippingAddress.province.trim() }),
-        ...(shippingAddress.zipCode?.trim() && { zipCode: shippingAddress.zipCode.trim() }),
-      };
-      const addressResponse = await fetch(`${API_BASE_URL}/orders/${orderId}/shipping-address`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token.trim()}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ shippingAddress: shippingPayload }),
-      });
-      if (!addressResponse.ok) {
-        const addrErr = await addressResponse.json().catch(() => ({}));
-        if (addressResponse.status === 401) {
-          handleSessionExpired();
-          return;
-        }
-        throw new Error(addrErr.message || 'Failed to update shipping address');
-      }
-      
-      showToast('Order created! Redirecting to payment...', 'success');
-
-      // Step 3: Create payment link
-      const paymentResponse = await fetch(`${API_BASE_URL}/payment/create-link`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token.trim()}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          orderId: orderId,
-        }),
-      });
-
-      const paymentData = await paymentResponse.json();
-
-      if (!paymentResponse.ok) {
-        if (paymentResponse.status === 401) {
-          handleSessionExpired();
-          return;
-        }
-        
-        // Handle PayOS configuration errors
-        if (paymentData.message?.includes('signature') || 
-            paymentData.message?.includes('PayOS') || 
-            paymentData.message?.includes('payment signature')) {
-          showToast('Payment service configuration error. Please contact administrator.', 'error');
-          console.error('PayOS error:', paymentData.message);
-          console.error('This error usually means PayOS credentials are missing or invalid in backend .env file');
-          return;
-        }
-        
-        throw new Error(paymentData.message || 'Failed to create payment link');
-      }
-
-      if (!paymentData.success || !paymentData.paymentLink) {
-        throw new Error(paymentData.message || 'Failed to create payment link');
-      }
-
-      // Step 4: Redirect to payment link
-      window.location.href = paymentData.paymentLink;
-
-    } catch (err: any) {
-      console.error('Error in handleBuyNow:', err);
-      showToast(err.message || 'Failed to process purchase', 'error');
-    } finally {
-      setOrderLoading(false);
-    }
+    navigate(`/checkout/${listing._id}`);
   };
 
   const mainImage = bike.images[selectedImageIndex] || bike.imageUrl;
@@ -442,28 +265,30 @@ export const ProductDetail: React.FC = () => {
              )}
           </div>
           
-          {/* Thumbnail Gallery */}
-          {bike.images.length > 1 ? (
+          {/* Thumbnail Gallery - chỉ dùng ảnh từ API, không mock/picsum */}
+          {bike.images.length > 0 && (
             <div className="grid grid-cols-4 gap-4">
               {bike.images.map((img, index) => (
-                <div 
+                <div
                   key={index}
                   className={`aspect-square bg-gray-100 cursor-pointer hover:opacity-80 transition-opacity border-2 ${
                     selectedImageIndex === index ? 'border-accent' : 'border-transparent'
                   }`}
                   onClick={() => setSelectedImageIndex(index)}
                 >
-                  <img src={img} alt={`${bike.title} ${index + 1}`} className="w-full h-full object-cover"/>
+                  <img src={img} alt={`${bike.title} ${index + 1}`} className="w-full h-full object-cover" />
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="grid grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="aspect-square bg-gray-100 cursor-pointer hover:opacity-80 transition-opacity">
-                  <img src={`https://picsum.photos/400?random=${i}`} className="w-full h-full object-cover"/>
-                </div>
-              ))}
+          )}
+
+          {/* Video - nếu có media.videoUrl từ BE */}
+          {listing.media?.videoUrl && (
+            <div className="mt-12 border border-gray-100 p-8 rounded-sm">
+              <h2 className="text-2xl font-bold mb-4">Video</h2>
+              <div className="aspect-video bg-black rounded overflow-hidden">
+                <video src={listing.media.videoUrl} controls className="w-full h-full object-contain" />
+              </div>
             </div>
           )}
 
@@ -516,13 +341,135 @@ export const ProductDetail: React.FC = () => {
                )}
             </div>
           )}
+
+          {/* Technical Specs - chuyển sang cột trái */}
+          {(listing.specs?.frameMaterial || listing.specs?.groupset || listing.specs?.wheelset ||
+            listing.specs?.brakeType || listing.specs?.suspensionType || listing.specs?.travelFront ||
+            listing.specs?.wheelSize || listing.specs?.weight || listing.specs?.motor ||
+            listing.specs?.battery || listing.specs?.range || listing.specs?.maxSpeed ||
+            listing.specs?.odometer != null) && (
+          <div className="mt-12 border border-gray-100 p-8 rounded-sm">
+            <h2 className="text-2xl font-bold mb-4">Technical Specifications</h2>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
+              {listing.specs?.frameMaterial && (
+                <>
+                  <div className="text-gray-500">Frame</div>
+                  <div className="font-medium">{listing.specs.frameMaterial}</div>
+                </>
+              )}
+              {listing.specs?.groupset && (
+                <>
+                  <div className="text-gray-500">Groupset</div>
+                  <div className="font-medium">{listing.specs.groupset}</div>
+                </>
+              )}
+              {listing.specs?.wheelset && (
+                <>
+                  <div className="text-gray-500">Wheels</div>
+                  <div className="font-medium">{listing.specs.wheelset}</div>
+                </>
+              )}
+              {listing.specs?.brakeType && (
+                <>
+                  <div className="text-gray-500">Brakes</div>
+                  <div className="font-medium">{listing.specs.brakeType}</div>
+                </>
+              )}
+              {listing.specs?.suspensionType && (
+                <>
+                  <div className="text-gray-500">Suspension</div>
+                  <div className="font-medium">{listing.specs.suspensionType}</div>
+                </>
+              )}
+              {listing.specs?.travelFront && listing.specs?.travelRear && (
+                <>
+                  <div className="text-gray-500">Travel</div>
+                  <div className="font-medium">{listing.specs.travelFront} F / {listing.specs.travelRear} R</div>
+                </>
+              )}
+              {listing.specs?.wheelSize && (
+                <>
+                  <div className="text-gray-500">Wheel Size</div>
+                  <div className="font-medium">{listing.specs.wheelSize}"</div>
+                </>
+              )}
+              {listing.specs?.weight && (
+                <>
+                  <div className="text-gray-500">Weight</div>
+                  <div className="font-medium">{listing.specs.weight} kg</div>
+                </>
+              )}
+              {listing.specs?.motor && (
+                <>
+                  <div className="text-gray-500">Motor</div>
+                  <div className="font-medium">{listing.specs.motor}</div>
+                </>
+              )}
+              {listing.specs?.battery && (
+                <>
+                  <div className="text-gray-500">Battery</div>
+                  <div className="font-medium">{listing.specs.battery}</div>
+                </>
+              )}
+              {listing.specs?.range && (
+                <>
+                  <div className="text-gray-500">Range</div>
+                  <div className="font-medium">{listing.specs.range}</div>
+                </>
+              )}
+              {listing.specs?.maxSpeed && (
+                <>
+                  <div className="text-gray-500">Max Speed</div>
+                  <div className="font-medium">{listing.specs.maxSpeed}</div>
+                </>
+              )}
+              {listing.specs?.odometer != null && (
+                <>
+                  <div className="text-gray-500">Odometer</div>
+                  <div className="font-medium">{listing.specs.odometer} km</div>
+                </>
+              )}
+            </div>
+          </div>
+          )}
+
+          {/* Geometry Chart - chuyển sang cột trái */}
+          {geometryData.length > 0 && (
+            <div className="mt-12 border border-gray-100 p-8 rounded-sm">
+              <h2 className="text-2xl font-bold mb-4 flex items-center gap-2"><Ruler size={20}/> Geometry</h2>
+              <div className="h-48 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={geometryData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                    <XAxis type="number" hide />
+                    <YAxis dataKey="name" type="category" width={60} tick={{fontSize: 10}} />
+                    <Tooltip cursor={{fill: 'transparent'}} contentStyle={{fontSize: '12px'}} />
+                    <Bar dataKey="value" barSize={20} fill="#111" radius={[0, 4, 4, 0]}>
+                      {geometryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={index === 0 ? '#EF4444' : '#111'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Right Column: details & Action */}
-        <div className="lg:col-span-4 space-y-8">
+        {/* Right Column: details & Action - sticky trên desktop */}
+        <div className="lg:col-span-4">
+          <div className="lg:sticky lg:top-20 space-y-6">
             <div>
-                <div className="text-sm text-gray-400 mb-1">{bike.year} • {bike.type}</div>
-                <h1 className="text-3xl font-extrabold leading-tight mb-2">{bike.title}</h1>
+                {/* Brand / Model rõ ràng */}
+                {(listing.generalInfo?.brand || listing.generalInfo?.model) && (
+                  <div className="text-sm text-gray-500 mb-1">
+                    {listing.generalInfo.brand} {listing.generalInfo.model}
+                    {bike.year && ` • ${bike.year}`} • {bike.type}
+                  </div>
+                )}
+                {!listing.generalInfo?.brand && !listing.generalInfo?.model && (
+                  <div className="text-sm text-gray-400 mb-1">{bike.year} • {bike.type}</div>
+                )}
+                <h1 className="text-2xl lg:text-3xl font-extrabold leading-tight mb-2">{bike.title}</h1>
                 
                 {/* Seller Info */}
                 {listing.sellerId && (
@@ -538,9 +485,9 @@ export const ProductDetail: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    {listing.sellerId.reputation && (
+                    {(listing.sellerId.reputation && (typeof listing.sellerId.reputation === 'object')) && (
                       <div className="text-xs text-gray-500">
-                        ⭐ {listing.sellerId.reputation.score}/5 ({listing.sellerId.reputation.reviewCount} reviews)
+                        ⭐ {(listing.sellerId.reputation as { score?: number; reviewCount?: number }).score ?? 0}/5 ({(listing.sellerId.reputation as { score?: number; reviewCount?: number }).reviewCount ?? 0} reviews)
                       </div>
                     )}
                   </div>
@@ -561,8 +508,8 @@ export const ProductDetail: React.FC = () => {
                     ) : null}
                 </div>
 
-                {/* Views & Boost Info */}
-                <div className="flex items-center gap-4 mb-6 text-xs text-gray-500">
+                {/* Views, Boost, Listed at */}
+                <div className="flex flex-wrap items-center gap-4 mb-6 text-xs text-gray-500">
                   <div className="flex items-center gap-1">
                     <Eye size={14} />
                     <span>{listing.views || 0} views</span>
@@ -571,6 +518,9 @@ export const ProductDetail: React.FC = () => {
                     <div className="text-accent font-semibold">
                       ⚡ Boosted {listing.boostCount}x
                     </div>
+                  )}
+                  {formatListedAt(listing.createdAt) && (
+                    <span>Đăng {formatListedAt(listing.createdAt)}</span>
                   )}
                 </div>
                 
@@ -586,232 +536,30 @@ export const ProductDetail: React.FC = () => {
                 </div>
 
                 <div className="space-y-3">
-                    {hasActiveOrder && (
-                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
-                        <p className="text-sm text-yellow-800 font-medium">
-                          ⚠️ Sản phẩm này đã có người đặt mua
+                    {!canPurchase && listing?.status === 'PUBLISHED' && (
+                      <div className="bg-gray-100 border border-gray-200 rounded-lg p-4 mb-3">
+                        <p className="text-sm text-gray-700 font-medium">
+                          Tài khoản Admin/Inspector không thể mua hàng.
                         </p>
-                        <p className="text-xs text-yellow-700 mt-1">
-                          Vui lòng chọn sản phẩm khác hoặc quay lại sau
+                        <p className="text-xs text-gray-500 mt-1">
+                          Đăng nhập bằng tài khoản Buyer hoặc Seller để đặt mua.
                         </p>
                       </div>
                     )}
-
-                    {/* Inspection Option Section */}
-                    {!hasActiveOrder && listing?.status === 'PUBLISHED' && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-3">
-                        <div className="flex items-start gap-3">
-                          <ShieldCheck className="text-blue-600 mt-0.5 flex-shrink-0" size={20} />
-                          <div className="flex-1">
-                            <h4 className="font-bold text-sm text-blue-900 mb-2">
-                              Dịch vụ kiểm định chuyên nghiệp
-                            </h4>
-                            
-                            {listing.inspectionRequired ? (
-                              <>
-                                {listing.sellerHasFreeInspection ? (
-                                  <div className="bg-green-50 border-2 border-green-300 rounded-lg p-3 mb-3">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <span className="text-2xl">🎉</span>
-                                      <span className="font-bold text-green-900 text-sm">
-                                        MIỄN PHÍ KIỂM ĐỊNH!
-                                      </span>
-                                    </div>
-                                    <p className="text-xs text-green-800">
-                                      Seller {listing.sellerId?.planType || 'Premium'} tài trợ phí kiểm định cho bạn. 
-                                      Tiết kiệm <span className="font-bold">500,000 VND</span>!
-                                    </p>
-                                  </div>
-                                ) : (
-                                  <p className="text-xs text-blue-800 mb-3">
-                                    Seller cho phép bạn lựa chọn dịch vụ kiểm định. Phí kiểm định: <span className="font-bold">500,000 VND</span>
-                                  </p>
-                                )}
-                                
-                                <div className="space-y-2">
-                                  <label className="flex items-start gap-2 cursor-pointer group">
-                                    <input
-                                      type="radio"
-                                      name="inspection"
-                                      checked={requestInspection === true}
-                                      onChange={() => setRequestInspection(true)}
-                                      className="mt-0.5 cursor-pointer"
-                                    />
-                                    <div className="flex-1">
-                                      <span className="text-sm font-medium text-blue-900 group-hover:text-blue-700">
-                                        ✅ Có, tôi muốn thuê inspector kiểm định 
-                                        {listing.sellerHasFreeInspection ? (
-                                          <span className="text-green-600"> (MIỄN PHÍ)</span>
-                                        ) : (
-                                          <span className="text-gray-600"> (+500,000 VND)</span>
-                                        )}
-                                      </span>
-                                      <p className="text-xs text-blue-700 mt-0.5">
-                                        Inspector sẽ kiểm tra xe trước khi giao hàng (khuyến nghị)
-                                      </p>
-                                    </div>
-                                  </label>
-                                  
-                                  <label className="flex items-start gap-2 cursor-pointer group">
-                                    <input
-                                      type="radio"
-                                      name="inspection"
-                                      checked={requestInspection === false}
-                                      onChange={() => setRequestInspection(false)}
-                                      className="mt-0.5 cursor-pointer"
-                                    />
-                                    <div className="flex-1">
-                                      <span className="text-sm font-medium text-blue-900 group-hover:text-blue-700">
-                                        ⚠️ Không, tôi bỏ qua kiểm định
-                                        {!listing.sellerHasFreeInspection && (
-                                          <span className="text-gray-600"> (tiết kiệm 500,000 VND)</span>
-                                        )}
-                                      </span>
-                                      <p className="text-xs text-blue-700 mt-0.5">
-                                        Xe sẽ được giao trực tiếp mà không qua kiểm định
-                                      </p>
-                                    </div>
-                                  </label>
-                                </div>
-
-                                {/* Price Breakdown */}
-                                <div className="mt-3 pt-3 border-t border-blue-200 text-xs space-y-1">
-                                  <div className="flex justify-between text-blue-800">
-                                    <span>Giá xe:</span>
-                                    <span className="font-medium">{formatPrice(bike.price)}</span>
-                                  </div>
-                                  <div className="flex justify-between text-blue-800">
-                                    <span>Phí kiểm định:</span>
-                                    <span className="font-medium">
-                                      {requestInspection ? (
-                                        listing.sellerHasFreeInspection ? (
-                                          <span className="text-green-600 font-bold">MIỄN PHÍ</span>
-                                        ) : (
-                                          '500,000 VND'
-                                        )
-                                      ) : (
-                                        '0 VND'
-                                      )}
-                                    </span>
-                                  </div>
-                                  <div className="flex justify-between text-blue-800">
-                                    <span>Phí vận chuyển:</span>
-                                    <span className="font-medium">150,000 VND</span>
-                                  </div>
-                                  <div className="flex justify-between text-blue-900 font-bold pt-1 border-t border-blue-300">
-                                    <span>Tổng thanh toán:</span>
-                                    <span>
-                                      {formatPrice(
-                                        bike.price + 
-                                        (requestInspection && !listing.sellerHasFreeInspection ? 500000 : 0) + 
-                                        150000
-                                      )}
-                                    </span>
-                                  </div>
-                                </div>
-                              </>
-                            ) : (
-                              <div className="bg-amber-50 border border-amber-200 rounded p-2">
-                                <p className="text-xs text-amber-800 mb-2">
-                                  ⚠️ Seller không yêu cầu kiểm định cho listing này. Xe sẽ được giao trực tiếp mà không qua inspector.
-                                </p>
-                                {/* Price Breakdown for non-inspection */}
-                                <div className="mt-2 pt-2 border-t border-amber-200 text-xs space-y-1">
-                                  <div className="flex justify-between text-amber-800">
-                                    <span>Giá xe:</span>
-                                    <span className="font-medium">{formatPrice(bike.price)}</span>
-                                  </div>
-                                  <div className="flex justify-between text-amber-800">
-                                    <span>Phí vận chuyển:</span>
-                                    <span className="font-medium">150,000 VND</span>
-                                  </div>
-                                  <div className="flex justify-between text-amber-900 font-bold pt-1 border-t border-amber-300">
-                                    <span>Tổng thanh toán:</span>
-                                    <span>{formatPrice(bike.price + 150000)}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                    {canPurchase && listing?.status === 'PUBLISHED' && (
+                      <button
+                        onClick={handleBuyNow}
+                        className="w-full bg-accent hover:bg-red-600 text-white py-4 font-bold uppercase tracking-widest transition-colors shadow-md"
+                      >
+                        MUA NGAY
+                      </button>
                     )}
-
-                    {/* Shipping Address Form */}
-                    {!hasActiveOrder && listing?.status === 'PUBLISHED' && (
-                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3">
-                        <h4 className="font-bold text-sm text-gray-900 mb-3 flex items-center gap-2">
-                          <MapPin size={16} className="text-accent" /> Địa chỉ giao hàng
-                        </h4>
-                        <div className="space-y-2 text-sm">
-                          <input
-                            type="text"
-                            placeholder="Họ tên người nhận *"
-                            value={shippingAddress.fullName}
-                            onChange={(e) => setShippingAddress(prev => ({ ...prev, fullName: e.target.value }))}
-                            className="w-full px-3 py-2 border border-gray-200 rounded focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
-                          />
-                          <input
-                            type="tel"
-                            placeholder="Số điện thoại *"
-                            value={shippingAddress.phone}
-                            onChange={(e) => setShippingAddress(prev => ({ ...prev, phone: e.target.value }))}
-                            className="w-full px-3 py-2 border border-gray-200 rounded focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Địa chỉ chi tiết (Số nhà, đường) *"
-                            value={shippingAddress.street}
-                            onChange={(e) => setShippingAddress(prev => ({ ...prev, street: e.target.value }))}
-                            className="w-full px-3 py-2 border border-gray-200 rounded focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
-                          />
-                          <div className="grid grid-cols-2 gap-2">
-                            <input
-                              type="text"
-                              placeholder="Quận/Huyện *"
-                              value={shippingAddress.district}
-                              onChange={(e) => setShippingAddress(prev => ({ ...prev, district: e.target.value }))}
-                              className="w-full px-3 py-2 border border-gray-200 rounded focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
-                            />
-                            <input
-                              type="text"
-                              placeholder="Thành phố *"
-                              value={shippingAddress.city}
-                              onChange={(e) => setShippingAddress(prev => ({ ...prev, city: e.target.value }))}
-                              className="w-full px-3 py-2 border border-gray-200 rounded focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <input
-                              type="text"
-                              placeholder="Tỉnh (tùy chọn)"
-                              value={shippingAddress.province}
-                              onChange={(e) => setShippingAddress(prev => ({ ...prev, province: e.target.value }))}
-                              className="w-full px-3 py-2 border border-gray-200 rounded focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
-                            />
-                            <input
-                              type="text"
-                              placeholder="Mã bưu điện"
-                              value={shippingAddress.zipCode}
-                              onChange={(e) => setShippingAddress(prev => ({ ...prev, zipCode: e.target.value }))}
-                              className="w-full px-3 py-2 border border-gray-200 rounded focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
-                            />
-                          </div>
-                        </div>
-                      </div>
+                    {listing?.status === 'SOLD' && (
+                      <div className="bg-gray-200 rounded-lg py-4 text-center font-bold text-gray-600">ĐÃ BÁN</div>
                     )}
-                    
-                    <button 
-                      onClick={handleBuyNow}
-                      disabled={orderLoading || listing?.status !== 'PUBLISHED' || hasActiveOrder}
-                      className="w-full bg-accent hover:bg-red-600 text-white py-4 font-bold uppercase tracking-widest transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {orderLoading ? 'PROCESSING...' : 
-                         hasActiveOrder ? 'KHÔNG KHẢ DỤNG' :
-                         listing?.status === 'SOLD' ? 'ĐÃ BÁN' :
-                         listing?.status === 'RESERVED' ? 'ĐÃ CÓ NGƯỜI ĐẶT' :
-                         'BUY NOW (ESCROW)'}
-                    </button>
+                    {listing?.status === 'RESERVED' && (
+                      <div className="bg-amber-100 rounded-lg py-4 text-center font-bold text-amber-800">ĐÃ CÓ NGƯỜI ĐẶT</div>
+                    )}
                 </div>
                 
                 <div className="mt-4 text-xs text-gray-500 text-center flex items-center justify-center gap-1">
@@ -819,92 +567,9 @@ export const ProductDetail: React.FC = () => {
                 </div>
             </div>
 
-            {/* Technical Specs */}
-            <div className="border-t border-gray-100 pt-8">
-                <h3 className="font-bold mb-4">Technical Specifications</h3>
-                <div className="grid grid-cols-2 gap-y-4 text-sm">
-                    {listing.specs?.frameMaterial && (
-                      <>
-                        <div className="text-gray-500">Frame</div>
-                        <div className="font-medium">{listing.specs.frameMaterial}</div>
-                      </>
-                    )}
-                    
-                    {listing.specs?.groupset && (
-                      <>
-                        <div className="text-gray-500">Groupset</div>
-                        <div className="font-medium">{listing.specs.groupset}</div>
-                      </>
-                    )}
-                    
-                    {listing.specs?.wheelset && (
-                      <>
-                        <div className="text-gray-500">Wheels</div>
-                        <div className="font-medium">{listing.specs.wheelset}</div>
-                      </>
-                    )}
-                    
-                    {listing.specs?.brakeType && (
-                      <>
-                        <div className="text-gray-500">Brakes</div>
-                        <div className="font-medium">{listing.specs.brakeType}</div>
-                      </>
-                    )}
-
-                    {listing.specs?.suspensionType && (
-                      <>
-                        <div className="text-gray-500">Suspension</div>
-                        <div className="font-medium">{listing.specs.suspensionType}</div>
-                      </>
-                    )}
-
-                    {listing.specs?.travelFront && listing.specs?.travelRear && (
-                      <>
-                        <div className="text-gray-500">Travel</div>
-                        <div className="font-medium">{listing.specs.travelFront} F / {listing.specs.travelRear} R</div>
-                      </>
-                    )}
-
-                    {listing.specs?.wheelSize && (
-                      <>
-                        <div className="text-gray-500">Wheel Size</div>
-                        <div className="font-medium">{listing.specs.wheelSize}"</div>
-                      </>
-                    )}
-
-                    {listing.specs?.weight && (
-                      <>
-                        <div className="text-gray-500">Weight</div>
-                        <div className="font-medium">{listing.specs.weight} kg</div>
-                      </>
-                    )}
-                </div>
-            </div>
-
-            {/* Geometry Chart */}
-            {geometryData.length > 0 && (
-              <div className="border-t border-gray-100 pt-8">
-                  <h3 className="font-bold mb-4 flex items-center gap-2"><Ruler size={16}/> Geometry</h3>
-                  <div className="h-48 w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={geometryData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                              <XAxis type="number" hide />
-                              <YAxis dataKey="name" type="category" width={60} tick={{fontSize: 10}} />
-                              <Tooltip cursor={{fill: 'transparent'}} contentStyle={{fontSize: '12px'}} />
-                              <Bar dataKey="value" barSize={20} fill="#111" radius={[0, 4, 4, 0]}>
-                                  {geometryData.map((entry, index) => (
-                                      <Cell key={`cell-${index}`} fill={index === 0 ? '#EF4444' : '#111'} />
-                                  ))}
-                              </Bar>
-                          </BarChart>
-                      </ResponsiveContainer>
-                  </div>
-              </div>
-            )}
-
             {/* Location */}
             {listing.location?.address && (
-              <div className="border-t border-gray-100 pt-8">
+              <div className="border-t border-gray-100 pt-6">
                 <h3 className="font-bold mb-2 text-sm flex items-center gap-2">
                   <MapPin size={16} className="text-gray-400" /> Location
                 </h3>
@@ -912,15 +577,16 @@ export const ProductDetail: React.FC = () => {
               </div>
             )}
 
-             {/* Shipping */}
-             <div className="border-t border-gray-100 pt-8 flex items-start gap-4">
-                 <Truck className="text-gray-400 mt-1" />
-                 <div>
-                     <h4 className="font-bold text-sm">Professional Shipping</h4>
-                     <p className="text-xs text-gray-500 mt-1">Bike is professionally packed in a dedicated box. Insured shipping via our logistics partner.</p>
-                 </div>
-             </div>
+            {/* Shipping */}
+            <div className="border-t border-gray-100 pt-6 flex items-start gap-4">
+              <Truck className="text-gray-400 mt-1 flex-shrink-0" size={20} />
+              <div>
+                <h4 className="font-bold text-sm">Professional Shipping</h4>
+                <p className="text-xs text-gray-500 mt-1">Bike is professionally packed in a dedicated box. Insured shipping via our logistics partner.</p>
+              </div>
+            </div>
 
+          </div>
         </div>
       </div>
 

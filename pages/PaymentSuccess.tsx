@@ -33,8 +33,9 @@ export const PaymentSuccess: React.FC = () => {
           setOrderDetails(data.data);
         }
 
-        // Clear pending order
+        // Clear pending order + listing
         localStorage.removeItem('pendingOrderId');
+        localStorage.removeItem('pendingListingId');
       } catch (err) {
         console.error('Error fetching order:', err);
       } finally {

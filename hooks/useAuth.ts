@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { API_ENDPOINTS } from '../constants';
 interface LoginCredentials {
   email: string;
@@ -40,6 +40,7 @@ interface UseAuthReturn {
 
 export const useAuth = (): UseAuthReturn => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,12 +80,18 @@ export const useAuth = (): UseAuthReturn => {
         // Dispatch event to notify Layout component
         window.dispatchEvent(new Event('authChange'));
 
-        // Redirect based on role
+        // Redirect based on role (or from state if BUYER/SELLER came from checkout)
         const role = user?.role;
-        console.log('📍 User role:', role, '| Type:', typeof role);
+        const from = (location.state as any)?.from;
+        console.log('📍 User role:', role, '| From:', from);
         if (role === 'SELLER' || role === 'BUYER') {
-          console.log('➡️ Redirecting to /marketplace');
-          navigate('/marketplace');
+          if (from && typeof from === 'string' && from.startsWith('/checkout/')) {
+            console.log('➡️ Redirecting to', from);
+            navigate(from, { replace: true });
+          } else {
+            console.log('➡️ Redirecting to /marketplace');
+            navigate('/marketplace');
+          }
         } else if (role === 'ADMIN') {
           console.log('➡️ Redirecting to /admin/dashboard');
           navigate('/admin/dashboard');
@@ -103,7 +110,7 @@ export const useAuth = (): UseAuthReturn => {
         setLoading(false);
       }
     },
-    [navigate]
+    [navigate, location]
   );
 
   const register = useCallback(

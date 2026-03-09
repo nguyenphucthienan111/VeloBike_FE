@@ -181,10 +181,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               </Link>
             </div>
 
-            {/* Desktop Nav: BUYER và SELLER (khi về mua hàng) đều dùng menu buyer: HOME, MARKETPLACE, DASHBOARD, INSPECTION */}
+            {/* Desktop Nav: chỉ BUYER và SELLER — Admin/Inspector dùng giao diện role riêng */}
             <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center space-x-6">
-              {userRole === 'INSPECTOR' ? (
-                null
+              {(userRole === 'ADMIN' || userRole === 'INSPECTOR') ? (
+                <Link to={userRole === 'ADMIN' ? '/admin/dashboard' : '/inspector/dashboard'} className="text-xs font-medium text-gray-500 hover:text-accent transition-colors">
+                  {userRole === 'ADMIN' ? 'ADMIN' : 'INSPECTOR'}
+                </Link>
               ) : (
                 <>
                   <Link to="/" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname === '/' ? 'text-black' : 'text-gray-500'}`}>HOME</Link>
