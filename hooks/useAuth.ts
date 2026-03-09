@@ -82,12 +82,9 @@ export const useAuth = (): UseAuthReturn => {
         // Redirect based on role
         const role = user?.role;
         console.log('📍 User role:', role, '| Type:', typeof role);
-        if (role === 'SELLER') {
-          console.log('➡️ Redirecting to /seller/dashboard');
-          navigate('/seller/dashboard');
-        } else if (role === 'BUYER') {
-          console.log('➡️ Redirecting to /buyer/dashboard');
-          navigate('/buyer/dashboard');
+        if (role === 'SELLER' || role === 'BUYER') {
+          console.log('➡️ Redirecting to /marketplace');
+          navigate('/marketplace');
         } else if (role === 'ADMIN') {
           console.log('➡️ Redirecting to /admin/dashboard');
           navigate('/admin/dashboard');

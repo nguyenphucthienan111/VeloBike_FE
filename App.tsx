@@ -50,6 +50,7 @@ import { MyInspections } from './pages/inspector/MyInspections';
 import { InspectionDetail } from './pages/inspector/InspectionDetail';
 import { InspectorProfile } from './pages/inspector/InspectorProfile';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { SellerGate } from './components/SellerGate';
 
 const App: React.FC = () => {
   return (
@@ -110,13 +111,15 @@ const App: React.FC = () => {
           
           {/* Seller Routes: KYC full page (không sidebar), còn lại dùng SellerLayout như Admin */}
           <Route path="/seller/kyc" element={
-            <ProtectedRoute allowedRoles={['SELLER']}>
+            <ProtectedRoute allowedRoles={['BUYER', 'SELLER']}>
               <SellerKyc />
             </ProtectedRoute>
           } />
           <Route path="/seller" element={
-            <ProtectedRoute allowedRoles={['SELLER']}>
-              <SellerLayout />
+            <ProtectedRoute allowedRoles={['BUYER', 'SELLER']}>
+              <SellerGate>
+                <SellerLayout />
+              </SellerGate>
             </ProtectedRoute>
           }>
             <Route index element={<Navigate to="/seller/dashboard" replace />} />

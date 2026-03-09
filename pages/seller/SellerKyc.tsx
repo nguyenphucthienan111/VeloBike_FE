@@ -33,6 +33,31 @@ export const SellerKyc: React.FC = () => {
         const data = await res.json();
         if (res.ok && data?.data?.kycStatus) {
           if (data.data.kycStatus === 'VERIFIED') {
+            const userStr = localStorage.getItem('user');
+            const user = userStr ? JSON.parse(userStr) : null;
+            if (user?.role === 'BUYER') {
+              const upRes = await fetch(`${API_BASE_URL}/users/me/upgrade-to-seller`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              if (upRes.ok) {
+                const meRes = await fetch(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } });
+                if (meRes.ok) {
+                  const meData = await meRes.json();
+                  const u = meData.data;
+                  localStorage.setItem('user', JSON.stringify({ id: u._id || u.id, email: u.email, fullName: u.fullName, role: 'SELLER', kycStatus: 'VERIFIED', emailVerified: u.emailVerified, avatar: u.avatar }));
+                  window.dispatchEvent(new Event('authStatusChanged'));
+                }
+              }
+            } else if (user?.role === 'SELLER') {
+              const meRes = await fetch(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } });
+              if (meRes.ok) {
+                const meData = await meRes.json();
+                const u = meData.data;
+                localStorage.setItem('user', JSON.stringify({ id: u._id || u.id, email: u.email, fullName: u.fullName, role: u.role, kycStatus: 'VERIFIED', emailVerified: u.emailVerified, avatar: u.avatar }));
+                window.dispatchEvent(new Event('authStatusChanged'));
+              }
+            }
             navigate('/seller/dashboard');
             return;
           }
@@ -149,8 +174,9 @@ export const SellerKyc: React.FC = () => {
             </div>
           )}
           {kycStatus === 'REJECTED' && (
-            <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
-              Hồ sơ KYC chưa được duyệt. Vui lòng kiểm tra lại thông tin và ảnh giấy tờ rồi gửi lại.
+            <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800 space-y-1">
+              <p className="font-medium">Hệ thống không xác thực được giấy tờ của bạn.</p>
+              <p>Vui lòng chụp lại ảnh CCCD và selfie rõ nét, đủ ánh sáng. Đảm bảo khuôn mặt trên CCCD khớp với ảnh selfie. Bạn có thể gửi lại bất cứ lúc nào.</p>
             </div>
           )}
           {error && (

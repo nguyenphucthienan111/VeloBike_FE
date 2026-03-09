@@ -35,18 +35,20 @@ export const BikeCard: React.FC<BikeCardProps> = ({ bike }) => {
               Verified
             </span>
            )}
-           {bike.inspectionStatus === InspectionStatus.PASSED && (
+           {bike.inspectionStatus === InspectionStatus.PASSED && bike.conditionScore > 0 && (
              <span className="bg-accent/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 uppercase tracking-wider">
-               Passed 50-Point
+               Passed {bike.conditionScore}/10
              </span>
            )}
         </div>
 
-        {/* Condition Score Bubble */}
-        <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur text-black text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-sm">
-          <Activity size={12} className="text-accent" />
-          {bike.conditionScore}/10
-        </div>
+        {/* Condition Score Bubble - only show when có inspectionScore thật */}
+        {bike.conditionScore > 0 && (
+          <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur text-black text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-sm">
+            <Activity size={12} className="text-accent" />
+            {bike.conditionScore}/10
+          </div>
+        )}
       </div>
 
       {/* Content */}

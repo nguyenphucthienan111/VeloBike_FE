@@ -227,7 +227,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                         <MessageCircle size={18} />
                         <span>Tin nhắn</span>
                       </Link>
-                      <Link to="/sell" className="flex items-center bg-black text-white hover:bg-gray-800 rounded-full px-4 py-2 text-sm font-medium transition-colors">
+                      <Link to="/seller/kyc" className="flex items-center bg-black text-white hover:bg-gray-800 rounded-full px-4 py-2 text-sm font-medium transition-colors">
                         Post listing
                       </Link>
                     </>
@@ -289,21 +289,21 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                             </div>
                           </div>
                         </Link>
-                        {/* Seller: chỉ khi role SELLER */}
-                        {userRole === 'SELLER' && (
+                        {/* Seller: hiện cho cả BUYER và SELLER. BUYER phải xác thực eKYC trước khi dùng */}
+                        {(userRole === 'BUYER' || userRole === 'SELLER') && (
                           <div className="py-2 border-t border-gray-100">
                             <p className="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Seller</p>
-                            <Link to="/seller/dashboard" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
+                            <Link to={userRole === 'SELLER' ? '/seller/dashboard' : '/seller/kyc'} onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
                               <Store size={18} className="text-gray-500 flex-shrink-0" />
                               <span className="flex-1">Cửa hàng / chuyên trang</span>
                               <ChevronRight size={16} className="text-gray-400" />
                             </Link>
-                            <Link to="/seller/dashboard" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
+                            <Link to={userRole === 'SELLER' ? '/seller/dashboard' : '/seller/kyc'} onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
                               <LayoutDashboard size={18} className="text-gray-500 flex-shrink-0" />
                               <span className="flex-1">Quản lý tin</span>
                               <ChevronRight size={16} className="text-gray-400" />
                             </Link>
-                            <Link to="/seller/wallet" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
+                            <Link to={userRole === 'SELLER' ? '/seller/wallet' : '/seller/kyc'} onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
                               <Wallet size={18} className="text-gray-500 flex-shrink-0" />
                               <span className="flex-1">Ví</span>
                               <ChevronRight size={16} className="text-gray-400" />

@@ -159,6 +159,7 @@ export const Marketplace: React.FC = () => {
           }
         }
         
+        const hasInspectionScore = typeof listing.inspectionScore === 'number' && listing.inspectionScore > 0;
         return {
           id: listing._id || listing.id || '',
           title: listing.title || 'Untitled',
@@ -169,8 +170,9 @@ export const Marketplace: React.FC = () => {
           originalPrice: listing.pricing?.originalPrice || listing.pricing?.amount || 0,
           type: listing.type || 'ROAD',
           size: listing.generalInfo?.size || 'M',
-          conditionScore: 8.5, // Mock score
-          inspectionStatus: 'PASSED' as any,
+          conditionScore: hasInspectionScore ? listing.inspectionScore : 0,
+          inspectionStatus: hasInspectionScore ? 'PASSED' : 'PENDING',
+          inspectionRequired: !!listing.inspectionRequired,
           imageUrl: listing.media?.thumbnails?.[0] || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect fill='%23e5e7eb' width='400' height='400'/%3E%3Ctext fill='%239ca3af' x='200' y='200' font-size='20' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E",
           location: listing.location?.address || 'Unknown',
           specs: {

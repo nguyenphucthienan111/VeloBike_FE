@@ -78,7 +78,36 @@ export const ProductDetail: React.FC = () => {
   const [orderLoading, setOrderLoading] = useState(false);
   const [hasActiveOrder, setHasActiveOrder] = useState(false);
   const [requestInspection, setRequestInspection] = useState(true); // Default to true if available
+  const [shippingAddress, setShippingAddress] = useState({
+    fullName: '',
+    phone: '',
+    street: '',
+    district: '',
+    city: '',
+    province: '',
+    zipCode: '',
+  });
   const { toast, showToast, hideToast } = useToast();
+
+  // Pre-fill shipping address from user profile
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) return;
+    try {
+      const user = JSON.parse(userStr);
+      if (!user.fullName) return;
+      setShippingAddress(prev => ({
+        ...prev,
+        fullName: user.fullName || prev.fullName,
+        phone: user.phone || prev.phone,
+        street: user.address?.street || prev.street,
+        district: user.address?.district || prev.district,
+        city: user.address?.city || prev.city,
+        province: user.address?.province || prev.province,
+        zipCode: user.address?.zipCode || prev.zipCode,
+      }));
+    } catch (_) {}
+  }, []);
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -168,7 +197,7 @@ export const ProductDetail: React.FC = () => {
     images: listing.media?.thumbnails?.length ? listing.media.thumbnails : ["data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='800' viewBox='0 0 800 800'%3E%3Crect fill='%23e5e7eb' width='800' height='800'/%3E%3Ctext fill='%239ca3af' x='400' y='400' font-size='24' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E"],
     specs: listing.specs || {},
     geometry: listing.geometry || {},
-    conditionScore: listing.inspectionScore || 8.5,
+    conditionScore: listing.inspectionScore ?? 0,
     inspectionRequired: listing.inspectionRequired,
   };
 
@@ -242,6 +271,13 @@ export const ProductDetail: React.FC = () => {
         return;
       }
 
+      // Validate shipping address
+      const { fullName, phone, street, district, city } = shippingAddress;
+      if (!fullName?.trim() || !phone?.trim() || !street?.trim() || !district?.trim() || !city?.trim()) {
+        showToast('Vui lòng nhập đủ địa chỉ giao hàng (Tên, SĐT, Đường, Quận/Huyện, TP)', 'warning');
+        return;
+      }
+
       setOrderLoading(true);
       showToast('Creating order...', 'info');
 
@@ -301,9 +337,36 @@ export const ProductDetail: React.FC = () => {
       // Save orderId to localStorage for cancel handling
       localStorage.setItem('pendingOrderId', orderId);
       
+      // Step 2: Update shipping address
+      const shippingPayload = {
+        fullName: shippingAddress.fullName.trim(),
+        phone: shippingAddress.phone.trim(),
+        street: shippingAddress.street.trim(),
+        district: shippingAddress.district.trim(),
+        city: shippingAddress.city.trim(),
+        ...(shippingAddress.province?.trim() && { province: shippingAddress.province.trim() }),
+        ...(shippingAddress.zipCode?.trim() && { zipCode: shippingAddress.zipCode.trim() }),
+      };
+      const addressResponse = await fetch(`${API_BASE_URL}/orders/${orderId}/shipping-address`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token.trim()}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ shippingAddress: shippingPayload }),
+      });
+      if (!addressResponse.ok) {
+        const addrErr = await addressResponse.json().catch(() => ({}));
+        if (addressResponse.status === 401) {
+          handleSessionExpired();
+          return;
+        }
+        throw new Error(addrErr.message || 'Failed to update shipping address');
+      }
+      
       showToast('Order created! Redirecting to payment...', 'success');
 
-      // Step 2: Create payment link
+      // Step 3: Create payment link
       const paymentResponse = await fetch(`${API_BASE_URL}/payment/create-link`, {
         method: 'POST',
         headers: {
@@ -340,7 +403,7 @@ export const ProductDetail: React.FC = () => {
         throw new Error(paymentData.message || 'Failed to create payment link');
       }
 
-      // Step 3: Redirect to payment link
+      // Step 4: Redirect to payment link
       window.location.href = paymentData.paymentLink;
 
     } catch (err: any) {
@@ -412,47 +475,45 @@ export const ProductDetail: React.FC = () => {
             </p>
           </div>
 
-          {/* Inspection Report Section */}
+          {/* Inspection Report Section - chỉ hiện khi có inspectionScore thật */}
           {bike.inspectionRequired && (
             <div className="mt-12 border border-gray-100 p-8 rounded-sm">
                <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
                    <ShieldCheck className="text-accent" /> Inspection Report
                </h2>
                
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+               {bike.conditionScore > 0 ? (
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                    <div>
-                       <div className="flex justify-between mb-2">
-                           <span className="font-medium">Overall Score</span>
-                           <span className="font-bold text-accent">{bike.conditionScore}/10</span>
-                       </div>
-                       <div className="w-full bg-gray-200 h-2 rounded-full mb-6">
-                           <div className="bg-accent h-2 rounded-full" style={{ width: `${bike.conditionScore * 10}%` }}></div>
-                       </div>
-                       
-                       <div className="space-y-3">
-                           <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 p-2 rounded">
-                               <CheckCircle size={16}/> Frame: Structurally Sound (Ultrasound verified)
-                           </div>
-                           <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 p-2 rounded">
-                               <CheckCircle size={16}/> Transmission: Chain wear &lt; 0.5%
-                           </div>
-                           <div className="flex items-center gap-2 text-sm text-yellow-700 bg-yellow-50 p-2 rounded">
-                               <AlertCircle size={16}/> Cosmetic: Minor scuffs on rear derailleur
-                           </div>
-                       </div>
+                     <div className="flex justify-between mb-2">
+                       <span className="font-medium">Overall Score</span>
+                       <span className="font-bold text-accent">{bike.conditionScore}/10</span>
+                     </div>
+                     <div className="w-full bg-gray-200 h-2 rounded-full mb-6">
+                       <div className="bg-accent h-2 rounded-full" style={{ width: `${bike.conditionScore * 10}%` }}></div>
+                     </div>
+                     <p className="text-sm text-gray-600">
+                       Xe đã qua kiểm định 50 điểm của VeloBike Inspector.
+                     </p>
                    </div>
-                   
                    <div className="bg-gray-50 p-6 rounded text-sm text-gray-600">
-                       <p className="italic">"Inspector note: {bike.description}"</p>
-                       <div className="mt-4 flex items-center gap-2">
-                           <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
-                           <div>
-                               <p className="font-bold text-black">Inspector</p>
-                               <p className="text-xs">Certified VeloBike Inspector</p>
-                           </div>
+                     <p className="italic">&quot;Kết quả kiểm định đã được lưu trên hệ thống.&quot;</p>
+                     <div className="mt-4 flex items-center gap-2">
+                       <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
+                       <div>
+                         <p className="font-bold text-black">Inspector</p>
+                         <p className="text-xs">Certified VeloBike Inspector</p>
                        </div>
+                     </div>
                    </div>
-               </div>
+                 </div>
+               ) : (
+                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                   <p className="text-sm text-blue-800">
+                     Xe chưa có báo cáo kiểm định. Bạn có thể yêu cầu kiểm định khi đặt mua — inspector sẽ kiểm tra xe trước khi giao hàng.
+                   </p>
+                 </div>
+               )}
             </div>
           )}
         </div>
@@ -671,6 +732,70 @@ export const ProductDetail: React.FC = () => {
                                 </div>
                               </div>
                             )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Shipping Address Form */}
+                    {!hasActiveOrder && listing?.status === 'PUBLISHED' && (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3">
+                        <h4 className="font-bold text-sm text-gray-900 mb-3 flex items-center gap-2">
+                          <MapPin size={16} className="text-accent" /> Địa chỉ giao hàng
+                        </h4>
+                        <div className="space-y-2 text-sm">
+                          <input
+                            type="text"
+                            placeholder="Họ tên người nhận *"
+                            value={shippingAddress.fullName}
+                            onChange={(e) => setShippingAddress(prev => ({ ...prev, fullName: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-200 rounded focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+                          />
+                          <input
+                            type="tel"
+                            placeholder="Số điện thoại *"
+                            value={shippingAddress.phone}
+                            onChange={(e) => setShippingAddress(prev => ({ ...prev, phone: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-200 rounded focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Địa chỉ chi tiết (Số nhà, đường) *"
+                            value={shippingAddress.street}
+                            onChange={(e) => setShippingAddress(prev => ({ ...prev, street: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-200 rounded focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+                          />
+                          <div className="grid grid-cols-2 gap-2">
+                            <input
+                              type="text"
+                              placeholder="Quận/Huyện *"
+                              value={shippingAddress.district}
+                              onChange={(e) => setShippingAddress(prev => ({ ...prev, district: e.target.value }))}
+                              className="w-full px-3 py-2 border border-gray-200 rounded focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Thành phố *"
+                              value={shippingAddress.city}
+                              onChange={(e) => setShippingAddress(prev => ({ ...prev, city: e.target.value }))}
+                              className="w-full px-3 py-2 border border-gray-200 rounded focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <input
+                              type="text"
+                              placeholder="Tỉnh (tùy chọn)"
+                              value={shippingAddress.province}
+                              onChange={(e) => setShippingAddress(prev => ({ ...prev, province: e.target.value }))}
+                              className="w-full px-3 py-2 border border-gray-200 rounded focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Mã bưu điện"
+                              value={shippingAddress.zipCode}
+                              onChange={(e) => setShippingAddress(prev => ({ ...prev, zipCode: e.target.value }))}
+                              className="w-full px-3 py-2 border border-gray-200 rounded focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+                            />
                           </div>
                         </div>
                       </div>

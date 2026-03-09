@@ -139,6 +139,11 @@ export const AdminUsers: React.FC = () => {
     }
   };
 
+  const formatRoleLabel = (role: string) => {
+    if (role === 'INSPECTOR') return 'INS';
+    return role;
+  };
+
   return (
     <div className="p-6">
         <div className="max-w-7xl mx-auto">
@@ -167,7 +172,7 @@ export const AdminUsers: React.FC = () => {
                   <option value="">All Roles</option>
                   <option value="BUYER">BUYER</option>
                   <option value="SELLER">SELLER</option>
-                  <option value="INSPECTOR">INSPECTOR</option>
+                  <option value="INSPECTOR">INS</option>
                   <option value="ADMIN">ADMIN</option>
                 </select>
               </div>
@@ -225,7 +230,7 @@ export const AdminUsers: React.FC = () => {
                           </td>
                           <td className="px-6 py-4">
                             <span className="px-2 py-1 text-xs font-semibold rounded bg-gray-100 text-gray-700">
-                              {user.role}
+                              {formatRoleLabel(user.role)}
                             </span>
                           </td>
                           <td className="px-6 py-4">

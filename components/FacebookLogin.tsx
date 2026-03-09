@@ -161,10 +161,8 @@ export const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError
       console.log('Facebook login user role:', role, 'Redirecting...');
       
       let redirectPath = '/';
-      if (role === 'SELLER') {
-        redirectPath = '/seller/dashboard';
-      } else if (role === 'BUYER') {
-        redirectPath = '/buyer/dashboard';
+      if (role === 'SELLER' || role === 'BUYER') {
+        redirectPath = '/marketplace';
       } else if (role === 'ADMIN') {
         redirectPath = '/admin/dashboard';
       } else if (role === 'INSPECTOR') {

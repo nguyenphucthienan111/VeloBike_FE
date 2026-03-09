@@ -4,12 +4,11 @@ import { Trash2, ShieldCheck, Truck, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const Cart: React.FC = () => {
-  // Simulating a cart with one item for UI demo
+  // Simulating a cart with one item for UI demo (đồng bộ phí với BE)
   const cartItem = MOCK_LISTINGS[0]; 
-  const inspectionFee = 1500000;
-  const shippingFee = 500000;
-  const platformFee = cartItem.price * 0.02; // 2%
-  const total = cartItem.price + inspectionFee + shippingFee + platformFee;
+  const inspectionFee = 500000;  // BE: OrderService.inspectionFee
+  const shippingFee = 150000;    // BE: OrderService.shippingFee
+  const total = cartItem.price + inspectionFee + shippingFee;
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
@@ -75,10 +74,6 @@ export const Cart: React.FC = () => {
               <div className="flex justify-between">
                 <span className="text-gray-600">Professional Shipping</span>
                 <span className="font-medium">{formatPrice(shippingFee)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Platform Fee (2%)</span>
-                <span className="font-medium">{formatPrice(platformFee)}</span>
               </div>
             </div>
 
