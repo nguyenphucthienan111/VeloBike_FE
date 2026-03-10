@@ -10,22 +10,35 @@ interface BikeCardProps {
 export const BikeCard: React.FC<BikeCardProps> = ({ bike }) => {
   const formatPrice = (price: number) => {
     if (!price || isNaN(price)) return '0 VND';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND', minimumFractionDigits: 0 }).format(price);
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
   };
 
   if (!bike || !bike.id) {
     return null; // Don't render if bike data is invalid
   }
 
+  const isOutOfStock = ['RESERVED', 'SOLD', 'IN_INSPECTION'].includes(bike.status);
+
   return (
-    <Link to={`/bike/${bike.id}`} className="group block bg-white border border-gray-100 hover:shadow-xl transition-all duration-300 ease-out overflow-hidden">
+    <Link to={`/bike/${bike.id}`} className="group block bg-white border border-gray-100 hover:shadow-xl transition-all duration-300 ease-out overflow-hidden relative">
       {/* Image Container */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
         <img 
           src={bike.imageUrl} 
           alt={bike.title} 
-          className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-in-out"
+          className={`w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-in-out ${isOutOfStock ? 'grayscale opacity-70' : ''}`}
         />
+        
+        {/* Out of Stock Overlay */}
+        {isOutOfStock && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10 backdrop-blur-[2px]">
+            <div className={`px-6 py-3 font-bold text-base uppercase tracking-widest transform -rotate-12 shadow-2xl border-4 border-white/20 rounded-lg ${
+              bike.status === 'SOLD' ? 'bg-gray-600 text-white' : 'bg-amber-600 text-white'
+            }`}>
+              {bike.status === 'SOLD' ? 'Đã bán' : 'Đã có người đặt'}
+            </div>
+          </div>
+        )}
         
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-2">

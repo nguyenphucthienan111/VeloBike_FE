@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { MessageCircle, Truck, CheckCircle, AlertTriangle } from 'lucide-react';
+import { API_BASE_URL } from '../../constants';
 import { SellerHeaderUserMenu } from '../../components/SellerHeaderUserMenu';
 
 interface Order {
@@ -37,6 +39,7 @@ export const SellerOrders: React.FC = () => {
     SHIPPING: 'bg-orange-100 text-orange-800',
     DELIVERED: 'bg-cyan-100 text-cyan-800',
     COMPLETED: 'bg-gray-100 text-gray-800',
+    DISPUTED: 'bg-red-100 text-red-800',
   };
 
   useEffect(() => {
@@ -49,7 +52,7 @@ export const SellerOrders: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch('http://localhost:5000/api/orders', {
+      const response = await fetch(`${API_BASE_URL}/orders`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -68,13 +71,42 @@ export const SellerOrders: React.FC = () => {
     }
   };
 
+  const handleCreateShipment = async (orderId: string) => {
+    if (!window.confirm('Bạn có chắc chắn muốn tạo vận đơn cho đơn hàng này?')) return;
+    
+    setUpdatingStatus(true);
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(`${API_BASE_URL}/logistics/create-shipment`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ orderId, serviceId: 'standard' }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert('Tạo vận đơn thành công! Đơn hàng đã chuyển sang trạng thái SHIPPING.');
+        fetchOrders();
+      } else {
+        alert(data.message || 'Không thể tạo vận đơn');
+      }
+    } catch (error: any) {
+      alert('Lỗi: ' + error.message);
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     if (newStatus === selectedOrder?.status) return;
 
     setUpdatingStatus(true);
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+      const response = await fetch(`${API_BASE_URL}/orders/${orderId}/status`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -208,15 +240,53 @@ export const SellerOrders: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</td>
                       <td className="px-6 py-4 text-sm">
-                        <button
-                          onClick={() => {
-                            setSelectedOrder(order);
-                            setShowDetailModal(true);
-                          }}
-                          className="text-blue-600 hover:text-blue-800 font-medium"
-                        >
-                          View Details
-                        </button>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => {
+                              setSelectedOrder(order);
+                              setShowDetailModal(true);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 font-medium"
+                          >
+                            View Details
+                          </button>
+
+                          {/* Logistics Actions */}
+                          {(order.status === 'INSPECTION_PASSED' || (order.status === 'ESCROW_LOCKED' && !order.inspectionRequired)) && (
+                            <button
+                              onClick={() => handleCreateShipment(order._id)}
+                              disabled={updatingStatus}
+                              className="inline-flex items-center gap-1 text-orange-600 hover:text-orange-800 font-medium disabled:opacity-50"
+                              title="Tạo vận đơn"
+                            >
+                              <Truck size={16} />
+                              Gửi hàng
+                            </button>
+                          )}
+
+                          {order.status === 'SHIPPING' && (
+                            <button
+                              onClick={() => handleUpdateStatus(order._id, 'DELIVERED')}
+                              disabled={updatingStatus}
+                              className="inline-flex items-center gap-1 text-green-600 hover:text-green-800 font-medium disabled:opacity-50"
+                              title="Xác nhận đã giao hàng"
+                            >
+                              <CheckCircle size={16} />
+                              Đã giao
+                            </button>
+                          )}
+
+                          {order.buyerId?._id && (
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/messages?contact=${order.buyerId._id}&orderId=${order._id}`)}
+                              className="inline-flex items-center gap-1 text-gray-700 hover:text-black font-medium"
+                            >
+                              <MessageCircle size={16} />
+                              Nhắn tin
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

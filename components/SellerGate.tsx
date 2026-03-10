@@ -13,8 +13,12 @@ export const SellerGate: React.FC<{ children: React.ReactNode }> = ({ children }
     const user = JSON.parse(userStr);
     if (user.role === 'BUYER') return <Navigate to="/seller/kyc" replace />;
     if (user.role === 'SELLER') {
-      if (user.kycStatus !== 'VERIFIED') return <Navigate to="/seller/kyc" replace />;
-      return <>{children}</>;
+      // Chấp nhận cả VERIFIED và APPROVED (đề phòng BE trả về khác nhau)
+      if (user.kycStatus === 'VERIFIED' || user.kycStatus === 'APPROVED') {
+        return <>{children}</>;
+      }
+      // Nếu PENDING, REJECTED hoặc null -> chặn
+      return <Navigate to="/seller/kyc" replace />;
     }
   } catch {
     return <Navigate to="/login" replace />;

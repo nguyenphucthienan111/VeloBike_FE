@@ -18,7 +18,7 @@ const mainNav = [
 ] as const;
 
 const accountNav = [
-  { path: '/seller/profile', label: 'Hồ sơ', icon: User },
+  { path: '/profile', label: 'Cài đặt tài khoản', icon: User },
   { path: '/seller/subscription', label: 'Gói đăng ký', icon: CreditCard },
 ] as const;
 
@@ -44,6 +44,23 @@ export const SellerHeaderUserMenu: React.FC<SellerHeaderUserMenuProps> = ({ user
   };
 
   const handleNav = (path: string) => {
+    // Nếu chưa verified mà cố vào trang seller (trừ profile/kyc) -> chặn
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const u = JSON.parse(userStr);
+        // Nếu là SELLER nhưng chưa VERIFIED/APPROVED
+        if (u.role === 'SELLER' && u.kycStatus !== 'VERIFIED' && u.kycStatus !== 'APPROVED') {
+          // Cho phép vào profile, subscription, logout, marketplace
+          const allowed = ['/profile', '/seller/subscription', '/marketplace', '/seller/kyc'];
+          if (!allowed.includes(path)) {
+            navigate('/seller/kyc');
+            setOpen(false);
+            return;
+          }
+        }
+      } catch {}
+    }
     navigate(path);
     setOpen(false);
   };

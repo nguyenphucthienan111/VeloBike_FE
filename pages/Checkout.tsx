@@ -224,10 +224,10 @@ export const Checkout: React.FC = () => {
   };
 
   const formatPrice = (amount: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: listing?.pricing?.currency || 'VND' }).format(amount);
+    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 
-  const inspectionFee = requestInspection && !listing?.sellerHasFreeInspection ? 500000 : 0;
-  const shippingFee = 150000;
+  const inspectionFee = requestInspection && !listing?.sellerHasFreeInspection ? 1000 : 0;
+  const shippingFee = 1000;
   const totalAmount = (listing?.pricing?.amount || 0) + inspectionFee + shippingFee;
 
   if (loading) {
@@ -313,16 +313,16 @@ export const Checkout: React.FC = () => {
               {listing.sellerHasFreeInspection ? (
                 <p className="text-sm text-green-700 mb-4">Seller tài trợ phí kiểm định — miễn phí cho bạn.</p>
               ) : (
-                <p className="text-sm text-gray-600 mb-4">Phí kiểm định: 500,000 VND</p>
+                <p className="text-sm text-gray-600 mb-4">Phí kiểm định: 1,000 VND</p>
               )}
               <div className="space-y-3">
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="radio" name="inspection" checked={requestInspection} onChange={() => setRequestInspection(true)} className="mt-0.5" />
-                  <span className="text-sm text-gray-700">Có, thuê inspector kiểm định{!listing.sellerHasFreeInspection && ' (+500,000 VND)'}</span>
+                  <span className="text-sm text-gray-700">Có, thuê inspector kiểm định{!listing.sellerHasFreeInspection && ' (+1,000 VND)'}</span>
                 </label>
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="radio" name="inspection" checked={!requestInspection} onChange={() => setRequestInspection(false)} className="mt-0.5" />
-                  <span className="text-sm text-gray-700">Không, bỏ qua kiểm định{!listing.sellerHasFreeInspection && ' (tiết kiệm 500,000 VND)'}</span>
+                  <span className="text-sm text-gray-700">Không, bỏ qua kiểm định{!listing.sellerHasFreeInspection && ' (tiết kiệm 1,000 VND)'}</span>
                 </label>
               </div>
             </>
@@ -400,11 +400,11 @@ export const Checkout: React.FC = () => {
             </div>
             <div className="flex justify-between text-gray-600">
               <span>Phí kiểm định</span>
-              <span>{inspectionFee === 0 ? '0 ₫' : '500.000 ₫'}</span>
+              <span>{inspectionFee === 0 ? '0 ₫' : '1.000 ₫'}</span>
             </div>
             <div className="flex justify-between text-gray-600">
               <span>Phí vận chuyển</span>
-              <span>150.000 ₫</span>
+              <span>1.000 ₫</span>
             </div>
             <div className="flex justify-between font-bold text-base pt-4 mt-2 border-t border-gray-200">
               <span className="text-gray-900">Tổng thanh toán</span>

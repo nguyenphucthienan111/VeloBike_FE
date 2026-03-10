@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { MessageCircle, CreditCard, XCircle, RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
+import { Toast, useToast } from '../../components/Toast';
+import { DisputeModal } from '../../components/DisputeModal';
 
 interface OrderListing {
   _id: string;
@@ -21,6 +24,7 @@ interface OrderListing {
 interface OrderItem {
   _id: string;
   listingId: OrderListing;
+  sellerId?: { _id: string; fullName?: string };
   status: string;
   createdAt: string;
   financials?: {
@@ -32,47 +36,237 @@ interface OrderItem {
 }
 
 export const BuyerOrders: React.FC = () => {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast, showToast, hideToast } = useToast();
+
+  const handlePayment = async (orderId: string) => {
+    try {
+      showToast('Đang tạo link thanh toán...', 'info');
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+
+      const res = await fetch(`${API_BASE_URL}/payment/create-link`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ orderId })
+      });
+
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.message || 'Không thể tạo link thanh toán');
+      }
+
+      if (data.success && data.paymentLink) {
+        window.location.href = data.paymentLink;
+      } else {
+        throw new Error('Phản hồi không hợp lệ từ hệ thống thanh toán');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Lỗi khi tạo thanh toán', 'error');
+    }
+  };
+
+  const handleCancelOrder = async (orderId: string) => {
+    if (!window.confirm('Bạn có chắc chắn muốn huỷ đơn hàng này không?')) return;
+
+    try {
+      showToast('Đang huỷ đơn hàng...', 'info');
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+
+      const res = await fetch(`${API_BASE_URL}/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: 'CANCELLED', note: 'Buyer cancelled order' })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Không thể huỷ đơn hàng');
+      }
+
+      showToast('Đã huỷ đơn hàng thành công', 'success');
+      
+      // Update local state
+      setOrders(prev => prev.map(o => 
+        o._id === orderId ? { ...o, status: 'CANCELLED' } : o
+      ));
+    } catch (err: any) {
+      showToast(err.message || 'Lỗi khi huỷ đơn hàng', 'error');
+    }
+  };
+
+  const handleConfirmReceived = async (orderId: string) => {
+    if (!window.confirm('Bạn xác nhận đã nhận được hàng và sản phẩm đúng như mô tả? Hành động này sẽ hoàn tất đơn hàng.')) return;
+
+    try {
+      showToast('Đang xác nhận...', 'info');
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+
+      const res = await fetch(`${API_BASE_URL}/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: 'DELIVERED', note: 'Buyer confirmed receipt' })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Không thể xác nhận đã nhận hàng');
+      }
+
+      showToast('Đã xác nhận nhận hàng thành công!', 'success');
+      fetchOrders();
+    } catch (err: any) {
+      showToast(err.message || 'Lỗi khi xác nhận', 'error');
+    }
+  };
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setError('Please sign in to view your orders.');
+        setLoading(false);
+        return;
+      }
+
+      const res = await fetch(`${API_BASE_URL}/orders?role=buyer&page=1&limit=50`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data?.message || 'Failed to load orders.');
+        setOrders([]);
+        return;
+      }
+
+      setOrders(Array.isArray(data.data) ? data.data : []);
+    } catch (err: any) {
+      setError(isConnectionError(err) ? CONNECTION_ERROR_MESSAGE : (err.message || 'Failed to load orders.'));
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const token = localStorage.getItem('accessToken');
-        if (!token) {
-          setError('Please sign in to view your orders.');
-          setLoading(false);
-          return;
-        }
-
-        const res = await fetch(`${API_BASE_URL}/orders?role=buyer&page=1&limit=50`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data?.message || 'Failed to load orders.');
-          setOrders([]);
-          return;
-        }
-
-        setOrders(Array.isArray(data.data) ? data.data : []);
-      } catch (err: any) {
-        setError(isConnectionError(err) ? CONNECTION_ERROR_MESSAGE : (err.message || 'Failed to load orders.'));
-        setOrders([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchOrders();
   }, []);
+
+  const [checkingPayment, setCheckingPayment] = useState<string | null>(null);
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
+  const [selectedOrderForDispute, setSelectedOrderForDispute] = useState<string | null>(null);
+
+  const handleCheckPayment = async (orderId: string, silent = false) => {
+    try {
+      if (!silent) setCheckingPayment(orderId);
+      if (!silent) showToast('Đang kiểm tra trạng thái thanh toán...', 'info');
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+
+      // 1. Fetch full order details to get orderCode from timeline
+      const orderRes = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) throw new Error(orderData.message || 'Không thể lấy thông tin đơn hàng');
+
+      const order = orderData.data;
+      
+      // If order is already paid, just refresh list
+      if (order.status !== 'CREATED') {
+          fetchOrders();
+          if (!silent) showToast('Đơn hàng đã được thanh toán!', 'success');
+          setCheckingPayment(null);
+          return;
+      }
+
+      // Extract orderCode from timeline note: "Payment link created with orderCode: 123456"
+      const timelineNote = order.timeline?.find((t: any) => t.note?.includes('orderCode:'))?.note;
+      const orderCode = timelineNote ? timelineNote.split('orderCode: ')[1] : null;
+
+      if (!orderCode) {
+        if (!silent) showToast('Không tìm thấy mã thanh toán. Vui lòng thử lại sau.', 'error');
+        setCheckingPayment(null);
+        return;
+      }
+
+      // 2. Check PayOS status using orderCode
+      const infoRes = await fetch(`${API_BASE_URL}/payment/info/${orderCode}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const infoData = await infoRes.json();
+
+      if (!infoRes.ok) {
+         throw new Error(infoData.message || 'Không thể kiểm tra trạng thái thanh toán');
+      }
+
+      if (infoData.data?.status === 'PAID') {
+         // 3. Trigger Webhook manually
+         const webhookBody = {
+             code: "00000",
+             orderCode: Number(orderCode),
+             data: infoData.data
+         };
+         
+         const webhookRes = await fetch(`${API_BASE_URL}/payment/webhook`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(webhookBody)
+         });
+         
+         if (webhookRes.ok) {
+             if (!silent) showToast('Đã cập nhật trạng thái thanh toán thành công!', 'success');
+             fetchOrders(); 
+         } else {
+             if (!silent) showToast('Thanh toán thành công nhưng chưa cập nhật được đơn hàng. Vui lòng thử lại.', 'warning');
+         }
+      } else {
+          if (!silent) showToast('Chưa ghi nhận thanh toán cho đơn hàng này.', 'info');
+      }
+
+    } catch (err: any) {
+      if (!silent) showToast(err.message || 'Lỗi khi kiểm tra thanh toán', 'error');
+    } finally {
+        setCheckingPayment(null);
+    }
+  };
+
+  // Auto-check payment for recent CREATED orders
+  useEffect(() => {
+      if (orders.length > 0) {
+          const createdOrders = orders.filter(o => o.status === 'CREATED');
+          // Check the most recent created order automatically
+          if (createdOrders.length > 0) {
+              const latestOrder = createdOrders[0]; // Assuming sorted by date desc
+              handleCheckPayment(latestOrder._id, true);
+          }
+      }
+  }, [orders]); // Only run when orders list changes/loads
 
   const formatCurrency = (amount: number | undefined, currency?: string) => {
     if (!amount) return '-';
@@ -127,6 +321,12 @@ export const BuyerOrders: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          isVisible={toast.isVisible}
+          onClose={hideToast}
+        />
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-sm text-red-700">{error}</p>
@@ -209,16 +409,87 @@ export const BuyerOrders: React.FC = () => {
                           {new Date(order.createdAt).toLocaleString()}
                         </td>
                         <td className="py-3 px-4">
-                          {listing?._id ? (
-                            <Link
-                              to={`/bike/${listing._id}`}
-                              className="text-xs font-semibold text-blue-600 hover:underline"
-                            >
-                              View bike
-                            </Link>
-                          ) : (
-                            <span className="text-xs text-gray-400">N/A</span>
-                          )}
+                          <div className="flex items-center gap-3">
+                            {order.status === 'CREATED' && (
+                              <div className="flex flex-col gap-1">
+                                {checkingPayment === order._id ? (
+                                    <div className="flex items-center justify-center gap-2 bg-gray-100 text-gray-600 px-3 py-1.5 rounded text-xs font-semibold">
+                                        <RefreshCw size={14} className="animate-spin" />
+                                        Đang kiểm tra...
+                                    </div>
+                                ) : (
+                                    <div className="flex gap-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => handlePayment(order._id)}
+                                        className="inline-flex items-center gap-1 text-xs font-bold text-white bg-accent hover:bg-red-600 px-3 py-1.5 rounded transition-colors shadow-sm"
+                                    >
+                                        <CreditCard size={14} />
+                                        Thanh toán
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleCheckPayment(order._id)}
+                                        className="inline-flex items-center gap-1 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded transition-colors shadow-sm"
+                                        title="Kiểm tra trạng thái thanh toán nếu bạn đã thanh toán"
+                                    >
+                                        <RefreshCw size={14} />
+                                    </button>
+                                    </div>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => handleCancelOrder(order._id)}
+                                  className="inline-flex items-center gap-1 text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded transition-colors shadow-sm w-full justify-center"
+                                >
+                                  <XCircle size={14} />
+                                  Huỷ đơn
+                                </button>
+                              </div>
+                            )}
+                            {order.status === 'SHIPPING' && (
+                                <button
+                                    type="button"
+                                    onClick={() => handleConfirmReceived(order._id)}
+                                    className="inline-flex items-center gap-1 text-xs font-bold text-white bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded transition-colors shadow-sm"
+                                    title="Xác nhận đã nhận được hàng"
+                                >
+                                    <CheckCircle size={14} />
+                                    Đã nhận hàng
+                                </button>
+                            )}
+                            {(order.status === 'SHIPPING' || order.status === 'DELIVERED') && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setSelectedOrderForDispute(order._id);
+                                        setShowDisputeModal(true);
+                                    }}
+                                    className="inline-flex items-center gap-1 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 px-3 py-1.5 rounded transition-colors shadow-sm"
+                                >
+                                    <AlertTriangle size={14} />
+                                    Khiếu nại
+                                </button>
+                            )}
+                            {listing?._id && (
+                              <Link
+                                to={`/bike/${listing._id}`}
+                                className="text-xs font-semibold text-blue-600 hover:underline"
+                              >
+                                View bike
+                              </Link>
+                            )}
+                            {order.sellerId?._id ? (
+                              <button
+                                type="button"
+                                onClick={() => navigate(`/messages?contact=${order.sellerId!._id}&orderId=${order._id}`)}
+                                className="inline-flex items-center gap-1 text-xs font-semibold text-gray-700 hover:text-black"
+                              >
+                                <MessageCircle size={14} />
+                                Nhắn tin
+                              </button>
+                            ) : null}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -229,6 +500,17 @@ export const BuyerOrders: React.FC = () => {
           )}
         </div>
       </div>
+
+      {showDisputeModal && selectedOrderForDispute && (
+        <DisputeModal
+          orderId={selectedOrderForDispute}
+          onClose={() => setShowDisputeModal(false)}
+          onSuccess={() => {
+            showToast('Đã gửi khiếu nại thành công', 'success');
+            fetchOrders();
+          }}
+        />
+      )}
     </div>
   );
 };

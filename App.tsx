@@ -43,6 +43,7 @@ import { AdminAnalytics } from './pages/admin/AdminAnalytics';
 import { AdminInspectors } from './pages/admin/AdminInspectors';
 import { AdminProfile } from './pages/admin/AdminProfile';
 import { AdminCatalog } from './pages/admin/AdminCatalog';
+import { AdminDisputes } from './pages/admin/AdminDisputes';
 import { AdminLayout } from './components/AdminLayout';
 import { InspectorDashboard } from './pages/inspector/InspectorDashboard';
 import { PendingInspections } from './pages/inspector/PendingInspections';
@@ -50,6 +51,7 @@ import { InspectionForm } from './pages/inspector/InspectionForm';
 import { MyInspections } from './pages/inspector/MyInspections';
 import { InspectionDetail } from './pages/inspector/InspectionDetail';
 import { InspectorProfile } from './pages/inspector/InspectorProfile';
+import { InspectorWallet } from './pages/inspector/InspectorWallet';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { SellerGate } from './components/SellerGate';
 import { BuyerSellerOnlyGate } from './components/BuyerSellerOnlyGate';
@@ -149,6 +151,7 @@ const App: React.FC = () => {
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="users" element={<AdminUsers />} />
+            <Route path="disputes" element={<AdminDisputes />} />
             <Route path="listings" element={<AdminListings />} />
             <Route path="catalog" element={<AdminCatalog />} />
             <Route path="orders" element={<AdminOrders />} />
@@ -181,6 +184,11 @@ const App: React.FC = () => {
           <Route path="/inspector/inspection/:orderId" element={
             <ProtectedRoute allowedRoles={['INSPECTOR']}>
               <InspectionDetail />
+            </ProtectedRoute>
+          } />
+          <Route path="/inspector/wallet" element={
+            <ProtectedRoute allowedRoles={['INSPECTOR']}>
+              <InspectorWallet />
             </ProtectedRoute>
           } />
           <Route path="/inspector/profile" element={

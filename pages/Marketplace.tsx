@@ -136,7 +136,9 @@ export const Marketplace: React.FC = () => {
     const validListings = listings
       .filter((listing) => {
         if (!listing || !listing._id) return false;
-        if (listing.status !== 'PUBLISHED') return false;
+        // Filter status
+        const allowedStatuses = ['PUBLISHED', 'RESERVED', 'SOLD', 'IN_INSPECTION'];
+        if (!allowedStatuses.includes(listing.status)) return false;
         // Check sellerId safely
         if (!listing.sellerId) return false;
         if (typeof listing.sellerId === 'object' && !listing.sellerId._id && !listing.sellerId.fullName) {
@@ -169,6 +171,7 @@ export const Marketplace: React.FC = () => {
           price: listing.pricing?.amount || 0,
           originalPrice: listing.pricing?.originalPrice || listing.pricing?.amount || 0,
           type: listing.type || 'ROAD',
+          status: listing.status || 'PUBLISHED',
           size: listing.generalInfo?.size || 'M',
           conditionScore: hasInspectionScore ? listing.inspectionScore : 0,
           inspectionStatus: hasInspectionScore ? 'PASSED' : 'PENDING',

@@ -5,29 +5,30 @@ import { InspectorHeader } from '../../components/InspectorHeader';
 import { API_BASE_URL } from '../../constants';
 
 interface PendingInspection {
-  id: string;
-  orderId: string;
-  order: {
-    id: string;
-    status: string;
-    amount: number;
-    listingId: {
-      title: string;
+  _id: string; // Order ID
+  listingId: {
+    title: string;
+    generalInfo: {
       brand: string;
       model: string;
-      type: string;
     };
-    buyerId: {
-      fullName: string;
-      email: string;
-    };
-    sellerId: {
-      fullName: string;
-      email: string;
+    type: string;
+    media: {
+      thumbnails: string[];
     };
   };
-  assignedAt: string;
-  deadline: string;
+  buyerId: {
+    fullName: string;
+    email: string;
+  };
+  sellerId: {
+    fullName: string;
+    email: string;
+  };
+  financials: {
+    totalAmount: number;
+  };
+  createdAt: string;
 }
 
 export const PendingInspections: React.FC = () => {
@@ -111,21 +112,38 @@ export const PendingInspections: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 gap-6">
               {inspections.map((inspection) => {
-                const daysLeft = getDaysUntilDeadline(inspection.deadline);
+                const daysLeft = 3; // Mock deadline for now
                 return (
-                  <div key={inspection.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <div key={inspection._id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-lg font-bold text-gray-900 mb-2">
-                          {inspection.order.listingId.title}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          {inspection.order.listingId.brand} {inspection.order.listingId.model} ({inspection.order.listingId.type})
-                        </p>
+                      <div className="flex gap-4">
+                        {/* Thumbnail Image */}
+                        <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 bg-gray-100">
+                          {inspection.listingId.media?.thumbnails?.[0] ? (
+                            <img 
+                              src={inspection.listingId.media.thumbnails[0]} 
+                              alt={inspection.listingId.title} 
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                              No Image
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div>
+                          <h3 className="text-lg font-bold text-gray-900 mb-2">
+                            {inspection.listingId.title}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            {inspection.listingId.generalInfo?.brand} {inspection.listingId.generalInfo?.model} ({inspection.listingId.type})
+                          </p>
+                        </div>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-semibold text-gray-900">
-                          {formatCurrency(inspection.order.amount)}
+                          {formatCurrency(inspection.financials?.totalAmount)}
                         </p>
                         <p className={`text-xs font-semibold mt-1 ${
                           daysLeft < 0 ? 'text-red-600' : daysLeft <= 1 ? 'text-yellow-600' : 'text-green-600'
@@ -140,23 +158,23 @@ export const PendingInspections: React.FC = () => {
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div>
                         <p className="text-xs text-gray-600 mb-1">Buyer</p>
-                        <p className="text-sm font-semibold text-gray-900">{inspection.order.buyerId.fullName}</p>
-                        <p className="text-xs text-gray-600">{inspection.order.buyerId.email}</p>
+                        <p className="text-sm font-semibold text-gray-900">{inspection.buyerId?.fullName || 'N/A'}</p>
+                        <p className="text-xs text-gray-600">{inspection.buyerId?.email || 'N/A'}</p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-600 mb-1">Seller</p>
-                        <p className="text-sm font-semibold text-gray-900">{inspection.order.sellerId.fullName}</p>
-                        <p className="text-xs text-gray-600">{inspection.order.sellerId.email}</p>
+                        <p className="text-sm font-semibold text-gray-900">{inspection.sellerId?.fullName || 'N/A'}</p>
+                        <p className="text-xs text-gray-600">{inspection.sellerId?.email || 'N/A'}</p>
                       </div>
                     </div>
 
                     <div className="flex justify-between items-center pt-4 border-t border-gray-200">
                       <div>
                         <p className="text-xs text-gray-600">Order ID</p>
-                        <p className="text-sm font-mono text-gray-900">{inspection.orderId.substring(0, 8)}...</p>
+                        <p className="text-sm font-mono text-gray-900">{inspection._id.substring(0, 8).toUpperCase()}...</p>
                       </div>
                       <button
-                        onClick={() => navigate(`/inspector/inspect/${inspection.orderId}`)}
+                        onClick={() => navigate(`/inspector/inspect/${inspection._id}`)}
                         className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
                       >
                         Start Inspection

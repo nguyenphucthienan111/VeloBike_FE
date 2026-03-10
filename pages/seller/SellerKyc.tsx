@@ -112,34 +112,53 @@ export const SellerKyc: React.FC = () => {
         return;
       }
 
-      // eKYC thành công → tự động upgrade lên SELLER
+      // eKYC thành công
+      // KHÔNG tự động set VERIFIED và redirect ngay.
+      // Fetch lại status thực tế từ BE để quyết định.
       try {
-        const upgradeRes = await fetch(`${API_BASE_URL}/users/me/upgrade-to-seller`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const upgradeData = await upgradeRes.json().catch(() => ({}));
+        const meRes = await fetch(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } });
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          const u = meData.data;
+          
+          // Cập nhật localStorage
+          localStorage.setItem('user', JSON.stringify({ 
+            id: u._id || u.id, 
+            email: u.email, 
+            fullName: u.fullName, 
+            role: u.role, 
+            kycStatus: u.kycStatus, // Status thực tế từ DB
+            emailVerified: u.emailVerified, 
+            avatar: u.avatar 
+          }));
+          window.dispatchEvent(new Event('authStatusChanged'));
 
-        if (upgradeRes.ok) {
-          setSuccess(
-            upgradeData?.message ||
-              'KYC đã được xác thực và tài khoản đã được nâng cấp lên Seller. Bạn có thể đăng tin bán xe.'
-          );
-        } else {
-          const msg =
-            upgradeData?.message ||
-            'KYC đã được xác thực, nhưng nâng cấp lên Seller không thành công. Vui lòng liên hệ hỗ trợ hoặc thử lại trong phần tài khoản.';
-          setSuccess(msg);
+          if (u.kycStatus === 'VERIFIED' || u.kycStatus === 'APPROVED') {
+            // Nếu eKYC tự động thành công (VERIFIED) -> gọi upgrade-to-seller
+            if (u.role !== 'SELLER') {
+               await fetch(`${API_BASE_URL}/users/me/upgrade-to-seller`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              // Update local storage role manually to avoid another fetch
+              const updatedUser = { ...JSON.parse(localStorage.getItem('user') || '{}'), role: 'SELLER' };
+              localStorage.setItem('user', JSON.stringify(updatedUser));
+              window.dispatchEvent(new Event('authStatusChanged'));
+            }
+
+            setSuccess('KYC đã được duyệt tự động! Đang chuyển hướng...');
+            setTimeout(() => navigate('/seller/dashboard'), 1500);
+          } else {
+            setKycStatus('PENDING'); // Hiển thị trạng thái chờ
+            setSuccess('Hồ sơ KYC đã được gửi thành công và đang chờ Admin duyệt. Vui lòng quay lại sau.');
+            // Không navigate, để user đọc thông báo
+          }
         }
-      } catch (upgradeErr: any) {
-        console.error('Upgrade to seller error:', upgradeErr);
-        setSuccess(
-          'KYC đã được xác thực, nhưng nâng cấp lên Seller gặp lỗi. Vui lòng thử lại trong phần tài khoản hoặc liên hệ hỗ trợ.'
-        );
+      } catch (err) {
+        console.error('Error refreshing user status:', err);
+        setSuccess('Hồ sơ đã gửi. Vui lòng tải lại trang để cập nhật trạng thái.');
       }
-
-      setKycStatus('VERIFIED');
-      navigate('/seller/dashboard');
+      
       setIdCardFront(null);
       setSelfie(null);
     } catch (err: unknown) {

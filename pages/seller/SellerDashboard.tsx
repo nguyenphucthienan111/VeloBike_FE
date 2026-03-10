@@ -178,6 +178,15 @@ export const SellerDashboard: React.FC = () => {
                   </div>
                 )}
               </div>
+
+              {/* Message Button */}
+              <button 
+                onClick={() => navigate('/seller/messages')}
+                className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-gray-50 text-gray-700"
+                title="Tin nhắn"
+              >
+                💬
+              </button>
               
               <SellerHeaderUserMenu user={user} />
             </div>

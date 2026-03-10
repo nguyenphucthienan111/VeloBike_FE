@@ -5,18 +5,18 @@ import { InspectorHeader } from '../../components/InspectorHeader';
 import { API_BASE_URL } from '../../constants';
 
 interface Inspection {
-  id: string;
-  orderId: string;
-  overallVerdict: string;
-  overallScore: number;
-  grade: string;
-  submittedAt: string;
-  order: {
-    status: string;
+  _id: string; // Inspection ID
+  orderId: {
+    _id: string;
     listingId: {
       title: string;
     };
+    status: string;
   };
+  overallVerdict: string;
+  overallScore: number;
+  grade: string;
+  createdAt: string; // Use createdAt instead of submittedAt
 }
 
 export const MyInspections: React.FC = () => {
@@ -148,12 +148,12 @@ export const MyInspections: React.FC = () => {
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {inspections.map((inspection) => (
-                        <tr key={inspection.id} className="hover:bg-gray-50">
+                        <tr key={inspection._id} className="hover:bg-gray-50">
                           <td className="px-6 py-4">
-                            <p className="text-sm font-mono text-gray-900">{inspection.orderId.substring(0, 8)}...</p>
+                            <p className="text-sm font-mono text-gray-900">{inspection.orderId._id.substring(0, 8).toUpperCase()}...</p>
                           </td>
                           <td className="px-6 py-4">
-                            <p className="font-semibold text-gray-900">{inspection.order.listingId.title}</p>
+                            <p className="font-semibold text-gray-900">{inspection.orderId.listingId?.title || 'Unknown Listing'}</p>
                           </td>
                           <td className="px-6 py-4">
                             <span className={`px-2 py-1 text-xs font-semibold rounded ${getVerdictColor(inspection.overallVerdict)}`}>
@@ -161,21 +161,21 @@ export const MyInspections: React.FC = () => {
                             </span>
                           </td>
                           <td className="px-6 py-4">
-                            <p className="font-semibold text-gray-900">{inspection.overallScore.toFixed(1)}</p>
+                            <p className="font-semibold text-gray-900">{inspection.overallScore?.toFixed(1) || 'N/A'}</p>
                           </td>
                           <td className="px-6 py-4">
                             <p className={`text-2xl font-bold ${getGradeColor(inspection.grade)}`}>
-                              {inspection.grade}
+                              {inspection.grade || '-'}
                             </p>
                           </td>
                           <td className="px-6 py-4">
                             <p className="text-sm text-gray-900">
-                              {new Date(inspection.submittedAt).toLocaleDateString()}
+                              {new Date(inspection.createdAt).toLocaleDateString()}
                             </p>
                           </td>
                           <td className="px-6 py-4">
                             <button
-                              onClick={() => navigate(`/inspector/inspection/${inspection.orderId}`)}
+                              onClick={() => navigate(`/inspector/inspection/${inspection.orderId._id}`)}
                               className="px-3 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded transition-colors"
                             >
                               View Details

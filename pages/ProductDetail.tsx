@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ShieldCheck, Ruler, Truck, ChevronLeft, AlertCircle, CheckCircle, Eye, MapPin } from 'lucide-react';
+import { ShieldCheck, Ruler, Truck, ChevronLeft, AlertCircle, CheckCircle, Eye, MapPin, MessageCircle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { API_BASE_URL } from '../constants';
 import { Toast, useToast } from '../components/Toast';
@@ -196,7 +196,7 @@ export const ProductDetail: React.FC = () => {
   ].filter(item => item.value > 0);
 
   const formatPrice = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { 
+    return new Intl.NumberFormat('vi-VN', { 
       style: 'currency', 
       currency: listing.pricing.currency || 'VND' 
     }).format(amount);
@@ -469,47 +469,35 @@ export const ProductDetail: React.FC = () => {
                 {!listing.generalInfo?.brand && !listing.generalInfo?.model && (
                   <div className="text-sm text-gray-400 mb-1">{bike.year} • {bike.type}</div>
                 )}
-                <h1 className="text-2xl lg:text-3xl font-extrabold leading-tight mb-2">{bike.title}</h1>
                 
-                {/* Seller Info */}
-                {listing.sellerId && (
-                  <div className="mb-4 p-3 bg-gray-50 rounded border border-gray-100">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-gray-500">Seller:</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold">{listing.sellerId.fullName}</span>
-                        {listing.sellerId.badge && (
-                          <span className="text-xs bg-accent text-white px-2 py-0.5 rounded">
-                            {listing.sellerId.badge}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {(listing.sellerId.reputation && (typeof listing.sellerId.reputation === 'object')) && (
-                      <div className="text-xs text-gray-500">
-                        ⭐ {(listing.sellerId.reputation as { score?: number; reviewCount?: number }).score ?? 0}/5 ({(listing.sellerId.reputation as { score?: number; reviewCount?: number }).reviewCount ?? 0} reviews)
-                      </div>
+                <h1 className="text-2xl lg:text-3xl font-extrabold leading-tight mb-4">{bike.title}</h1>
+                
+                {/* Price Section - Di chuyển lên trên */}
+                <div className="flex items-baseline gap-3 mb-6">
+                    <span className="text-4xl font-bold text-accent">
+                        {formatPrice(bike.price)}
+                    </span>
+                    {bike.originalPrice > bike.price && (
+                      <span className="text-gray-400 line-through text-sm">
+                          {formatPrice(bike.originalPrice)}
+                      </span>
                     )}
-                  </div>
-                )}
+                </div>
 
-                <div className="flex items-center gap-2 mb-6 flex-wrap">
+                {/* Tags & Stats */}
+                <div className="flex flex-wrap items-center gap-2 mb-6">
                     <span className="text-xs font-bold bg-black text-white px-2 py-1">SIZE {bike.size}</span>
-                    <span className="text-xs text-gray-500">Condition: {formatCondition(bike.condition)}</span>
-                    {/* Availability badge */}
+                    <span className="text-xs text-gray-500 border border-gray-200 px-2 py-1 rounded">Condition: {formatCondition(bike.condition)}</span>
                     {listing.status === 'SOLD' ? (
                       <span className="text-xs font-bold bg-gray-500 text-white px-2 py-1 rounded">ĐÃ BÁN</span>
-                    ) : listing.status === 'RESERVED' ? (
+                    ) : (listing.status === 'RESERVED' || listing.status === 'IN_INSPECTION') ? (
                       <span className="text-xs font-bold bg-amber-500 text-white px-2 py-1 rounded">ĐÃ CÓ NGƯỜI ĐẶT</span>
                     ) : listing.status === 'PUBLISHED' ? (
                       <span className="text-xs font-bold bg-green-600 text-white px-2 py-1 rounded">CÒN HÀNG</span>
-                    ) : listing.status ? (
-                      <span className="text-xs font-bold bg-amber-500 text-white px-2 py-1 rounded">{listing.status}</span>
                     ) : null}
                 </div>
 
-                {/* Views, Boost, Listed at */}
-                <div className="flex flex-wrap items-center gap-4 mb-6 text-xs text-gray-500">
+                <div className="flex flex-wrap items-center gap-4 mb-8 text-xs text-gray-500">
                   <div className="flex items-center gap-1">
                     <Eye size={14} />
                     <span>{listing.views || 0} views</span>
@@ -523,19 +511,25 @@ export const ProductDetail: React.FC = () => {
                     <span>Đăng {formatListedAt(listing.createdAt)}</span>
                   )}
                 </div>
-                
-                <div className="flex items-baseline gap-3 mb-6">
-                    <span className="text-4xl font-bold text-accent">
-                        {formatPrice(bike.price)}
-                    </span>
-                    {bike.originalPrice > bike.price && (
-                      <span className="text-gray-400 line-through text-sm">
-                          {formatPrice(bike.originalPrice)}
-                      </span>
-                    )}
-                </div>
 
-                <div className="space-y-3">
+                {/* Actions Buttons */}
+                <div className="space-y-3 mb-8">
+                    {/* Status Alert - Always visible if not PUBLISHED */}
+                    {listing.status !== 'PUBLISHED' && (
+                      <div className={`rounded-lg p-4 mb-3 text-center font-bold border-2 ${
+                        listing.status === 'SOLD' 
+                          ? 'bg-gray-100 border-gray-300 text-gray-600' 
+                          : 'bg-amber-50 border-amber-200 text-amber-800'
+                      }`}>
+                        {listing.status === 'SOLD' ? 'SẢN PHẨM ĐÃ BÁN' : 'SẢN PHẨM ĐÃ CÓ NGƯỜI ĐẶT'}
+                        <p className="text-xs font-normal mt-1 opacity-80">
+                          {listing.status === 'SOLD' 
+                            ? 'Sản phẩm này không còn khả dụng.' 
+                            : 'Vui lòng chọn sản phẩm khác hoặc quay lại sau.'}
+                        </p>
+                      </div>
+                    )}
+
                     {!canPurchase && listing?.status === 'PUBLISHED' && (
                       <div className="bg-gray-100 border border-gray-200 rounded-lg p-4 mb-3">
                         <p className="text-sm text-gray-700 font-medium">
@@ -546,25 +540,64 @@ export const ProductDetail: React.FC = () => {
                         </p>
                       </div>
                     )}
+                    
                     {canPurchase && listing?.status === 'PUBLISHED' && (
-                      <button
-                        onClick={handleBuyNow}
-                        className="w-full bg-accent hover:bg-red-600 text-white py-4 font-bold uppercase tracking-widest transition-colors shadow-md"
-                      >
-                        MUA NGAY
-                      </button>
+                      <div className="flex flex-col gap-3">
+                        <button
+                          onClick={handleBuyNow}
+                          className="w-full bg-accent hover:bg-red-600 text-white py-4 font-bold uppercase tracking-widest transition-colors shadow-md rounded-sm text-lg"
+                        >
+                          MUA NGAY
+                        </button>
+                        
+                        {listing.sellerId && (
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/messages?contact=${listing.sellerId!._id}&listingId=${listing._id}`)}
+                            className="w-full flex items-center justify-center gap-2 py-3 border border-gray-300 rounded-sm hover:bg-gray-50 text-gray-700 font-semibold transition-colors"
+                          >
+                            <MessageCircle size={18} />
+                            Nhắn tin với người bán
+                          </button>
+                        )}
+                      </div>
                     )}
+                    
                     {listing?.status === 'SOLD' && (
                       <div className="bg-gray-200 rounded-lg py-4 text-center font-bold text-gray-600">ĐÃ BÁN</div>
                     )}
                     {listing?.status === 'RESERVED' && (
                       <div className="bg-amber-100 rounded-lg py-4 text-center font-bold text-amber-800">ĐÃ CÓ NGƯỜI ĐẶT</div>
                     )}
+                    
+                    <div className="mt-2 text-xs text-gray-500 text-center flex items-center justify-center gap-1">
+                        <ShieldCheck size={14}/> 100% Money Back Guarantee if item differs from inspection
+                    </div>
                 </div>
                 
-                <div className="mt-4 text-xs text-gray-500 text-center flex items-center justify-center gap-1">
-                    <ShieldCheck size={14}/> 100% Money Back Guarantee if item differs from inspection
-                </div>
+                {/* Seller Info - Compact */}
+                {listing.sellerId && (
+                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-100 mb-6">
+                    <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 font-bold text-lg overflow-hidden">
+                      {listing.sellerId.fullName.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-gray-900">{listing.sellerId.fullName}</span>
+                        {listing.sellerId.badge && (
+                          <span className="text-[10px] bg-accent text-white px-1.5 py-0.5 rounded">
+                            {listing.sellerId.badge}
+                          </span>
+                        )}
+                      </div>
+                      {(listing.sellerId.reputation && (typeof listing.sellerId.reputation === 'object')) && (
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          ⭐ {(listing.sellerId.reputation as { score?: number; reviewCount?: number }).score ?? 0}/5 • {(listing.sellerId.reputation as { score?: number; reviewCount?: number }).reviewCount ?? 0} reviews
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
             </div>
 
             {/* Location */}
