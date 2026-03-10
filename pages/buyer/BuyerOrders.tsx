@@ -5,6 +5,7 @@ import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../..
 import { Toast, useToast } from '../../components/Toast';
 import { DisputeModal } from '../../components/DisputeModal';
 import { ConfirmReceivedModal } from '../../components/ConfirmReceivedModal';
+import { ReviewModal } from '../../components/ReviewModal';
 
 interface OrderListing {
   _id: string;
@@ -116,6 +117,7 @@ export const BuyerOrders: React.FC = () => {
   const [checkingPayment, setCheckingPayment] = useState<string | null>(null);
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [showConfirmReceivedModal, setShowConfirmReceivedModal] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
   const [selectedOrderForAction, setSelectedOrderForAction] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -502,6 +504,19 @@ export const BuyerOrders: React.FC = () => {
                                     Khiếu nại
                                 </button>
                             )}
+                            {(order.status === 'COMPLETED' || order.status === 'DELIVERED') && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setSelectedOrderForAction(order._id);
+                                        setShowReviewModal(true);
+                                    }}
+                                    className="inline-flex items-center gap-1 text-xs font-bold text-white bg-yellow-500 hover:bg-yellow-600 px-3 py-1.5 rounded transition-colors shadow-sm"
+                                >
+                                    <MessageCircle size={14} />
+                                    Đánh giá
+                                </button>
+                            )}
                             {listing?._id && (
                               <Link
                                 to={`/bike/${listing._id}`}
@@ -549,6 +564,16 @@ export const BuyerOrders: React.FC = () => {
           onClose={() => setShowConfirmReceivedModal(false)}
           onConfirm={handleConfirmReceived}
           loading={actionLoading}
+        />
+      )}
+
+      {showReviewModal && selectedOrderForAction && (
+        <ReviewModal
+          orderId={selectedOrderForAction}
+          onClose={() => setShowReviewModal(false)}
+          onSuccess={() => {
+            showToast('Đã gửi đánh giá thành công', 'success');
+          }}
         />
       )}
     </div>

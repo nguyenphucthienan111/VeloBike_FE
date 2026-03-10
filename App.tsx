@@ -44,6 +44,7 @@ import { AdminInspectors } from './pages/admin/AdminInspectors';
 import { AdminProfile } from './pages/admin/AdminProfile';
 import { AdminCatalog } from './pages/admin/AdminCatalog';
 import { AdminDisputes } from './pages/admin/AdminDisputes';
+import { AdminSettings } from './pages/admin/AdminSettings';
 import { AdminLayout } from './components/AdminLayout';
 import { InspectorDashboard } from './pages/inspector/InspectorDashboard';
 import { PendingInspections } from './pages/inspector/PendingInspections';
@@ -152,6 +153,7 @@ const App: React.FC = () => {
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="disputes" element={<AdminDisputes />} />
+            <Route path="settings" element={<AdminSettings />} />
             <Route path="listings" element={<AdminListings />} />
             <Route path="catalog" element={<AdminCatalog />} />
             <Route path="orders" element={<AdminOrders />} />

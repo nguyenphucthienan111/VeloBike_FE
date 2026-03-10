@@ -16,6 +16,7 @@ export const AdminSidebar: React.FC = () => {
     { path: '/admin/disputes', label: 'Disputes' },
     { path: '/admin/analytics', label: 'Analytics' },
     { path: '/admin/inspectors', label: 'Inspectors' },
+    { path: '/admin/settings', label: 'Settings' },
     { path: '/admin/profile', label: 'My Profile' },
   ];
 

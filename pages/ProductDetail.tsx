@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ShieldCheck, Ruler, Truck, ChevronLeft, AlertCircle, CheckCircle, Eye, MapPin, MessageCircle } from 'lucide-react';
+import { ShieldCheck, Ruler, Truck, ChevronLeft, AlertCircle, CheckCircle, Eye, MapPin, MessageCircle, Flag } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { API_BASE_URL } from '../constants';
 import { Toast, useToast } from '../components/Toast';
+import { ReportModal } from '../components/ReportModal';
 
 interface ListingData {
   _id: string;
@@ -80,6 +81,7 @@ export const ProductDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [showReportModal, setShowReportModal] = useState(false);
   const { toast, showToast, hideToast } = useToast();
 
   // Chỉ BUYER và SELLER mua hàng được — Admin/Inspector không
@@ -570,8 +572,16 @@ export const ProductDetail: React.FC = () => {
                       <div className="bg-amber-100 rounded-lg py-4 text-center font-bold text-amber-800">ĐÃ CÓ NGƯỜI ĐẶT</div>
                     )}
                     
-                    <div className="mt-2 text-xs text-gray-500 text-center flex items-center justify-center gap-1">
-                        <ShieldCheck size={14}/> 100% Money Back Guarantee if item differs from inspection
+                    <div className="mt-2 text-xs text-gray-500 text-center flex flex-col items-center gap-2">
+                        <div className="flex items-center gap-1">
+                            <ShieldCheck size={14}/> 100% Money Back Guarantee if item differs from inspection
+                        </div>
+                        <button 
+                            onClick={() => setShowReportModal(true)}
+                            className="text-gray-400 hover:text-red-500 flex items-center gap-1 transition-colors"
+                        >
+                            <Flag size={12} /> Báo cáo tin đăng
+                        </button>
                     </div>
                 </div>
                 
@@ -631,6 +641,14 @@ export const ProductDetail: React.FC = () => {
         onClose={hideToast}
         duration={3000}
       />
+
+      {showReportModal && listing && (
+        <ReportModal 
+            listingId={listing._id}
+            onClose={() => setShowReportModal(false)}
+            onSuccess={() => showToast('Đã gửi báo cáo thành công. Admin sẽ xem xét sớm.', 'success')}
+        />
+      )}
     </div>
   );
 };
