@@ -29,6 +29,17 @@ export const SellerOrders: React.FC = () => {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [user, setUser] = useState<any>(null);
 
+  const [showShipmentModal, setShowShipmentModal] = useState(false);
+  const [selectedShipmentOrder, setSelectedShipmentOrder] = useState<string | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState('ghn');
+
+  const providers = [
+    { id: 'ghn', name: 'Giao Hàng Nhanh (GHN)', price: '30,000đ', time: '2-3 days' },
+    { id: 'ghtk', name: 'Giao Hàng Tiết Kiệm (GHTK)', price: '25,000đ', time: '3-4 days' },
+    { id: 'viettelpost', name: 'Viettel Post', price: '28,000đ', time: '2-4 days' },
+    { id: 'grab', name: 'GrabExpress (Hỏa tốc)', price: '50,000đ', time: '1-2 hours' },
+  ];
+
   const statuses = ['ALL', 'CREATED', 'ESCROW_LOCKED', 'IN_INSPECTION', 'INSPECTION_PASSED', 'SHIPPING', 'DELIVERED', 'COMPLETED'];
   
   const statusColors: {[key: string]: string} = {
@@ -52,7 +63,8 @@ export const SellerOrders: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`${API_BASE_URL}/orders`, {
+      // Fix: Only fetch orders where I am the SELLER
+      const response = await fetch(`${API_BASE_URL}/orders?role=seller`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -72,7 +84,12 @@ export const SellerOrders: React.FC = () => {
   };
 
   const handleCreateShipment = async (orderId: string) => {
-    if (!window.confirm('Bạn có chắc chắn muốn tạo vận đơn cho đơn hàng này?')) return;
+    setSelectedShipmentOrder(orderId);
+    setShowShipmentModal(true);
+  };
+
+  const confirmShipment = async () => {
+    if (!selectedShipmentOrder) return;
     
     setUpdatingStatus(true);
     try {
@@ -83,12 +100,13 @@ export const SellerOrders: React.FC = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ orderId, serviceId: 'standard' }),
+        body: JSON.stringify({ orderId: selectedShipmentOrder, serviceId: selectedProvider }),
       });
 
       const data = await response.json();
       if (response.ok) {
-        alert('Tạo vận đơn thành công! Đơn hàng đã chuyển sang trạng thái SHIPPING.');
+        alert(`Tạo vận đơn thành công với ${providers.find(p => p.id === selectedProvider)?.name}!`);
+        setShowShipmentModal(false);
         fetchOrders();
       } else {
         alert(data.message || 'Không thể tạo vận đơn');
@@ -296,6 +314,62 @@ export const SellerOrders: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Shipment Modal */}
+      {showShipmentModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-900">Select Shipping Provider</h2>
+              <button onClick={() => setShowShipmentModal(false)} className="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-gray-600 mb-4">Please choose a shipping service for this order.</p>
+              <div className="space-y-3">
+                {providers.map((provider) => (
+                  <label 
+                    key={provider.id} 
+                    className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-all ${
+                      selectedProvider === provider.id ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600' : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <input 
+                        type="radio" 
+                        name="provider" 
+                        value={provider.id} 
+                        checked={selectedProvider === provider.id}
+                        onChange={() => setSelectedProvider(provider.id)}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <div>
+                        <p className="font-medium text-gray-900">{provider.name}</p>
+                        <p className="text-xs text-gray-500">{provider.time}</p>
+                      </div>
+                    </div>
+                    <span className="font-bold text-gray-900">{provider.price}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="p-6 border-t border-gray-200 flex gap-3">
+              <button 
+                onClick={() => setShowShipmentModal(false)}
+                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmShipment}
+                disabled={updatingStatus}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50"
+              >
+                {updatingStatus ? 'Processing...' : 'Confirm Shipment'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Order Detail Modal */}
       {showDetailModal && selectedOrder && (

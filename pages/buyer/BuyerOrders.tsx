@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MessageCircle, CreditCard, XCircle, RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
+import { MessageCircle, CreditCard, XCircle, RefreshCw, AlertTriangle, CheckCircle, Truck } from 'lucide-react';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
 import { Toast, useToast } from '../../components/Toast';
 import { DisputeModal } from '../../components/DisputeModal';
+import { ConfirmReceivedModal } from '../../components/ConfirmReceivedModal';
 
 interface OrderListing {
   _id: string;
@@ -33,6 +34,11 @@ interface OrderItem {
     inspectionFee: number;
     shippingFee: number;
   };
+  timeline?: {
+    status: string;
+    timestamp: string;
+    note?: string;
+  }[];
 }
 
 export const BuyerOrders: React.FC = () => {
@@ -107,15 +113,21 @@ export const BuyerOrders: React.FC = () => {
     }
   };
 
-  const handleConfirmReceived = async (orderId: string) => {
-    if (!window.confirm('Bạn xác nhận đã nhận được hàng và sản phẩm đúng như mô tả? Hành động này sẽ hoàn tất đơn hàng.')) return;
+  const [checkingPayment, setCheckingPayment] = useState<string | null>(null);
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
+  const [showConfirmReceivedModal, setShowConfirmReceivedModal] = useState(false);
+  const [selectedOrderForAction, setSelectedOrderForAction] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
+  const handleConfirmReceived = async () => {
+    if (!selectedOrderForAction) return;
+    
+    setActionLoading(true);
     try {
-      showToast('Đang xác nhận...', 'info');
       const token = localStorage.getItem('accessToken');
       if (!token) return;
 
-      const res = await fetch(`${API_BASE_URL}/orders/${orderId}/status`, {
+      const res = await fetch(`${API_BASE_URL}/orders/${selectedOrderForAction}/status`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -131,9 +143,12 @@ export const BuyerOrders: React.FC = () => {
       }
 
       showToast('Đã xác nhận nhận hàng thành công!', 'success');
+      setShowConfirmReceivedModal(false);
       fetchOrders();
     } catch (err: any) {
       showToast(err.message || 'Lỗi khi xác nhận', 'error');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -174,10 +189,6 @@ export const BuyerOrders: React.FC = () => {
   useEffect(() => {
     fetchOrders();
   }, []);
-
-  const [checkingPayment, setCheckingPayment] = useState<string | null>(null);
-  const [showDisputeModal, setShowDisputeModal] = useState(false);
-  const [selectedOrderForDispute, setSelectedOrderForDispute] = useState<string | null>(null);
 
   const handleCheckPayment = async (orderId: string, silent = false) => {
     try {
@@ -309,6 +320,13 @@ export const BuyerOrders: React.FC = () => {
     }
   };
 
+  const getShippingInfo = (timeline: any[]) => {
+    if (!timeline) return null;
+    // Find the SHIPPING event
+    const event = timeline.find((t: any) => t.status === 'SHIPPING');
+    return event?.note;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white shadow">
@@ -370,6 +388,8 @@ export const BuyerOrders: React.FC = () => {
                       order.financials?.totalAmount ||
                       order.financials?.itemPrice ||
                       listing?.pricing?.amount;
+                    
+                    const shippingInfo = order.status === 'SHIPPING' ? getShippingInfo(order.timeline || []) : null;
 
                     return (
                       <tr key={order._id} className="border-b hover:bg-gray-50">
@@ -399,11 +419,19 @@ export const BuyerOrders: React.FC = () => {
                           {formatCurrency(amount, listing?.pricing?.currency)}
                         </td>
                         <td className="py-3 px-4">
-                          <span
-                            className={`inline-flex px-2 py-1 rounded text-xs font-medium ${statusInfo.className}`}
-                          >
-                            {statusInfo.label}
-                          </span>
+                          <div className="flex flex-col gap-1">
+                            <span
+                              className={`inline-flex px-2 py-1 rounded text-xs font-medium w-fit ${statusInfo.className}`}
+                            >
+                              {statusInfo.label}
+                            </span>
+                            {shippingInfo && (
+                              <div className="flex items-start gap-1 text-xs text-gray-600 bg-blue-50 p-1.5 rounded border border-blue-100 max-w-[200px]">
+                                <Truck size={12} className="mt-0.5 flex-shrink-0 text-blue-600" />
+                                <span className="break-words">{shippingInfo}</span>
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td className="py-3 px-4 text-gray-600">
                           {new Date(order.createdAt).toLocaleString()}
@@ -450,7 +478,10 @@ export const BuyerOrders: React.FC = () => {
                             {order.status === 'SHIPPING' && (
                                 <button
                                     type="button"
-                                    onClick={() => handleConfirmReceived(order._id)}
+                                    onClick={() => {
+                                        setSelectedOrderForAction(order._id);
+                                        setShowConfirmReceivedModal(true);
+                                    }}
                                     className="inline-flex items-center gap-1 text-xs font-bold text-white bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded transition-colors shadow-sm"
                                     title="Xác nhận đã nhận được hàng"
                                 >
@@ -462,7 +493,7 @@ export const BuyerOrders: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => {
-                                        setSelectedOrderForDispute(order._id);
+                                        setSelectedOrderForAction(order._id);
                                         setShowDisputeModal(true);
                                     }}
                                     className="inline-flex items-center gap-1 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 px-3 py-1.5 rounded transition-colors shadow-sm"
@@ -501,14 +532,23 @@ export const BuyerOrders: React.FC = () => {
         </div>
       </div>
 
-      {showDisputeModal && selectedOrderForDispute && (
+      {showDisputeModal && selectedOrderForAction && (
         <DisputeModal
-          orderId={selectedOrderForDispute}
+          orderId={selectedOrderForAction}
           onClose={() => setShowDisputeModal(false)}
           onSuccess={() => {
             showToast('Đã gửi khiếu nại thành công', 'success');
             fetchOrders();
           }}
+        />
+      )}
+
+      {showConfirmReceivedModal && selectedOrderForAction && (
+        <ConfirmReceivedModal
+          orderId={selectedOrderForAction}
+          onClose={() => setShowConfirmReceivedModal(false)}
+          onConfirm={handleConfirmReceived}
+          loading={actionLoading}
         />
       )}
     </div>

@@ -85,27 +85,7 @@ export const AdminDisputes: React.FC = () => {
     try {
       const token = localStorage.getItem('accessToken');
       
-      // Logic: 
-      // If REFUND_BUYER -> We might want to set compensationAmount = full order amount (or partial). 
-      // For simplicity in this UI, let's assume REFUND_BUYER means full refund (or whatever amount is entered if we had that field, but let's stick to simple resolution first).
-      // Actually, the BE resolveDispute takes { resolution, compensationAmount }.
-      // If we want to REFUND, we usually set compensationAmount > 0 for the claimant (Buyer).
-      // If we want to PAY SELLER (deny dispute), we set compensationAmount = 0.
-
-      // However, the BE logic for `resolveDispute` only updates the Dispute status and optionally adds money to claimant's wallet.
-      // It DOES NOT automatically transition the Order status to REFUNDED or COMPLETED in the `OrderService`.
-      // Wait, let's re-read DisputeController.ts... 
-      // It updates Dispute status. It adds money to wallet if compensationAmount > 0.
-      // It DOES NOT call OrderService.transitionStatus.
-      
-      // BUT, the user asked "xú lý xong thi qua trạngt hái gì".
-      // And I said "REFUNDED or COMPLETED".
-      // The current BE `resolveDispute` might be incomplete if it doesn't update Order status.
-      // Let's check if I can update Order status separately or if I should just use the dispute resolution API.
-      
-      // For now, I will use the `resolveDispute` API. 
-      // If I want to fully refund, I should probably also call the Order Refund API or similar, but let's stick to the Dispute API first.
-      
+      // 1. Resolve Dispute
       const body = {
         resolution: resolutionNote,
         compensationAmount: action === 'REFUND_BUYER' ? refundAmount : 0
@@ -120,16 +100,48 @@ export const AdminDisputes: React.FC = () => {
         body: JSON.stringify(body)
       });
 
-      if (response.ok) {
-        alert('Dispute resolved successfully');
-        setSelectedDispute(null);
-        setResolutionNote('');
-        setRefundAmount(0);
-        fetchDisputes();
-      } else {
+      if (!response.ok) {
         const data = await response.json();
-        alert(data.message || 'Failed to resolve dispute');
+        throw new Error(data.message || 'Failed to resolve dispute');
       }
+
+      // 2. Update Order Status & Financials
+      // If REFUND_BUYER -> Set Order to REFUNDED
+      // If PAY_SELLER -> Try to Release Payout (Note: This might fail if Order is not DELIVERED due to BE restriction)
+      
+      if (action === 'REFUND_BUYER') {
+        const orderRes = await fetch(`${API_BASE_URL}/orders/${selectedDispute.orderId._id}/status`, {
+          method: 'PUT',
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status: 'REFUNDED', note: `Dispute resolved: ${resolutionNote}` })
+        });
+        if (!orderRes.ok) console.error('Failed to update order status to REFUNDED');
+      } else {
+        // PAY_SELLER -> Release Payout
+        // Backend Requirement: Order must be in DELIVERED status to release payout.
+        // If it's DISPUTED, this might fail. We'll try to set it to COMPLETED manually if payout fails, 
+        // but money won't be transferred automatically if releasePayout fails.
+        
+        const payoutRes = await fetch(`${API_BASE_URL}/admin/orders/${selectedDispute.orderId._id}/payout`, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!payoutRes.ok) {
+            const payoutData = await payoutRes.json();
+            console.error('Failed to release payout to seller:', payoutData.message);
+            alert(`Warning: Dispute resolved but Payout failed. Reason: ${payoutData.message}. Please handle payout manually.`);
+        }
+      }
+
+      alert('Dispute resolved successfully');
+      setSelectedDispute(null);
+      setResolutionNote('');
+      setRefundAmount(0);
+      fetchDisputes();
     } catch (error) {
       console.error('Error resolving dispute:', error);
       alert('Error resolving dispute');

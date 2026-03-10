@@ -26,6 +26,7 @@ export const Checkout: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [orderLoading, setOrderLoading] = useState(false);
   const [hasActiveOrder, setHasActiveOrder] = useState(false);
+  const [existingOrderId, setExistingOrderId] = useState<string | null>(null);
   const [requestInspection, setRequestInspection] = useState(true);
   const [shippingAddress, setShippingAddress] = useState({
     fullName: '',
@@ -38,14 +39,23 @@ export const Checkout: React.FC = () => {
   });
   const { toast, showToast } = useToast();
 
-  const canPurchase = (() => {
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
     const userStr = localStorage.getItem('user');
-    if (!userStr) return true;
-    try {
-      const u = JSON.parse(userStr);
-      return u?.role === 'BUYER' || u?.role === 'SELLER';
-    } catch { return true; }
+    if (userStr) {
+        try {
+            setCurrentUser(JSON.parse(userStr));
+        } catch {}
+    }
+  }, []);
+
+  const canPurchase = (() => {
+    if (!currentUser) return true;
+    return currentUser?.role === 'BUYER' || currentUser?.role === 'SELLER';
   })();
+
+  const isOwner = currentUser && listing?.sellerId?._id === currentUser.id;
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -86,19 +96,57 @@ export const Checkout: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`${API_BASE_URL}/listings/${listingId}`);
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
+        
+        // Parallel fetch: Listing details AND User's existing orders
+        const [listingRes, ordersRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/listings/${listingId}`),
+          fetch(`${API_BASE_URL}/orders?role=buyer&limit=50`, { // Fetch all recent orders, filter client-side
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+        ]);
+
+        if (!listingRes.ok) {
+          const err = await listingRes.json().catch(() => ({}));
           setError(err.message || 'Không tìm thấy sản phẩm');
           setLoading(false);
           return;
         }
-        const data = await res.json();
-        if (data.success && data.data) {
-          setListing(data.data);
+        const listingData = await listingRes.json();
+        if (listingData.success && listingData.data) {
+          setListing(listingData.data);
         } else {
           setError('Không tìm thấy sản phẩm');
         }
+
+        // Check for existing active order (CREATED or ESCROW_LOCKED etc)
+        if (ordersRes.ok) {
+          const ordersData = await ordersRes.json();
+          // Find any order for this listing that is NOT cancelled/refunded/completed
+          const activeOrder = ordersData.data?.find((o: any) => {
+            const isThisListing = o.listingId?._id === listingId || o.listingId === listingId;
+            const isActiveStatus = !['CANCELLED', 'REFUNDED', 'COMPLETED'].includes(o.status);
+            return isThisListing && isActiveStatus;
+          });
+          
+          if (activeOrder) {
+            // If we found an active order, we should resume it (if CREATED) or show status
+            if (activeOrder.status === 'CREATED') {
+                setExistingOrderId(activeOrder._id);
+                // Pre-fill address
+                if (activeOrder.shippingAddress) {
+                    setShippingAddress(prev => ({
+                        ...prev,
+                        ...activeOrder.shippingAddress
+                    }));
+                }
+            } else {
+                // If order exists but is not CREATED (e.g. PAID), we should probably redirect or show message
+                // For now, let's just mark hasActiveOrder to disable new creation
+                setHasActiveOrder(true);
+            }
+          }
+        }
+
       } catch (err: any) {
         setError(err.message || 'Lỗi tải thông tin');
       } finally {
@@ -109,8 +157,10 @@ export const Checkout: React.FC = () => {
   }, [listingId, canPurchase, navigate]);
 
   const handleSubmit = async () => {
+    console.log('Handle submit triggered');
     const token = localStorage.getItem('accessToken');
     const userStr = localStorage.getItem('user');
+    
     if (!token || !userStr) {
       showToast('Vui lòng đăng nhập', 'warning');
       navigate('/login');
@@ -139,37 +189,50 @@ export const Checkout: React.FC = () => {
     }
 
     setOrderLoading(true);
-    showToast('Đang tạo đơn hàng...', 'info');
+    showToast('Đang xử lý...', 'info');
 
     try {
-      const inspectionRequired = listing.inspectionRequired === false ? false : requestInspection;
+      let orderId = existingOrderId;
+      console.log('Existing Order ID:', orderId);
 
-      const orderRes = await fetch(`${API_BASE_URL}/orders`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token.trim()}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listingId: listing._id, inspectionRequired }),
-      });
-      const orderData = await orderRes.json();
+      // Only create new order if one doesn't exist
+      if (!orderId) {
+        const inspectionRequired = listing.inspectionRequired === false ? false : requestInspection;
+        console.log('Creating new order for listing:', listing._id);
 
-      if (!orderRes.ok) {
-        if (orderRes.status === 401) {
-          handleSessionExpired();
-          return;
+        const orderRes = await fetch(`${API_BASE_URL}/orders`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token.trim()}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ listingId: listing._id, inspectionRequired }),
+        });
+        const orderData = await orderRes.json();
+        console.log('Order creation response:', orderData);
+
+        if (!orderRes.ok) {
+          if (orderRes.status === 401) {
+            handleSessionExpired();
+            return;
+          }
+          if (orderData.message?.includes('đã có người đặt mua') || orderData.message?.includes('already')) {
+            setHasActiveOrder(true);
+            showToast('Đơn hàng đã tồn tại. Đang tải lại...', 'info');
+            setTimeout(() => window.location.reload(), 1500);
+            return;
+          }
+          throw new Error(orderData.message || 'Không thể tạo đơn hàng');
         }
-        if (orderData.message?.includes('đã có người đặt mua') || orderData.message?.includes('already')) {
-          setHasActiveOrder(true);
+        if (!orderData.success || !orderData.data) {
+          throw new Error(orderData.message || 'Không thể tạo đơn hàng');
         }
-        throw new Error(orderData.message || 'Không thể tạo đơn hàng');
-      }
-      if (!orderData.success || !orderData.data) {
-        throw new Error(orderData.message || 'Không thể tạo đơn hàng');
+
+        orderId = orderData.data._id;
+        const actualInspectionFee = orderData.data.financials?.inspectionFee || 0;
+        if (inspectionRequired && actualInspectionFee === 0) {
+          showToast('🎉 Miễn phí kiểm định!', 'success');
+        }
       }
 
-      const orderId = orderData.data._id;
-      const actualInspectionFee = orderData.data.financials?.inspectionFee || 0;
-      if (inspectionRequired && actualInspectionFee === 0) {
-        showToast('🎉 Miễn phí kiểm định!', 'success');
-      }
+      if (!orderId) throw new Error("Missing Order ID");
 
       localStorage.setItem('pendingOrderId', orderId);
       localStorage.setItem('pendingListingId', listing._id);
@@ -183,6 +246,8 @@ export const Checkout: React.FC = () => {
         ...(shippingAddress.province?.trim() && { province: shippingAddress.province.trim() }),
         ...(shippingAddress.zipCode?.trim() && { zipCode: shippingAddress.zipCode.trim() }),
       };
+      
+      console.log('Updating shipping address...');
       const addrRes = await fetch(`${API_BASE_URL}/orders/${orderId}/shipping-address`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token.trim()}`, 'Content-Type': 'application/json' },
@@ -190,11 +255,13 @@ export const Checkout: React.FC = () => {
       });
       if (!addrRes.ok) {
         const err = await addrRes.json().catch(() => ({}));
+        console.error('Address update failed:', err);
         if (addrRes.status === 401) handleSessionExpired();
         throw new Error(err.message || 'Cập nhật địa chỉ thất bại');
       }
 
       showToast('Đang chuyển đến thanh toán...', 'success');
+      console.log('Creating payment link...');
 
       const paymentRes = await fetch(`${API_BASE_URL}/payment/create-link`, {
         method: 'POST',
@@ -202,6 +269,7 @@ export const Checkout: React.FC = () => {
         body: JSON.stringify({ orderId }),
       });
       const paymentData = await paymentRes.json();
+      console.log('Payment link response:', paymentData);
 
       if (!paymentRes.ok) {
         if (paymentRes.status === 401) handleSessionExpired();
@@ -211,12 +279,17 @@ export const Checkout: React.FC = () => {
         }
         throw new Error(paymentData.message || 'Không tạo được link thanh toán');
       }
-      if (!paymentData.success || !paymentData.paymentLink) {
+      
+      const link = paymentData.paymentLink || paymentData.checkoutUrl;
+      if (paymentData.success && link) {
+        console.log('Redirecting to:', link);
+        window.location.href = link;
+      } else {
         throw new Error(paymentData.message || 'Không tạo được link thanh toán');
       }
 
-      window.location.href = paymentData.paymentLink;
     } catch (err: any) {
+      console.error('Checkout error:', err);
       showToast(err.message || 'Có lỗi xảy ra', 'error');
     } finally {
       setOrderLoading(false);
@@ -297,7 +370,19 @@ export const Checkout: React.FC = () => {
           </div>
         </div>
 
-        {hasActiveOrder && (
+        {isOwner && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div>
+                <p className="text-sm text-blue-900 font-bold">Đây là sản phẩm của bạn</p>
+                <p className="text-xs text-blue-700 mt-1">Bạn đang xem trang thanh toán cho sản phẩm do chính bạn đăng bán. Bạn không thể tự mua sản phẩm của mình.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {hasActiveOrder && !isOwner && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
             <p className="text-sm text-amber-900 font-medium">Sản phẩm này đã có người đặt mua</p>
             <p className="text-xs text-amber-700 mt-1">Vui lòng chọn sản phẩm khác</p>
@@ -415,10 +500,10 @@ export const Checkout: React.FC = () => {
 
         <button
           onClick={handleSubmit}
-          disabled={orderLoading || hasActiveOrder}
+          disabled={orderLoading || (hasActiveOrder && !existingOrderId) || isOwner}
           className="w-full bg-accent hover:bg-red-600 text-white py-4 font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-xl"
         >
-          {orderLoading ? 'ĐANG XỬ LÝ...' : hasActiveOrder ? 'ĐÃ CÓ NGƯỜI ĐẶT' : 'THANH TOÁN'}
+          {orderLoading ? 'ĐANG XỬ LÝ...' : (isOwner ? 'SẢN PHẨM CỦA BẠN' : (existingOrderId ? 'TIẾP TỤC THANH TOÁN' : (hasActiveOrder ? 'ĐÃ CÓ NGƯỜI ĐẶT' : 'THANH TOÁN')))}
         </button>
       </div>
       <Toast />
