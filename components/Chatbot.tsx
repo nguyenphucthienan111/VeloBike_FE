@@ -1,0 +1,262 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { MessageSquare, X, Send, Loader2, Bot } from 'lucide-react';
+import { API_BASE_URL } from '../constants';
+
+interface Message {
+  id: string;
+  text: string;
+  sender: 'user' | 'bot';
+  timestamp: string;
+}
+
+export const Chatbot: React.FC = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [remaining, setRemaining] = useState<number | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    setIsAuthenticated(!!token);
+    
+    if (token && isOpen && messages.length === 0) {
+      fetchHistory();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const fetchHistory = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+
+      const response = await fetch(`${API_BASE_URL}/chatbot/history?limit=20`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        // Transform history to messages
+        const historyMessages: Message[] = [];
+        // The history API returns conversations with messages array
+        // We need to flatten this or handle the structure correctly
+        // Assuming data.data is array of conversations
+        data.data.forEach((conv: any) => {
+          conv.messages.forEach((msg: any) => {
+            historyMessages.push({
+              id: msg._id || Math.random().toString(),
+              text: msg.text,
+              sender: msg.sender.toLowerCase() === 'user' ? 'user' : 'bot',
+              timestamp: msg.timestamp
+            });
+          });
+        });
+        
+        // Sort by timestamp
+        historyMessages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        setMessages(historyMessages);
+      }
+    } catch (error) {
+      console.error('Error fetching chat history:', error);
+    }
+  };
+
+  const handleSend = async () => {
+    if (!input.trim() || loading) return;
+
+    const userMessage = input.trim();
+    setInput('');
+    
+    // Add user message immediately
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      text: userMessage,
+      sender: 'user',
+      timestamp: new Date().toISOString()
+    };
+    setMessages(prev => [...prev, newMessage]);
+    setLoading(true);
+
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(`${API_BASE_URL}/chatbot/webhook`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ message: userMessage })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: data.reply,
+          sender: 'bot',
+          timestamp: new Date().toISOString()
+        };
+        setMessages(prev => [...prev, botMessage]);
+        setRemaining(data.remaining);
+      } else {
+        // Handle error (e.g. rate limit)
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: data.message || "Xin lỗi, tôi đang gặp sự cố. Vui lòng thử lại sau.",
+          sender: 'bot',
+          timestamp: new Date().toISOString()
+        };
+        setMessages(prev => [...prev, errorMessage]);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "Không thể kết nối đến server. Vui lòng kiểm tra mạng.",
+        sender: 'bot',
+        timestamp: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  if (!isAuthenticated) return null;
+
+  return (
+    <>
+      {/* Floating Button */}
+      <button
+        onClick={() => setIsOpen(true)}
+        className={`fixed bottom-6 right-6 z-40 bg-black text-white p-4 rounded-full shadow-lg hover:bg-gray-800 transition-all duration-300 ${isOpen ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`}
+      >
+        <MessageSquare size={24} />
+      </button>
+
+      {/* Chat Window */}
+      <div 
+        className={`fixed bottom-6 right-6 z-50 w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col transition-all duration-300 origin-bottom-right ${
+          isOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'
+        }`}
+        style={{ height: '500px' }}
+      >
+        {/* Header */}
+        <div className="bg-black text-white p-4 rounded-t-2xl flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="bg-white/20 p-1.5 rounded-full">
+              <Bot size={20} />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm">VeloBike AI Assistant</h3>
+              {remaining !== null && remaining !== -1 && (
+                <p className="text-[10px] text-gray-300">Còn lại: {remaining} tin nhắn</p>
+              )}
+            </div>
+          </div>
+          <button 
+            onClick={() => setIsOpen(false)}
+            className="text-gray-300 hover:text-white transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+          {messages.length === 0 ? (
+            <div className="text-center text-gray-500 mt-10">
+              <Bot size={40} className="mx-auto mb-2 opacity-20" />
+              <p className="text-sm">Xin chào! Tôi có thể giúp gì cho bạn về xe đạp?</p>
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                <button 
+                  onClick={() => { setInput("Định giá xe đạp"); }}
+                  className="text-xs bg-white border border-gray-200 px-3 py-1.5 rounded-full hover:bg-gray-100"
+                >
+                  Định giá xe
+                </button>
+                <button 
+                  onClick={() => { setInput("Quy trình kiểm định"); }}
+                  className="text-xs bg-white border border-gray-200 px-3 py-1.5 rounded-full hover:bg-gray-100"
+                >
+                  Kiểm định
+                </button>
+                <button 
+                  onClick={() => { setInput("Làm sao để bán xe?"); }}
+                  className="text-xs bg-white border border-gray-200 px-3 py-1.5 rounded-full hover:bg-gray-100"
+                >
+                  Bán xe
+                </button>
+              </div>
+            </div>
+          ) : (
+            messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[80%] p-3 rounded-2xl text-sm whitespace-pre-wrap ${
+                    msg.sender === 'user'
+                      ? 'bg-black text-white rounded-br-none'
+                      : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm'
+                  }`}
+                >
+                  {msg.text}
+                </div>
+              </div>
+            ))
+          )}
+          {loading && (
+            <div className="flex justify-start">
+              <div className="bg-white border border-gray-200 p-3 rounded-2xl rounded-bl-none shadow-sm">
+                <Loader2 size={16} className="animate-spin text-gray-400" />
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input */}
+        <div className="p-3 border-t border-gray-100 bg-white rounded-b-2xl">
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder="Nhập tin nhắn..."
+              className="flex-1 bg-gray-100 border-none rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-black/5 outline-none"
+              disabled={loading}
+            />
+            <button
+              onClick={handleSend}
+              disabled={!input.trim() || loading}
+              className="bg-black text-white p-2 rounded-full hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <Send size={18} />
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};

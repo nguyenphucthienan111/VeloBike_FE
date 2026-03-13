@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../constants';
-import { toast } from 'react-toastify';
+import { useToast, Toast } from '../../components/Toast';
 import { Flag, CheckCircle, XCircle, Eye, AlertTriangle } from 'lucide-react';
 
 interface Report {
@@ -31,6 +31,7 @@ interface Report {
 }
 
 export const AdminReports: React.FC = () => {
+  const { toast, showToast, hideToast } = useToast();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
@@ -73,11 +74,11 @@ export const AdminReports: React.FC = () => {
         setReports(data.data);
         setPagination(prev => ({ ...prev, ...data.pagination }));
       } else {
-        toast.error(data.message || 'Failed to fetch reports');
+        showToast(data.message || 'Failed to fetch reports', 'error');
       }
     } catch (error) {
       console.error('Error fetching reports:', error);
-      toast.error('Error fetching reports');
+      showToast('Error fetching reports', 'error');
     } finally {
       setLoading(false);
     }
@@ -106,15 +107,15 @@ export const AdminReports: React.FC = () => {
 
       const data = await response.json();
       if (data.success) {
-        toast.success('Report reviewed successfully');
+        showToast('Report reviewed successfully', 'success');
         setSelectedReport(null);
         fetchReports();
       } else {
-        toast.error(data.message || 'Failed to review report');
+        showToast(data.message || 'Failed to review report', 'error');
       }
     } catch (error) {
       console.error('Error reviewing report:', error);
-      toast.error('Error reviewing report');
+      showToast('Error reviewing report', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -361,6 +362,14 @@ export const AdminReports: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={hideToast}
+      />
     </div>
   );
 };

@@ -4,6 +4,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../constants';
 import { handleSessionExpired } from '../utils/auth';
 
+import { Chatbot } from './Chatbot';
+
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -399,6 +401,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         </div>
       </footer>
       )}
+      {/* Chatbot */}
+      <Chatbot />
     </div>
   );
 };
