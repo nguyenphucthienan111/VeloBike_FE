@@ -14,6 +14,7 @@ export const AdminSidebar: React.FC = () => {
     { path: '/admin/catalog', label: 'Catalog' },
     { path: '/admin/orders', label: 'Orders' },
     { path: '/admin/disputes', label: 'Disputes' },
+    { path: '/admin/reports', label: 'Reports' },
     { path: '/admin/analytics', label: 'Analytics' },
     { path: '/admin/inspectors', label: 'Inspectors' },
     { path: '/admin/settings', label: 'Settings' },

@@ -130,6 +130,13 @@ export const AdminDashboard: React.FC = () => {
                 <p className="font-semibold text-gray-900">Release Payouts</p>
                 <p className="text-sm text-gray-600 mt-1">Process seller payouts</p>
               </a>
+              <a
+                href="#/admin/reports?status=PENDING"
+                className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <p className="font-semibold text-gray-900">Review Reports</p>
+                <p className="text-sm text-gray-600 mt-1">Handle user reports</p>
+              </a>
             </div>
           </div>
         </div>
