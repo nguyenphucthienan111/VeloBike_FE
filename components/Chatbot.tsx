@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, X, Send, Loader2, Bot } from 'lucide-react';
+import { X, Send, Loader2, Bot } from 'lucide-react';
 import { API_BASE_URL } from '../constants';
 
 interface Message {
@@ -17,15 +17,25 @@ export const Chatbot: React.FC = () => {
   const [remaining, setRemaining] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [position, setPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const isDraggingRef = useRef(false);
+  const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     setIsAuthenticated(!!token);
-    
+
     if (token && isOpen && messages.length === 0) {
       fetchHistory();
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    // Vị trí mặc định: gần góc phải dưới
+    const initX = window.innerWidth - 96;
+    const initY = window.innerHeight - 96;
+    setPosition({ x: initX, y: initY });
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
@@ -140,6 +150,46 @@ export const Chatbot: React.FC = () => {
     }
   };
 
+  const startDrag = (clientX: number, clientY: number) => {
+    isDraggingRef.current = true;
+    dragOffsetRef.current = {
+      x: clientX - position.x,
+      y: clientY - position.y,
+    };
+  };
+
+  const stopDrag = () => {
+    isDraggingRef.current = false;
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingRef.current) return;
+      const newX = e.clientX - dragOffsetRef.current.x;
+      const newY = e.clientY - dragOffsetRef.current.y;
+
+      const padding = 16;
+      const maxX = window.innerWidth - padding - 80;
+      const maxY = window.innerHeight - padding - 80;
+
+      setPosition({
+        x: Math.min(Math.max(padding, newX), maxX),
+        y: Math.min(Math.max(padding, newY), maxY),
+      });
+    };
+
+    const handleMouseUp = () => {
+      stopDrag();
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
   if (!isAuthenticated) return null;
 
   return (
@@ -147,20 +197,26 @@ export const Chatbot: React.FC = () => {
       {/* Floating Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 z-40 bg-black text-white p-4 rounded-full shadow-lg hover:bg-gray-800 transition-all duration-300 ${isOpen ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`}
+        className={`fixed z-40 bg-black text-white p-4 rounded-full shadow-lg hover:bg-gray-800 ${isOpen ? 'hidden' : ''}`}
+        aria-label="Mở trợ lý VeloBike"
+        style={{ top: position.y, left: position.x }}
+        onMouseDown={(e) => startDrag(e.clientX, e.clientY)}
       >
-        <MessageSquare size={24} />
+        <Bot size={22} />
       </button>
 
       {/* Chat Window */}
       <div 
-        className={`fixed bottom-6 right-6 z-50 w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col transition-all duration-300 origin-bottom-right ${
-          isOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'
+        className={`fixed z-50 w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col ${
+          isOpen ? '' : 'hidden'
         }`}
-        style={{ height: '500px' }}
+        style={{ height: '500px', top: position.y - 420, left: position.x - 280 }}
       >
         {/* Header */}
-        <div className="bg-black text-white p-4 rounded-t-2xl flex justify-between items-center">
+        <div
+          className="bg-black text-white p-4 rounded-t-2xl flex justify-between items-center cursor-move"
+          onMouseDown={(e) => startDrag(e.clientX, e.clientY)}
+        >
           <div className="flex items-center gap-2">
             <div className="bg-white/20 p-1.5 rounded-full">
               <Bot size={20} />
