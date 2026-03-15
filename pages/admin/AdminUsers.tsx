@@ -34,6 +34,8 @@ export const AdminUsers: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showKycModal, setShowKycModal] = useState(false);
   const [kycStatus, setKycStatus] = useState('VERIFIED');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -68,6 +70,41 @@ export const AdminUsers: React.FC = () => {
       setError(isConnectionError(error) ? CONNECTION_ERROR_MESSAGE : 'Error loading users');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkStatus = async (isActive: boolean) => {
+    if (selectedIds.size === 0) {
+      alert('Chọn ít nhất một user');
+      return;
+    }
+    setBulkLoading(true);
+    try {
+      const token = localStorage.getItem('accessToken');
+      const res = await fetch(`${API_BASE_URL}/bulk/admin/users/update-status`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userIds: Array.from(selectedIds), isActive }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSelectedIds(new Set());
+        fetchUsers();
+        alert(data.message || `${selectedIds.size} users updated`);
+      } else alert(data.message || 'Failed');
+    } catch (e) {
+      alert('Error');
+    } finally {
+      setBulkLoading(false);
     }
   };
 
@@ -199,6 +236,15 @@ export const AdminUsers: React.FC = () => {
             </div>
           </div>
 
+          {selectedIds.size > 0 && (
+            <div className="flex gap-2 items-center mb-4">
+              <span className="text-sm text-gray-600">{selectedIds.size} selected</span>
+              <button onClick={() => handleBulkStatus(true)} disabled={bulkLoading} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">Bulk Activate</button>
+              <button onClick={() => handleBulkStatus(false)} disabled={bulkLoading} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">Bulk Deactivate</button>
+              <button onClick={() => setSelectedIds(new Set())} className="px-4 py-2 border rounded-lg text-sm">Clear</button>
+            </div>
+          )}
+
           {/* Users Table */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             {loading ? (
@@ -212,6 +258,9 @@ export const AdminUsers: React.FC = () => {
                   <table className="w-full">
                     <thead className="bg-gray-50">
                       <tr>
+                        <th className="px-6 py-3 text-left">
+                          <input type="checkbox" checked={filteredUsers.length > 0 && selectedIds.size === filteredUsers.length} onChange={(e) => setSelectedIds(e.target.checked ? new Set(filteredUsers.map(u => u._id)) : new Set())} />
+                        </th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">User</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Role</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">KYC Status</th>
@@ -222,6 +271,9 @@ export const AdminUsers: React.FC = () => {
                     <tbody className="divide-y divide-gray-200">
                       {filteredUsers.map((user) => (
                         <tr key={user._id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4">
+                            <input type="checkbox" checked={selectedIds.has(user._id)} onChange={() => toggleSelect(user._id)} />
+                          </td>
                           <td className="px-6 py-4">
                             <div>
                               <p className="font-semibold text-gray-900">{user.fullName}</p>

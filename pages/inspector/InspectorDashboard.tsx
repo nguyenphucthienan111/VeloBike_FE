@@ -173,51 +173,36 @@ export const InspectorDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* Stats Cards */}
+          {/* Stats Cards - dữ liệu từ API /dashboard/inspector/stats và /earnings */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex justify-between items-start">
-                <span className="text-green-600 text-sm font-semibold">+8.2%</span>
-              </div>
-              <p className="text-gray-600 text-xs font-semibold mt-4">TOTAL EARNINGS</p>
+              <p className="text-gray-600 text-xs font-semibold uppercase tracking-wide">TOTAL EARNINGS</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">
-                {earnings?.totalEarnings ? formatCurrency(earnings.totalEarnings) : '₫0.00'}
+                {earnings?.totalEarnings != null ? formatCurrency(earnings.totalEarnings) : '₫0.00'}
               </p>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex justify-between items-start">
-                <span className="text-green-600 text-sm font-semibold">+5.1%</span>
-              </div>
-              <p className="text-gray-600 text-xs font-semibold mt-4">COMPLETED</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">{stats?.completedInspections || 0}</p>
+              <p className="text-gray-600 text-xs font-semibold uppercase tracking-wide">COMPLETED</p>
+              <p className="text-2xl font-bold text-gray-900 mt-2">{stats?.completedInspections ?? 0}</p>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex justify-between items-start">
-                <span className="text-green-600 text-sm font-semibold">+3.2%</span>
-              </div>
-              <p className="text-gray-600 text-xs font-semibold mt-4">PENDING</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">{stats?.pendingInspections || 0}</p>
+              <p className="text-gray-600 text-xs font-semibold uppercase tracking-wide">PENDING</p>
+              <p className="text-2xl font-bold text-gray-900 mt-2">{stats?.pendingInspections ?? 0}</p>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex justify-between items-start">
-                <span className="text-green-600 text-sm font-semibold">+1.5%</span>
-              </div>
-              <p className="text-gray-600 text-xs font-semibold mt-4">PASS RATE</p>
+              <p className="text-gray-600 text-xs font-semibold uppercase tracking-wide">PASS RATE</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">
-                {stats?.passRate ? `${stats.passRate.toFixed(1)}%` : '0.0%'}
+                {stats?.passRate != null ? `${stats.passRate.toFixed(1)}%` : '0.0%'}
               </p>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex justify-between items-start">
-                <span className="text-green-600 text-sm font-semibold">+2.1%</span>
-              </div>
-              <p className="text-gray-600 text-xs font-semibold mt-4">AVG SCORE</p>
+              <p className="text-gray-600 text-xs font-semibold uppercase tracking-wide">AVG SCORE</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">
-                {stats?.averageScore ? stats.averageScore.toFixed(1) : '0.0'}
+                {stats?.averageScore != null ? stats.averageScore.toFixed(1) : '0.0'}
               </p>
             </div>
           </div>

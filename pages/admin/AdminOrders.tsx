@@ -91,6 +91,45 @@ export const AdminOrders: React.FC = () => {
     }
   };
 
+  const handleStartInspection = async (orderId: string) => {
+    if (!confirm('Bắt đầu kiểm định thủ công cho đơn này? (Admin only - for debugging)')) return;
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(`${API_BASE_URL}/orders/${orderId}/start-inspection`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (response.ok) {
+        alert(data.message || 'Inspection started');
+        fetchOrders();
+      } else {
+        alert(data.message || 'Failed to start inspection');
+      }
+    } catch (error) {
+      console.error('Error starting inspection:', error);
+      alert('Error starting inspection');
+    }
+  };
+
+  const handleExportOrders = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const res = await fetch(`${API_BASE_URL}/bulk/export/orders`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `orders-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      alert('Export failed');
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -113,6 +152,16 @@ export const AdminOrders: React.FC = () => {
     <div className="p-6">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">Orders Management</h1>
+
+          {/* Actions */}
+          <div className="flex flex-wrap gap-4 items-center mb-6">
+            <button
+              onClick={handleExportOrders}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium"
+            >
+              Export CSV
+            </button>
+          </div>
 
           {/* Filter */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
@@ -203,14 +252,24 @@ export const AdminOrders: React.FC = () => {
                             </span>
                           </td>
                           <td className="px-6 py-4">
-                            {order.status === 'DELIVERED' && (
-                              <button
-                                onClick={() => handleReleasePayout(order._id)}
-                                className="px-3 py-1 text-xs font-semibold text-green-600 hover:bg-green-50 rounded transition-colors"
-                              >
-                                Release Payout
-                              </button>
-                            )}
+                            <div className="flex flex-col gap-1">
+                              {order.status === 'ESCROW_LOCKED' && (
+                                <button
+                                  onClick={() => handleStartInspection(order._id)}
+                                  className="px-3 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded transition-colors text-left"
+                                >
+                                  Start Inspection
+                                </button>
+                              )}
+                              {order.status === 'DELIVERED' && (
+                                <button
+                                  onClick={() => handleReleasePayout(order._id)}
+                                  className="px-3 py-1 text-xs font-semibold text-green-600 hover:bg-green-50 rounded transition-colors text-left"
+                                >
+                                  Release Payout
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}

@@ -149,7 +149,16 @@ export const Messages: React.FC = () => {
             newConvs.splice(existingIndex, 1);
             return [updatedConv, ...newConvs];
           } else {
-            fetchConversations().then(setConversations);
+            fetchConversations().then((raw) => {
+              const uid = getCurrentUserId();
+              const filtered = raw.filter((c) => String(c.userId) !== String(uid));
+              setConversations(filtered);
+              setSelected((prev) =>
+                prev && filtered.some((c) => c.conversationId === prev.conversationId)
+                  ? prev
+                  : (filtered[0] ?? null)
+              );
+            });
             return prev;
           }
         });
@@ -224,7 +233,9 @@ export const Messages: React.FC = () => {
       try {
         const convos = await fetchConversations();
         if (cancelled) return;
-        setConversations(convos);
+        const uid = getCurrentUserId();
+        const validConvos = convos.filter((c) => String(c.userId) !== String(uid));
+        setConversations(validConvos);
 
         if (contactFromUrl) {
           const ensured = await ensureConversationWithContact(
@@ -233,14 +244,22 @@ export const Messages: React.FC = () => {
             orderIdFromUrl
           );
           if (cancelled || !ensured) {
-            if (convos.length > 0 && !selected) {
-              setSelected(convos[0]);
-              fetchMessages(convos[0]);
+            if (validConvos.length > 0 && !selected) {
+              setSelected(validConvos[0]);
+              fetchMessages(validConvos[0]);
             }
             setLoading(false);
             return;
           }
-          const exists = convos.find(c => c.conversationId === ensured.conversationId);
+          if (String(ensured.userId) === String(uid)) {
+            if (validConvos.length > 0 && !selected) {
+              setSelected(validConvos[0]);
+              fetchMessages(validConvos[0]);
+            }
+            setLoading(false);
+            return;
+          }
+          const exists = validConvos.find(c => c.conversationId === ensured.conversationId);
           const toSelect = exists || { ...ensured };
           if (!exists) {
             setConversations(prev => [toSelect, ...prev]);
@@ -249,9 +268,9 @@ export const Messages: React.FC = () => {
           await fetchMessages(toSelect);
           const baseHash = window.location.hash.split('?')[0];
           window.history.replaceState({}, '', `${window.location.pathname}${baseHash || '#/messages'}`);
-        } else if (convos.length > 0 && !selected) {
-          setSelected(convos[0]);
-          fetchMessages(convos[0]);
+        } else if (validConvos.length > 0 && !selected) {
+          setSelected(validConvos[0]);
+          fetchMessages(validConvos[0]);
         }
       } catch (e) {
         console.error('Error loading messages:', e);

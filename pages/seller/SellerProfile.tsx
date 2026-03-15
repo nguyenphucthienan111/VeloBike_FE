@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../../constants';
 
 interface UserProfile {
   id: string;
@@ -7,15 +8,7 @@ interface UserProfile {
   fullName: string;
   phone?: string;
   avatar?: string;
-  banner?: string;
-  bio?: string;
-  shopName?: string;
-  shopDescription?: string;
-  businessRegistration?: string;
-  businessType?: string;
-  address?: string;
-  city?: string;
-  country?: string;
+  address?: { street?: string; city?: string; province?: string };
 }
 
 export const SellerProfile: React.FC = () => {
@@ -31,20 +24,13 @@ export const SellerProfile: React.FC = () => {
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
-    bio: '',
-    shopName: '',
-    shopDescription: '',
-    businessRegistration: '',
-    businessType: '',
     address: '',
     city: '',
-    country: '',
+    province: '',
   });
 
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [bannerFile, setBannerFile] = useState<File | null>(null);
 
   useEffect(() => {
     fetchProfile();
@@ -59,7 +45,7 @@ export const SellerProfile: React.FC = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/users/me', {
+      const response = await fetch(`${API_BASE_URL}/users/me`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
@@ -71,17 +57,24 @@ export const SellerProfile: React.FC = () => {
         setFormData({
           fullName: profileData.fullName || '',
           phone: profileData.phone || '',
-          bio: profileData.bio || '',
-          shopName: profileData.shopName || '',
-          shopDescription: profileData.shopDescription || '',
-          businessRegistration: profileData.businessRegistration || '',
-          businessType: profileData.businessType || '',
           address: (typeof addr === 'string' ? addr : addr.street) || '',
-          city: (typeof addr === 'object' ? addr.city : '') || profileData.city || '',
-          country: (typeof addr === 'object' ? addr.province : '') || profileData.country || '',
+          city: (typeof addr === 'object' ? addr.city : '') || '',
+          province: (typeof addr === 'object' ? addr.province : '') || '',
         });
         setAvatarPreview(profileData.avatar || null);
-        setBannerPreview(profileData.banner || null);
+        // Cập nhật header: sync fullName, avatar vào localStorage để Layout/SellerHeader hiển thị đúng
+        try {
+          const userStr = localStorage.getItem('user');
+          if (userStr) {
+            const user = JSON.parse(userStr);
+            localStorage.setItem('user', JSON.stringify({
+              ...user,
+              fullName: profileData.fullName ?? user.fullName,
+              avatar: profileData.avatar !== undefined ? profileData.avatar : user.avatar,
+            }));
+            window.dispatchEvent(new Event('authChange'));
+          }
+        } catch (_) {}
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -111,18 +104,6 @@ export const SellerProfile: React.FC = () => {
     }
   };
 
-  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setBannerFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setBannerPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const handleSaveProfile = async () => {
     try {
       setSaving(true);
@@ -133,19 +114,14 @@ export const SellerProfile: React.FC = () => {
       const body = {
         fullName: formData.fullName,
         phone: formData.phone || '',
-        bio: formData.bio || '',
-        shopName: formData.shopName || '',
-        shopDescription: formData.shopDescription || '',
-        businessRegistration: formData.businessRegistration || '',
-        businessType: formData.businessType || '',
         address: {
           street: formData.address || '',
           city: formData.city || '',
-          province: formData.country || '',
+          province: formData.province || '',
         },
       };
 
-      const response = await fetch('http://localhost:5000/api/users/me', {
+      const response = await fetch(`${API_BASE_URL}/users/me`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -157,7 +133,6 @@ export const SellerProfile: React.FC = () => {
       if (response.ok) {
         setSuccess('Profile updated successfully!');
         setAvatarFile(null);
-        setBannerFile(null);
         await fetchProfile();
       } else {
         const data = await response.json();
@@ -197,12 +172,6 @@ export const SellerProfile: React.FC = () => {
           )}
 
           {/* Banner */}
-          {(profile?.banner || bannerPreview) && (
-            <div className="mb-8 rounded-lg overflow-hidden h-40 bg-gray-200">
-              <img src={(bannerPreview as string) || profile?.banner || ''} alt="Banner" className="w-full h-full object-cover" />
-            </div>
-          )}
-
           {/* Content */}
           <div className="grid grid-cols-3 gap-6">
             {/* Avatar Section */}
@@ -271,91 +240,15 @@ export const SellerProfile: React.FC = () => {
                     />
                   </div>
 
-                  {/* Bio */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Bio</label>
-                    <textarea
-                      name="bio"
-                      value={formData.bio}
-                      onChange={handleInputChange}
-                      placeholder="Tell buyers about yourself"
-                      rows={3}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:border-gray-900"
-                    />
-                  </div>
                 </div>
               </div>
 
-              {/* Shop Information */}
+              {/* Address (BE: address.street, address.city, address.province) */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-lg font-bold text-gray-900 mb-6">Shop Information</h2>
-                
+                <h2 className="text-lg font-bold text-gray-900 mb-6">Address</h2>
                 <div className="space-y-4">
-                  {/* Shop Name */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Shop Name</label>
-                    <input
-                      type="text"
-                      name="shopName"
-                      value={formData.shopName}
-                      onChange={handleInputChange}
-                      placeholder="Enter your shop name"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
-                    />
-                  </div>
-
-                  {/* Shop Description */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Shop Description</label>
-                    <textarea
-                      name="shopDescription"
-                      value={formData.shopDescription}
-                      onChange={handleInputChange}
-                      placeholder="Describe your shop"
-                      rows={3}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:border-gray-900"
-                    />
-                  </div>
-
-                  {/* Business Type */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Business Type</label>
-                    <select
-                      name="businessType"
-                      value={formData.businessType}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
-                    >
-                      <option value="">Select business type</option>
-                      <option value="individual">Individual Seller</option>
-                      <option value="business">Business</option>
-                      <option value="shop">Shop</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Business Registration */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-lg font-bold text-gray-900 mb-6">Business Registration</h2>
-                
-                <div className="space-y-4">
-                  {/* Business Registration Number */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Registration Number</label>
-                    <input
-                      type="text"
-                      name="businessRegistration"
-                      value={formData.businessRegistration}
-                      onChange={handleInputChange}
-                      placeholder="Enter your business registration number"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
-                    />
-                  </div>
-
-                  {/* Address */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Address</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Street</label>
                     <input
                       type="text"
                       name="address"
@@ -365,8 +258,6 @@ export const SellerProfile: React.FC = () => {
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
                     />
                   </div>
-
-                  {/* City and Country */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-900 mb-2">City</label>
@@ -375,50 +266,24 @@ export const SellerProfile: React.FC = () => {
                         name="city"
                         value={formData.city}
                         onChange={handleInputChange}
-                        placeholder="Enter your city"
-                        className={`w-full px-4 py-2 border border-gray-300 rounded-lg ${
-                          isEditing ? 'focus:outline-none focus:border-gray-900' : 'bg-gray-50 text-gray-600 cursor-not-allowed'
-                        }`}
+                        placeholder="City"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">Country</label>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">Province / Country</label>
                       <input
                         type="text"
-                        name="country"
-                        value={formData.country}
+                        name="province"
+                        value={formData.province}
                         onChange={handleInputChange}
-                        placeholder="Enter your country"
-                        className={`w-full px-4 py-2 border border-gray-300 rounded-lg ${
-                          isEditing ? 'focus:outline-none focus:border-gray-900' : 'bg-gray-50 text-gray-600 cursor-not-allowed'
-                        }`}
+                        placeholder="Province or country"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
                       />
                     </div>
                   </div>
                 </div>
               </div>
-
-              {/* Banner Upload */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                  <h2 className="text-lg font-bold text-gray-900 mb-6">Banner</h2>
-                  <div className="space-y-4">
-                    <div className="mb-4">
-                      <div className="w-full h-40 rounded-lg bg-gray-200 flex items-center justify-center overflow-hidden">
-                        {bannerPreview ? (
-                          <img src={bannerPreview} alt="Banner" className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-gray-400">No banner</span>
-                        )}
-                      </div>
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleBannerChange}
-                      className="w-full text-sm"
-                    />
-                  </div>
-                </div>
 
               {/* Save Button */}
                 <div className="flex gap-3">

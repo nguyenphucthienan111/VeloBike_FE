@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../../constants';
 
 interface UserProfile {
   id: string;
@@ -52,7 +53,7 @@ export const BuyerProfile: React.FC = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/users/me', {
+      const response = await fetch(`${API_BASE_URL}/users/me`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
@@ -70,6 +71,19 @@ export const BuyerProfile: React.FC = () => {
           country: (typeof addr === 'object' ? addr.province : '') || profileData.country || '',
         });
         setAvatarPreview(profileData.avatar || null);
+        // Cập nhật header: sync fullName, avatar vào localStorage để Layout/SellerHeader hiển thị đúng
+        try {
+          const userStr = localStorage.getItem('user');
+          if (userStr) {
+            const user = JSON.parse(userStr);
+            localStorage.setItem('user', JSON.stringify({
+              ...user,
+              fullName: profileData.fullName ?? user.fullName,
+              avatar: profileData.avatar !== undefined ? profileData.avatar : user.avatar,
+            }));
+            window.dispatchEvent(new Event('authChange'));
+          }
+        } catch (_) {}
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -117,7 +131,7 @@ export const BuyerProfile: React.FC = () => {
         },
       };
 
-      const response = await fetch('http://localhost:5000/api/users/me', {
+      const response = await fetch(`${API_BASE_URL}/users/me`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

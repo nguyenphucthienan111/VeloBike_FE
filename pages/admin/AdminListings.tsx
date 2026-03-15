@@ -46,6 +46,10 @@ export const AdminListings: React.FC = () => {
   const [showActionModal, setShowActionModal] = useState(false);
   const [actionType, setActionType] = useState<'approve' | 'reject'>('approve');
   const [rejectionReason, setRejectionReason] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState<'approve' | 'reject' | null>(null);
+  const [bulkReason, setBulkReason] = useState('');
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   useEffect(() => {
     fetchListings();
@@ -124,6 +128,54 @@ export const AdminListings: React.FC = () => {
     }
   };
 
+  const handleExportListings = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const res = await fetch(`${API_BASE_URL}/bulk/export/listings`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `listings-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      showToast('Export completed', 'success');
+    } catch (e) {
+      console.error(e);
+      showToast('Export failed', 'error');
+    }
+  };
+
+  const handleBulkModerate = async () => {
+    if (selectedIds.size === 0 || !bulkAction) return;
+    if (bulkAction === 'REJECT' && !bulkReason.trim()) {
+      showToast('Nhập lý do từ chối', 'error');
+      return;
+    }
+    setBulkLoading(true);
+    try {
+      const token = localStorage.getItem('accessToken');
+      const res = await fetch(`${API_BASE_URL}/bulk/admin/listings/moderate`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listingIds: Array.from(selectedIds), action: bulkAction, reason: bulkReason || undefined }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSelectedIds(new Set());
+        setBulkAction(null);
+        setBulkReason('');
+        fetchListings();
+        showToast(data.message || 'Done', 'success');
+      } else showToast(data.message || 'Failed', 'error');
+    } catch (e) {
+      showToast('Error', 'error');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
   const formatCurrency = (amount: number | undefined) => {
     if (!amount || isNaN(amount)) return '0 VND';
     return new Intl.NumberFormat('en-US', {
@@ -152,6 +204,29 @@ export const AdminListings: React.FC = () => {
     <div className="p-6">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">Listings Management</h1>
+
+          <div className="flex flex-wrap gap-4 items-center mb-4">
+            <button onClick={handleExportListings} className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium">Export CSV</button>
+            {selectedIds.size > 0 && (
+              <>
+                <span className="text-sm text-gray-600">{selectedIds.size} selected</span>
+                <button onClick={() => setBulkAction('APPROVE')} disabled={bulkLoading} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">Bulk Approve</button>
+                <button onClick={() => setBulkAction('REJECT')} disabled={bulkLoading} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">Bulk Reject</button>
+                <button onClick={() => { setSelectedIds(new Set()); setBulkAction(null); setBulkReason(''); }} className="px-4 py-2 border rounded-lg text-sm">Clear</button>
+              </>
+            )}
+          </div>
+
+          {bulkAction && (
+            <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+              <p className="text-sm font-medium text-gray-700 mb-2">Bulk {bulkAction}: {selectedIds.size} listings. {bulkAction === 'REJECT' ? 'Lý do (bắt buộc):' : ''}</p>
+              {bulkAction === 'REJECT' && <input type="text" value={bulkReason} onChange={(e) => setBulkReason(e.target.value)} placeholder="Lý do từ chối" className="w-full max-w-md border rounded-lg px-3 py-2 text-sm mb-2" />}
+              <div className="flex gap-2">
+                <button onClick={handleBulkModerate} disabled={bulkLoading || (bulkAction === 'REJECT' && !bulkReason.trim())} className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm disabled:opacity-50">Xác nhận</button>
+                <button onClick={() => { setBulkAction(null); setBulkReason(''); }} className="px-4 py-2 border rounded-lg text-sm">Hủy</button>
+              </div>
+            </div>
+          )}
 
           {/* Filter */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
@@ -190,6 +265,9 @@ export const AdminListings: React.FC = () => {
                   <table className="w-full">
                     <thead className="bg-gray-50">
                       <tr>
+                        <th className="px-6 py-3 text-left">
+                          <input type="checkbox" checked={listings.length > 0 && selectedIds.size === listings.length} onChange={(e) => setSelectedIds(e.target.checked ? new Set(listings.map(l => l._id)) : new Set())} />
+                        </th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Listing</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Seller</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Price</th>
@@ -203,6 +281,9 @@ export const AdminListings: React.FC = () => {
                     <tbody className="divide-y divide-gray-200">
                       {listings.map((listing) => (
                         <tr key={listing._id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4">
+                            <input type="checkbox" checked={selectedIds.has(listing._id)} onChange={() => setSelectedIds(prev => { const n = new Set(prev); if (n.has(listing._id)) n.delete(listing._id); else n.add(listing._id); return n; })} />
+                          </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               {/* Product Image */}

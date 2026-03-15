@@ -51,7 +51,8 @@ export const InspectorWallet: React.FC = () => {
   });
   const [withdrawLoading, setWithdrawLoading] = useState(false);
   const [withdrawError, setWithdrawError] = useState('');
-  
+  const [cancelWithdrawId, setCancelWithdrawId] = useState<string | null>(null);
+
   // Bank Account Management
   const [savedBankAccount, setSavedBankAccount] = useState<BankAccount | null>(null);
   const [showBankAccountModal, setShowBankAccountModal] = useState(false);
@@ -374,6 +375,28 @@ export const InspectorWallet: React.FC = () => {
     }
   };
 
+  const handleCancelWithdrawal = async (id: string) => {
+    if (!confirm('Bạn có chắc muốn hủy yêu cầu rút tiền này?')) return;
+    setCancelWithdrawId(id);
+    try {
+      const token = localStorage.getItem('accessToken');
+      const res = await fetch(`${API_BASE_URL}/wallet/withdrawals/${id}/cancel`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        await fetchWalletData();
+      } else {
+        const data = await res.json();
+        alert(data.message || 'Hủy yêu cầu thất bại');
+      }
+    } catch (e) {
+      alert('Lỗi khi hủy yêu cầu');
+    } finally {
+      setCancelWithdrawId(null);
+    }
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -520,6 +543,7 @@ export const InspectorWallet: React.FC = () => {
                         <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">PHÍ</th>
                         <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">TÀI KHOẢN</th>
                         <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">TRẠNG THÁI</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">THAO TÁC</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -535,6 +559,18 @@ export const InspectorWallet: React.FC = () => {
                             <span className={`px-3 py-1 rounded text-xs font-semibold ${getStatusBadge(withdrawal.status)}`}>
                               {withdrawal.status}
                             </span>
+                          </td>
+                          <td className="py-4 px-4">
+                            {withdrawal.status === 'PENDING' && (
+                              <button
+                                type="button"
+                                onClick={() => handleCancelWithdrawal(withdrawal.id)}
+                                disabled={cancelWithdrawId === withdrawal.id}
+                                className="text-red-600 text-sm font-medium hover:underline disabled:opacity-50"
+                              >
+                                {cancelWithdrawId === withdrawal.id ? 'Đang hủy...' : 'Hủy yêu cầu'}
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))}

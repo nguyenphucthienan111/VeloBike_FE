@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { ShoppingBag, Menu, User, ShieldCheck, Heart, Bell, MessageCircle, ChevronRight, Settings, HelpCircle, LogOut, Store, CreditCard, LayoutDashboard, Wallet } from 'lucide-react';
+import { ShoppingBag, Menu, User, ShieldCheck, Heart, Bell, MessageCircle, ChevronRight, Settings, LogOut, Store, CreditCard, LayoutDashboard } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../constants';
 import { handleSessionExpired } from '../utils/auth';
@@ -140,6 +140,28 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       .catch(() => setNotificationUnread(0));
   }, [isAuthenticated, refreshKey]);
 
+  // Refetch notification count khi trang Notifications đánh dấu đã đọc
+  useEffect(() => {
+    const onRefresh = () => {
+      const token = localStorage.getItem('accessToken');
+      if (!token || !isAuthenticated) return;
+      fetch(`${API_BASE_URL}/notifications?page=1&limit=1`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => (res.status === 401 ? null : res.json()))
+        .then((data) => {
+          if (data?.success && data?.pagination?.unreadCount != null) {
+            setNotificationUnread(data.pagination.unreadCount);
+          } else {
+            setNotificationUnread(0);
+          }
+        })
+        .catch(() => setNotificationUnread(0));
+    };
+    window.addEventListener('ordersAndNotificationsRefresh', onRefresh);
+    return () => window.removeEventListener('ordersAndNotificationsRefresh', onRefresh);
+  }, [isAuthenticated]);
+
   // Số lượng wishlist (icon tim) - GET /api/wishlist/count
   const fetchWishlistCount = () => {
     if (!isAuthenticated || (userRole !== 'BUYER' && userRole !== 'SELLER')) {
@@ -175,7 +197,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     }
   }, [profileOpen]);
 
-  const profileUrl = userRole === 'SELLER' ? '/seller/profile' : userRole === 'INSPECTOR' ? '/inspector/profile' : userRole === 'ADMIN' ? '/admin/profile' : '/buyer/profile';
+  // Cài đặt tài khoản: khi ở giao diện buyer (marketplace, home...) → buyer profile; khi ở seller dashboard → seller profile
+  const profileUrl = isSellerPage && userRole === 'SELLER' ? '/seller/profile'
+    : isInspectorPage && userRole === 'INSPECTOR' ? '/inspector/profile'
+    : isAdminPage && userRole === 'ADMIN' ? '/admin/profile'
+    : '/buyer/profile';
 
   const handleLogout = () => {
     setProfileOpen(false);
@@ -343,11 +369,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                               <span className="flex-1">Quản lý tin</span>
                               <ChevronRight size={16} className="text-gray-400" />
                             </Link>
-                            <Link to={userRole === 'SELLER' ? '/seller/wallet' : '/seller/kyc'} onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
-                              <Wallet size={18} className="text-gray-500 flex-shrink-0" />
-                              <span className="flex-1">Ví</span>
-                              <ChevronRight size={16} className="text-gray-400" />
-                            </Link>
                           </div>
                         )}
                         {/* Khác */}
@@ -356,16 +377,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                           <Link to={profileUrl} onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
                             <Settings size={18} className="text-gray-500 flex-shrink-0" />
                             <span className="flex-1">Cài đặt tài khoản</span>
-                            <ChevronRight size={16} className="text-gray-400" />
-                          </Link>
-                          <Link to="#" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
-                            <HelpCircle size={18} className="text-gray-500 flex-shrink-0" />
-                            <span className="flex-1">Trợ giúp</span>
-                            <ChevronRight size={16} className="text-gray-400" />
-                          </Link>
-                          <Link to="#" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
-                            <MessageCircle size={18} className="text-gray-500 flex-shrink-0" />
-                            <span className="flex-1">Đóng góp ý kiến</span>
                             <ChevronRight size={16} className="text-gray-400" />
                           </Link>
                           <button type="button" onClick={handleLogout} className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 w-full">

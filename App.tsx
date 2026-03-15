@@ -45,7 +45,10 @@ import { AdminProfile } from './pages/admin/AdminProfile';
 import { AdminCatalog } from './pages/admin/AdminCatalog';
 import { AdminDisputes } from './pages/admin/AdminDisputes';
 import { AdminReports } from './pages/admin/AdminReports';
-import { AdminSettings } from './pages/admin/AdminSettings';
+import { AdminWithdrawals } from './pages/admin/AdminWithdrawals';
+import { AdminTransactions } from './pages/admin/AdminTransactions';
+import { AdminSubscriptions } from './pages/admin/AdminSubscriptions';
+import { AdminFraud } from './pages/admin/AdminFraud';
 import { AdminLayout } from './components/AdminLayout';
 import { InspectorDashboard } from './pages/inspector/InspectorDashboard';
 import { PendingInspections } from './pages/inspector/PendingInspections';
@@ -153,12 +156,15 @@ const App: React.FC = () => {
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="users" element={<AdminUsers />} />
-            <Route path="disputes" element={<AdminDisputes />} />
-            <Route path="reports" element={<AdminReports />} />
-            <Route path="settings" element={<AdminSettings />} />
             <Route path="listings" element={<AdminListings />} />
             <Route path="catalog" element={<AdminCatalog />} />
             <Route path="orders" element={<AdminOrders />} />
+            <Route path="disputes" element={<AdminDisputes />} />
+            <Route path="reports" element={<AdminReports />} />
+            <Route path="withdrawals" element={<AdminWithdrawals />} />
+            <Route path="transactions" element={<AdminTransactions />} />
+            <Route path="subscriptions" element={<AdminSubscriptions />} />
+            <Route path="fraud" element={<AdminFraud />} />
             <Route path="analytics" element={<AdminAnalytics />} />
             <Route path="inspectors" element={<AdminInspectors />} />
             <Route path="profile" element={<AdminProfile />} />

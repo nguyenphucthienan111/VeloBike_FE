@@ -186,11 +186,16 @@ export const SellerMessages: React.FC = () => {
       }
       try {
         const convos = await fetchConversations();
-        setConversations(convos);
-        setFilteredConversations(convos);
-        if (convos.length > 0 && !selectedConversation) {
-          setSelectedConversation(convos[0]);
-          fetchMessages(convos[0]);
+        const uid = getCurrentUserId();
+        // Không hiển thị hội thoại với chính mình (tự nhắn tin)
+        const validConvos = convos.filter((c) => String(c.userId) !== String(uid));
+        setConversations(validConvos);
+        setFilteredConversations(validConvos);
+        if (validConvos.length > 0 && !selectedConversation) {
+          setSelectedConversation(validConvos[0]);
+          fetchMessages(validConvos[0]);
+        } else if (selectedConversation && validConvos.every((c) => c.id !== selectedConversation.id)) {
+          setSelectedConversation(null);
         }
       } catch (e) {
         console.error('Error loading conversations:', e);

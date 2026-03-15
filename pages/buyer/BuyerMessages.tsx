@@ -31,6 +31,15 @@ export const BuyerMessages: React.FC = () => {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
 
+  const getCurrentUserId = () => {
+    try {
+      const u = JSON.parse(localStorage.getItem('user') || '{}');
+      return u?._id || u?.id || '';
+    } catch {
+      return '';
+    }
+  };
+
   useEffect(() => {
     fetchConversations();
   }, []);
@@ -52,11 +61,15 @@ export const BuyerMessages: React.FC = () => {
       }
       if (res.ok) {
         const data = await res.json();
-        const convos = data.data || [];
+        const raw = data.data || [];
+        const currentUserId = getCurrentUserId();
+        const convos = raw.filter((c: Conversation) => String(c.userId) !== String(currentUserId));
         setConversations(convos);
         if (convos.length > 0) {
           setSelectedConversation(convos[0]);
           fetchMessages(convos[0].userId);
+        } else {
+          setSelectedConversation(null);
         }
       }
     } catch (e) {

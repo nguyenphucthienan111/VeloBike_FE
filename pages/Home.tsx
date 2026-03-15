@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { ArrowRight, Shield, RefreshCw, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BikeCard } from '../components/BikeCard';
-import { useListings } from '../hooks/useListings';
+import { API_BASE_URL } from '../constants';
 import { BikeListing, InspectionStatus } from '../types';
 
 export const Home: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const { listings, loading: listingsLoading, fetch } = useListings();
+  const [trendingListings, setTrendingListings] = useState<any[]>([]);
+  const [trendingLoading, setTrendingLoading] = useState(true);
 
   useEffect(() => {
     // Check if user is logged in
@@ -27,46 +28,71 @@ export const Home: React.FC = () => {
     }
   }, []);
 
-  // Fetch real listings for Trending Arrivals (no mock)
+  // Trending Arrivals: GET /api/recommendations/trending (fallback: GET /api/listings khi trending rỗng)
   useEffect(() => {
-    fetch({ limit: 6, page: 1 });
-  }, [fetch]);
-
-  const mapListingsToBikeCards = (items: any[]): BikeListing[] => {
-    return items
-      .filter((l) => l && (l._id || l.id) && l.status === 'PUBLISHED')
-      .map((listing) => {
-        const hasInspectionScore = typeof listing.inspectionScore === 'number' && listing.inspectionScore > 0;
-        let sellerName = 'Unknown';
-        let isVerified = false;
-        if (listing.sellerId && typeof listing.sellerId === 'object') {
-          sellerName = listing.sellerId.fullName || 'Unknown';
-          isVerified = !!listing.sellerId.badge;
+    let cancelled = false;
+    setTrendingLoading(true);
+    fetch(`${API_BASE_URL}/recommendations/trending?period=7d&limit=6`)
+      .then((res) => res.json())
+      .then(async (data) => {
+        if (cancelled) return;
+        let list = data?.data?.trendingBikes ?? [];
+        if (!Array.isArray(list)) list = [];
+        if (list.length === 0) {
+          const fallback = await fetch(`${API_BASE_URL}/listings?page=1&limit=6`).then((r) => r.json()).catch(() => ({}));
+          const fallbackData = fallback?.data ?? fallback?.listings ?? [];
+          list = Array.isArray(fallbackData) ? fallbackData : [];
         }
-        return {
-          id: listing._id || listing.id || '',
-          title: listing.title || 'Untitled',
-          brand: listing.generalInfo?.brand || 'Unknown',
-          model: listing.generalInfo?.model || 'Unknown',
-          year: listing.generalInfo?.year || 0,
-          price: listing.pricing?.amount || 0,
-          originalPrice: listing.pricing?.originalPrice || listing.pricing?.amount || 0,
-          type: (listing.type || 'ROAD') as any,
-          size: listing.generalInfo?.size || 'M',
-          conditionScore: hasInspectionScore ? listing.inspectionScore : 0,
-          inspectionStatus: (hasInspectionScore ? 'PASSED' : 'PENDING') as InspectionStatus,
-          inspectionRequired: !!listing.inspectionRequired,
-          imageUrl: listing.media?.thumbnails?.[0] || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect fill='%23e5e7eb' width='400' height='400'/%3E%3Ctext fill='%239ca3af' x='200' y='200' font-size='20' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E",
-          location: listing.location?.address || 'Unknown',
-          specs: { frameMaterial: '', groupset: listing.specs?.groupset || 'Standard', wheelset: '', brakeType: 'Disc' },
-          geometry: {},
-          description: listing.description || '',
-          sellerName,
-          isVerified,
-        };
+        if (!cancelled) setTrendingListings(list);
       })
-      .filter((b) => b.id);
+      .catch(async () => {
+        if (cancelled) return;
+        try {
+          const fallback = await fetch(`${API_BASE_URL}/listings?page=1&limit=6`).then((r) => r.json());
+          const list = fallback?.data ?? fallback?.listings ?? [];
+          if (!cancelled) setTrendingListings(Array.isArray(list) ? list : []);
+        } catch {
+          if (!cancelled) setTrendingListings([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setTrendingLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const mapListingToBikeCard = (listing: any): BikeListing | null => {
+    if (!listing || !(listing._id || listing.id) || listing.status !== 'PUBLISHED') return null;
+    const hasInspectionScore = typeof listing.inspectionScore === 'number' && listing.inspectionScore > 0;
+    const sellerObj = listing.seller || listing.sellerId;
+    const sellerName = (sellerObj && typeof sellerObj === 'object' && sellerObj.fullName) ? sellerObj.fullName : 'Unknown';
+    const isVerified = !!(listing.sellerId && typeof listing.sellerId === 'object' && listing.sellerId.badge) || !!(sellerObj && typeof sellerObj === 'object' && (sellerObj as any).badge);
+    return {
+      id: listing._id || listing.id || '',
+      title: listing.title || 'Untitled',
+      brand: listing.generalInfo?.brand || 'Unknown',
+      model: listing.generalInfo?.model || 'Unknown',
+      year: listing.generalInfo?.year || 0,
+      price: listing.pricing?.amount || 0,
+      originalPrice: listing.pricing?.originalPrice || listing.pricing?.amount || 0,
+      type: (listing.type || 'ROAD') as any,
+      size: listing.generalInfo?.size || 'M',
+      conditionScore: hasInspectionScore ? listing.inspectionScore : 0,
+      inspectionStatus: (hasInspectionScore ? 'PASSED' : 'PENDING') as InspectionStatus,
+      inspectionRequired: !!listing.inspectionRequired,
+      imageUrl: listing.media?.thumbnails?.[0] || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect fill='%23e5e7eb' width='400' height='400'/%3E%3Ctext fill='%239ca3af' x='200' y='200' font-size='20' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E",
+      location: listing.location?.address || 'Unknown',
+      specs: { frameMaterial: '', groupset: listing.specs?.groupset || 'Standard', wheelset: '', brakeType: 'Disc' },
+      geometry: {},
+      description: listing.description || '',
+      sellerName,
+      isVerified,
+    };
   };
+
+  const trendingBikeCards = trendingListings
+    .map(mapListingToBikeCard)
+    .filter((b): b is BikeListing => b != null && !!b.id);
 
   return (
     <div className="bg-white">
@@ -162,10 +188,12 @@ export const Home: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {listingsLoading ? (
+                {trendingLoading ? (
                     <div className="col-span-full py-12 text-center text-gray-500">Đang tải...</div>
+                ) : trendingBikeCards.length === 0 ? (
+                    <div className="col-span-full py-12 text-center text-gray-500">Chưa có xe trending trong 7 ngày qua. Xem thêm tại Marketplace.</div>
                 ) : (
-                    mapListingsToBikeCards(listings).map(bike => (
+                    trendingBikeCards.map(bike => (
                         <BikeCard key={bike.id} bike={bike} />
                     ))
                 )}

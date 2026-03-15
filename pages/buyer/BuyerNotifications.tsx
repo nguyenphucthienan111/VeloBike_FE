@@ -14,6 +14,7 @@ interface NotificationItem {
 export const BuyerNotifications: React.FC = () => {
   const [list, setList] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [markingAll, setMarkingAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchNotifications = async () => {
@@ -69,22 +70,52 @@ export const BuyerNotifications: React.FC = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setList((prev) => prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)));
+      window.dispatchEvent(new Event('ordersAndNotificationsRefresh'));
     } catch (_) {}
+  };
+
+  const markAllAsRead = async () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token || unreadCount === 0) return;
+    try {
+      setMarkingAll(true);
+      await fetch(`${API_BASE_URL}/notifications/read-all`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setList((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      window.dispatchEvent(new Event('ordersAndNotificationsRefresh'));
+    } catch (_) {}
+    finally {
+      setMarkingAll(false);
+    }
   };
 
   const unreadCount = list.filter((n) => !n.isRead).length;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-        <Bell size={28} className="text-accent" />
-        Notifications
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <Bell size={28} className="text-accent" />
+          Notifications
+          {unreadCount > 0 && (
+            <span className="bg-accent text-white text-sm font-bold px-2 py-0.5 rounded-full">
+              {unreadCount}
+            </span>
+          )}
+        </h1>
         {unreadCount > 0 && (
-          <span className="bg-accent text-white text-sm font-bold px-2 py-0.5 rounded-full">
-            {unreadCount}
-          </span>
+          <button
+            type="button"
+            onClick={markAllAsRead}
+            disabled={markingAll}
+            className="text-sm font-medium text-accent hover:underline disabled:opacity-50"
+          >
+            {markingAll ? 'Đang cập nhật...' : 'Đánh dấu tất cả đã đọc'}
+          </button>
         )}
-      </h1>
+      </div>
 
       {loading && (
         <div className="text-gray-500 py-8">Loading...</div>
