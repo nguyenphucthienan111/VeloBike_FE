@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
+import { AdminPageLayout, AdminPageHeader, AdminErrorBanner, AdminLoadingState } from '../../components/AdminPageLayout';
 
 interface Inspector {
   _id: string;
@@ -54,106 +55,94 @@ export const AdminInspectors: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">Inspectors Management</h1>
+    <AdminPageLayout>
+      <AdminPageHeader title="Quản lý kiểm định viên" subtitle="Xem danh sách và trạng thái kiểm định viên" />
+      {error && <AdminErrorBanner message={error} />}
 
-          {/* Filter */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-            <div className="flex gap-4 items-end">
-              <div className="flex-1">
-                <label className="block text-sm font-semibold text-gray-900 mb-2">Status</label>
-                <select
-                  value={isActiveFilter}
-                  onChange={(e) => {
-                    setIsActiveFilter(e.target.value);
-                    setPagination({ ...pagination, page: 1 });
-                  }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
-                >
-                  <option value="">All Status</option>
-                  <option value="true">Active</option>
-                  <option value="false">Inactive</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Inspectors Table */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            {loading ? (
-              <div className="p-8 text-center">
-                <div className="animate-spin h-8 w-8 border-4 border-gray-900 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading inspectors...</p>
-              </div>
-            ) : (
-              <>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Inspector</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Contact</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Joined</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {inspectors.map((inspector) => (
-                        <tr key={inspector._id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4">
-                            <div>
-                              <p className="font-semibold text-gray-900">{inspector.fullName}</p>
-                              <p className="text-sm text-gray-600">{inspector.email}</p>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <p className="text-sm text-gray-900">{inspector.phone || 'N/A'}</p>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`px-2 py-1 text-xs font-semibold rounded ${
-                              inspector.isActive ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'
-                            }`}>
-                              {inspector.isActive ? 'Active' : 'Inactive'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <p className="text-sm text-gray-900">
-                              {new Date(inspector.createdAt).toLocaleDateString()}
-                            </p>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Pagination */}
-                <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
-                  <p className="text-sm text-gray-600">
-                    Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} inspectors
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
-                      disabled={pagination.page === 1}
-                      className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Previous
-                    </button>
-                    <button
-                      onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
-                      disabled={pagination.page >= pagination.pages}
-                      className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-6">
+        <div className="flex gap-4 items-end">
+          <div className="flex-1 max-w-xs">
+            <label className="block text-sm font-medium text-slate-700 mb-1">Trạng thái</label>
+            <select
+              value={isActiveFilter}
+              onChange={(e) => {
+                setIsActiveFilter(e.target.value);
+                setPagination({ ...pagination, page: 1 });
+              }}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-800 focus:ring-2 focus:ring-slate-300 outline-none"
+            >
+              <option value="">Tất cả</option>
+              <option value="true">Đang hoạt động</option>
+              <option value="false">Vô hiệu hóa</option>
+            </select>
           </div>
         </div>
-    </div>
+      </div>
+
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        {loading ? (
+          <AdminLoadingState message="Đang tải kiểm định viên..." />
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Kiểm định viên</th>
+                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Liên hệ</th>
+                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Trạng thái</th>
+                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Tham gia</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {inspectors.map((inspector) => (
+                    <tr key={inspector._id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="px-5 py-3.5">
+                        <div>
+                          <p className="font-medium text-slate-900">{inspector.fullName}</p>
+                          <p className="text-slate-500">{inspector.email}</p>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5 text-slate-700">{inspector.phone || 'N/A'}</td>
+                      <td className="px-5 py-3.5">
+                        <span className={`px-2.5 py-1 text-xs font-medium rounded-md border ${
+                          inspector.isActive ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-red-700 bg-red-50 border-red-200'
+                        }`}>
+                          {inspector.isActive ? 'Hoạt động' : 'Vô hiệu'}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5 text-slate-600">
+                        {new Date(inspector.createdAt).toLocaleDateString('vi-VN')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="px-5 py-4 border-t border-slate-200 flex justify-between items-center bg-slate-50/50">
+              <p className="text-sm text-slate-600">
+                {((pagination.page - 1) * pagination.limit) + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} / {pagination.total} kiểm định viên
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
+                  disabled={pagination.page === 1}
+                  className="px-3 py-2 border border-slate-200 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Trước
+                </button>
+                <button
+                  onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
+                  disabled={pagination.page >= pagination.pages}
+                  className="px-3 py-2 border border-slate-200 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Sau
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </AdminPageLayout>
   );
 };

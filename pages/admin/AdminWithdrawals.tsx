@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
+import { AdminPageLayout, AdminPageHeader, AdminErrorBanner, AdminLoadingState } from '../../components/AdminPageLayout';
 
 interface Withdrawal {
   _id: string;
@@ -155,94 +157,90 @@ export const AdminWithdrawals: React.FC = () => {
 
   const getStatusColor = (s: string) => {
     switch (s) {
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      case 'APPROVED': case 'PROCESSING': return 'bg-blue-100 text-blue-800';
-      case 'COMPLETED': return 'bg-green-100 text-green-800';
-      case 'REJECTED': case 'CANCELLED': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'PENDING': return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'APPROVED': case 'PROCESSING': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'COMPLETED': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      case 'REJECTED': case 'CANCELLED': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-slate-100 text-slate-800 border-slate-200';
     }
   };
 
   return (
-    <div className="p-6">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Yêu cầu rút tiền</h1>
-        {error && <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">{error}</div>}
+    <AdminPageLayout>
+      <AdminPageHeader title="Yêu cầu rút tiền" subtitle="Duyệt, hoàn thành hoặc từ chối yêu cầu rút tiền" />
+      {error && <AdminErrorBanner message={error} />}
 
-        {/* Stats */}
-        {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase">Chờ duyệt</p>
-              <p className="text-xl font-bold text-yellow-600">{stats.pending ?? 0}</p>
-            </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase">Đã duyệt</p>
-              <p className="text-xl font-bold text-blue-600">{stats.approved ?? 0}</p>
-            </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase">Hoàn thành</p>
-              <p className="text-xl font-bold text-green-600">{stats.completed ?? 0}</p>
-            </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase">Từ chối</p>
-              <p className="text-xl font-bold text-red-600">{stats.rejected ?? 0}</p>
-            </div>
+      {stats && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 border-l-4 border-l-amber-500">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Chờ duyệt</p>
+            <p className="mt-1 text-2xl font-bold text-amber-600">{stats.pending ?? 0}</p>
           </div>
-        )}
-
-        {/* Filter */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
-          <div className="flex gap-4 items-center flex-wrap">
-            <label className="text-sm font-medium text-gray-700">Trạng thái</label>
-            <select
-              value={statusFilter}
-              onChange={(e) => { setStatusFilter(e.target.value); setPagination(p => ({ ...p, page: 1 })); }}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
-            >
-              <option value="">Tất cả</option>
-              <option value="PENDING">Chờ duyệt</option>
-              <option value="APPROVED">Đã duyệt</option>
-              <option value="COMPLETED">Hoàn thành</option>
-              <option value="REJECTED">Từ chối</option>
-            </select>
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 border-l-4 border-l-blue-500">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đã duyệt</p>
+            <p className="mt-1 text-2xl font-bold text-blue-600">{stats.approved ?? 0}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 border-l-4 border-l-emerald-500">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Hoàn thành</p>
+            <p className="mt-1 text-2xl font-bold text-emerald-600">{stats.completed ?? 0}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 border-l-4 border-l-red-500">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Từ chối</p>
+            <p className="mt-1 text-2xl font-bold text-red-600">{stats.rejected ?? 0}</p>
           </div>
         </div>
+      )}
 
-        {/* Table */}
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          {loading ? (
-            <div className="p-12 text-center text-gray-500">Đang tải...</div>
-          ) : withdrawals.length === 0 ? (
-            <div className="p-12 text-center text-gray-500">Chưa có yêu cầu rút tiền</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-900">User / Ngân hàng</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-900">Số tiền</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-900">Trạng thái</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-900">Ngày yêu cầu</th>
-                    <th className="text-right px-4 py-3 font-semibold text-gray-900">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {withdrawals.map((w) => (
-                    <tr key={w._id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-gray-900">{typeof w.userId === 'object' ? (w.userId as any).fullName || (w.userId as any).email : w.userId}</p>
-                        <p className="text-gray-500 text-xs">{w.bankAccount?.bankName} - {w.bankAccount?.accountNumber} - {w.bankAccount?.accountName}</p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="font-semibold">{formatCurrency(w.netAmount)}</p>
-                        <p className="text-xs text-gray-500">Phí: {formatCurrency(w.fee || 0)}</p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(w.status)}`}>{w.status}</span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">{formatDate(w.requestedAt)}</td>
-                      <td className="px-4 py-3 text-right">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-6">
+        <div className="flex gap-4 items-center flex-wrap">
+          <label className="text-sm font-medium text-slate-700">Trạng thái</label>
+          <select
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value); setPagination(p => ({ ...p, page: 1 })); }}
+            className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-slate-300 outline-none"
+          >
+            <option value="">Tất cả</option>
+            <option value="PENDING">Chờ duyệt</option>
+            <option value="APPROVED">Đã duyệt</option>
+            <option value="COMPLETED">Hoàn thành</option>
+            <option value="REJECTED">Từ chối</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        {loading ? (
+          <AdminLoadingState message="Đang tải yêu cầu rút tiền..." />
+        ) : withdrawals.length === 0 ? (
+          <div className="py-20 text-center text-slate-500 text-sm">Chưa có yêu cầu rút tiền</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="text-left px-5 py-3.5 font-semibold text-slate-700">User / Ngân hàng</th>
+                  <th className="text-left px-5 py-3.5 font-semibold text-slate-700">Số tiền</th>
+                  <th className="text-left px-5 py-3.5 font-semibold text-slate-700">Trạng thái</th>
+                  <th className="text-left px-5 py-3.5 font-semibold text-slate-700">Ngày yêu cầu</th>
+                  <th className="text-right px-5 py-3.5 font-semibold text-slate-700">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {withdrawals.map((w) => (
+                  <tr key={w._id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="px-5 py-3.5">
+                      <p className="font-medium text-slate-900">{typeof w.userId === 'object' ? (w.userId as any).fullName || (w.userId as any).email : w.userId}</p>
+                      <p className="text-slate-500 text-xs">{w.bankAccount?.bankName} - {w.bankAccount?.accountNumber} - {w.bankAccount?.accountName}</p>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <p className="font-semibold text-slate-900">{formatCurrency(w.netAmount)}</p>
+                      <p className="text-xs text-slate-500">Phí: {formatCurrency(w.fee || 0)}</p>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <span className={`px-2.5 py-1 rounded-md text-xs font-medium border ${getStatusColor(w.status)}`}>{w.status}</span>
+                    </td>
+                    <td className="px-5 py-3.5 text-slate-600">{formatDate(w.requestedAt)}</td>
+                    <td className="px-5 py-3.5 text-right">
                         {w.status === 'PENDING' && (
                           <div className="flex gap-2 justify-end">
                             <button
@@ -274,21 +272,24 @@ export const AdminWithdrawals: React.FC = () => {
         </div>
 
         {pagination.pages > 1 && (
-          <div className="mt-4 flex justify-center gap-2">
+          <div className="mt-6 flex items-center justify-center gap-2">
             <button
               disabled={pagination.page <= 1}
               onClick={() => setPagination(p => ({ ...p, page: p.page - 1 }))}
-              className="px-4 py-2 border rounded-lg disabled:opacity-50"
-            >Trước</button>
-            <span className="py-2">Trang {pagination.page} / {pagination.pages}</span>
+              className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
+            >
+              <ChevronLeft className="h-4 w-4" /> Trước
+            </button>
+            <span className="px-4 py-2 text-sm text-slate-600">Trang {pagination.page} / {pagination.pages}</span>
             <button
               disabled={pagination.page >= pagination.pages}
               onClick={() => setPagination(p => ({ ...p, page: p.page + 1 }))}
-              className="px-4 py-2 border rounded-lg disabled:opacity-50"
-            >Sau</button>
+              className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
+            >
+              Sau <ChevronRight className="h-4 w-4" />
+            </button>
           </div>
         )}
-      </div>
 
       {/* Modal Complete */}
       {completeModal && (
@@ -340,6 +341,6 @@ export const AdminWithdrawals: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </AdminPageLayout>
   );
 };

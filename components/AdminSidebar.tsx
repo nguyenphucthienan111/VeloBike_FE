@@ -18,7 +18,6 @@ export const AdminSidebar: React.FC = () => {
     { path: '/admin/withdrawals', label: 'Withdrawals' },
     { path: '/admin/transactions', label: 'Transactions' },
     { path: '/admin/subscriptions', label: 'Subscriptions' },
-    { path: '/admin/fraud', label: 'Fraud' },
     { path: '/admin/analytics', label: 'Analytics' },
     { path: '/admin/inspectors', label: 'Inspectors' },
     { path: '/admin/profile', label: 'My Profile' },

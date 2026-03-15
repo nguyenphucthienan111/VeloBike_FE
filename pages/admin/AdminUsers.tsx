@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
+import { AdminPageLayout, AdminPageHeader, AdminErrorBanner, AdminLoadingState } from '../../components/AdminPageLayout';
 
 interface KycData {
   documentType?: string;
@@ -182,128 +183,123 @@ export const AdminUsers: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">Users Management</h1>
+    <AdminPageLayout>
+      <AdminPageHeader title="Quản lý users" subtitle="Tìm kiếm, lọc và quản lý tài khoản người dùng" />
+      {error && <AdminErrorBanner message={error} />}
 
-          {/* Filters */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">Search</label>
-                <input
-                  type="text"
-                  placeholder="Email, Name, ID..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">Role</label>
-                <select
-                  value={filters.role}
-                  onChange={(e) => setFilters({ ...filters, role: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
-                >
-                  <option value="">All Roles</option>
-                  <option value="BUYER">BUYER</option>
-                  <option value="SELLER">SELLER</option>
-                  <option value="INSPECTOR">INS</option>
-                  <option value="ADMIN">ADMIN</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">Status</label>
-                <select
-                  value={filters.status}
-                  onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
-                >
-                  <option value="">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-              <div className="flex items-end">
-                <button
-                  onClick={() => setFilters({ role: '', status: '' })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  Clear Filters
-                </button>
-              </div>
-            </div>
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Tìm kiếm</label>
+            <input
+              type="text"
+              placeholder="Email, tên, ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-300 focus:border-slate-400 outline-none"
+            />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Vai trò</label>
+            <select
+              value={filters.role}
+              onChange={(e) => setFilters({ ...filters, role: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-800 focus:ring-2 focus:ring-slate-300 outline-none"
+            >
+              <option value="">Tất cả</option>
+              <option value="BUYER">BUYER</option>
+              <option value="SELLER">SELLER</option>
+              <option value="INSPECTOR">INS</option>
+              <option value="ADMIN">ADMIN</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Trạng thái</label>
+            <select
+              value={filters.status}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-800 focus:ring-2 focus:ring-slate-300 outline-none"
+            >
+              <option value="">Tất cả</option>
+              <option value="active">Đang hoạt động</option>
+              <option value="inactive">Vô hiệu hóa</option>
+            </select>
+          </div>
+          <div className="flex items-end">
+            <button
+              onClick={() => setFilters({ role: '', status: '' })}
+              className="w-full px-4 py-2 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 text-sm font-medium transition-colors"
+            >
+              Xóa bộ lọc
+            </button>
+          </div>
+        </div>
+      </div>
 
-          {selectedIds.size > 0 && (
-            <div className="flex gap-2 items-center mb-4">
-              <span className="text-sm text-gray-600">{selectedIds.size} selected</span>
-              <button onClick={() => handleBulkStatus(true)} disabled={bulkLoading} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">Bulk Activate</button>
-              <button onClick={() => handleBulkStatus(false)} disabled={bulkLoading} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">Bulk Deactivate</button>
-              <button onClick={() => setSelectedIds(new Set())} className="px-4 py-2 border rounded-lg text-sm">Clear</button>
-            </div>
-          )}
+      {selectedIds.size > 0 && (
+        <div className="flex gap-2 items-center mb-4">
+          <span className="text-sm text-slate-600">{selectedIds.size} đã chọn</span>
+          <button onClick={() => handleBulkStatus(true)} disabled={bulkLoading} className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50">Kích hoạt hàng loạt</button>
+          <button onClick={() => handleBulkStatus(false)} disabled={bulkLoading} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50">Vô hiệu hóa hàng loạt</button>
+          <button onClick={() => setSelectedIds(new Set())} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50">Bỏ chọn</button>
+        </div>
+      )}
 
-          {/* Users Table */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            {loading ? (
-              <div className="p-8 text-center">
-                <div className="animate-spin h-8 w-8 border-4 border-gray-900 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading users...</p>
-              </div>
-            ) : (
-              <>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left">
-                          <input type="checkbox" checked={filteredUsers.length > 0 && selectedIds.size === filteredUsers.length} onChange={(e) => setSelectedIds(e.target.checked ? new Set(filteredUsers.map(u => u._id)) : new Set())} />
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">User</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Role</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">KYC Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {filteredUsers.map((user) => (
-                        <tr key={user._id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4">
-                            <input type="checkbox" checked={selectedIds.has(user._id)} onChange={() => toggleSelect(user._id)} />
-                          </td>
-                          <td className="px-6 py-4">
-                            <div>
-                              <p className="font-semibold text-gray-900">{user.fullName}</p>
-                              <p className="text-sm text-gray-600">{user.email}</p>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="px-2 py-1 text-xs font-semibold rounded bg-gray-100 text-gray-700">
-                              {formatRoleLabel(user.role)}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            {user.role === 'SELLER' ? (
-                              <span className={`px-2 py-1 text-xs font-semibold rounded ${getStatusColor(user.kycStatus)}`}>
-                                {user.kycStatus}
-                              </span>
-                            ) : (
-                              <span className="px-2 py-1 text-xs font-semibold rounded text-gray-400 bg-gray-50">
-                                N/A
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`px-2 py-1 text-xs font-semibold rounded ${
-                              user.isActive ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        {loading ? (
+          <AdminLoadingState message="Đang tải users..." />
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th className="px-5 py-3.5 text-left">
+                      <input type="checkbox" checked={filteredUsers.length > 0 && selectedIds.size === filteredUsers.length} onChange={(e) => setSelectedIds(e.target.checked ? new Set(filteredUsers.map(u => u._id)) : new Set())} className="rounded border-slate-300" />
+                    </th>
+                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">User</th>
+                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Vai trò</th>
+                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">KYC</th>
+                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Trạng thái</th>
+                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredUsers.map((user) => (
+                    <tr key={user._id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="px-5 py-3.5">
+                        <input type="checkbox" checked={selectedIds.has(user._id)} onChange={() => toggleSelect(user._id)} className="rounded border-slate-300" />
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div>
+                          <p className="font-medium text-slate-900">{user.fullName}</p>
+                          <p className="text-slate-500">{user.email}</p>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className="px-2.5 py-1 text-xs font-medium rounded-md bg-slate-100 text-slate-700 border border-slate-200">
+                          {formatRoleLabel(user.role)}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        {user.role === 'SELLER' ? (
+                          <span className={`px-2.5 py-1 text-xs font-medium rounded-md border ${getStatusColor(user.kycStatus)}`}>
+                            {user.kycStatus}
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-1 text-xs font-medium rounded-md text-slate-400 bg-slate-50 border border-slate-200">
+                            N/A
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3.5">
+                            <span className={`px-2.5 py-1 text-xs font-medium rounded-md border ${
+                              user.isActive ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-red-700 bg-red-50 border-red-200'
                             }`}>
-                              {user.isActive ? 'Active' : 'Inactive'}
+                              {user.isActive ? 'Hoạt động' : 'Vô hiệu'}
                             </span>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-5 py-3.5">
                             <div className="flex gap-2">
                               {(user.role === 'SELLER' || user.kycStatus === 'PENDING' || (user.kycData && (user.kycData.documentType || user.kycData.documentId || user.kycData.frontImage || user.kycData.backImage))) && (
                                 <button
@@ -312,20 +308,20 @@ export const AdminUsers: React.FC = () => {
                                     setKycStatus(user.kycStatus);
                                     setShowKycModal(true);
                                   }}
-                                  className="px-3 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                  className="px-3 py-1.5 text-xs font-medium text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
                                 >
                                   KYC
                                 </button>
                               )}
                               <button
                                 onClick={() => handleBanUser(user._id, user.isActive)}
-                                className={`px-3 py-1 text-xs font-semibold rounded transition-colors ${
+                                className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
                                   user.isActive
-                                    ? 'text-red-600 hover:bg-red-50'
-                                    : 'text-green-600 hover:bg-green-50'
+                                    ? 'text-red-700 border-red-200 hover:bg-red-50'
+                                    : 'text-emerald-700 border-emerald-200 hover:bg-emerald-50'
                                 }`}
                               >
-                                {user.isActive ? 'Ban' : 'Unban'}
+                                {user.isActive ? 'Khóa' : 'Mở khóa'}
                               </button>
                             </div>
                           </td>
@@ -335,32 +331,30 @@ export const AdminUsers: React.FC = () => {
                   </table>
                 </div>
 
-                {/* Pagination */}
-                <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
-                  <p className="text-sm text-gray-600">
-                    Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} users
+                <div className="px-5 py-4 border-t border-slate-200 flex justify-between items-center bg-slate-50/50">
+                  <p className="text-sm text-slate-600">
+                    {((pagination.page - 1) * pagination.limit) + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} / {pagination.total} users
                   </p>
                   <div className="flex gap-2">
                     <button
                       onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
                       disabled={pagination.page === 1}
-                      className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-2 border border-slate-200 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
                     >
-                      Previous
+                      Trước
                     </button>
                     <button
                       onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
                       disabled={pagination.page >= pagination.pages}
-                      className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-2 border border-slate-200 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
                     >
-                      Next
+                      Sau
                     </button>
                   </div>
                 </div>
               </>
-            )}
-          </div>
-        </div>
+        )}
+      </div>
 
       {/* KYC Modal — SELLER hoặc user có hồ sơ KYC (kể cả BUYER đã gửi KYC) */}
       {showKycModal && selectedUser && (selectedUser.role === 'SELLER' || selectedUser.kycStatus === 'PENDING' || (selectedUser.kycData && (selectedUser.kycData.documentType || selectedUser.kycData.documentId || selectedUser.kycData.frontImage || selectedUser.kycData.backImage))) && (
@@ -453,6 +447,6 @@ export const AdminUsers: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </AdminPageLayout>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useToast, Toast } from '../../components/Toast';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
+import { AdminPageLayout, AdminPageHeader, AdminErrorBanner, AdminLoadingState } from '../../components/AdminPageLayout';
 
 interface Listing {
   _id: string;
@@ -201,65 +202,60 @@ export const AdminListings: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">Listings Management</h1>
+    <AdminPageLayout>
+      <AdminPageHeader title="Quản lý tin đăng" subtitle="Duyệt, từ chối và xuất danh sách tin đăng" />
+      {error && <AdminErrorBanner message={error} />}
 
-          <div className="flex flex-wrap gap-4 items-center mb-4">
-            <button onClick={handleExportListings} className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium">Export CSV</button>
-            {selectedIds.size > 0 && (
-              <>
-                <span className="text-sm text-gray-600">{selectedIds.size} selected</span>
-                <button onClick={() => setBulkAction('APPROVE')} disabled={bulkLoading} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">Bulk Approve</button>
-                <button onClick={() => setBulkAction('REJECT')} disabled={bulkLoading} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">Bulk Reject</button>
-                <button onClick={() => { setSelectedIds(new Set()); setBulkAction(null); setBulkReason(''); }} className="px-4 py-2 border rounded-lg text-sm">Clear</button>
-              </>
-            )}
+      <div className="flex flex-wrap gap-4 items-center mb-4">
+        <button onClick={handleExportListings} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50 bg-white">Export CSV</button>
+        {selectedIds.size > 0 && (
+          <>
+            <span className="text-sm text-slate-600">{selectedIds.size} đã chọn</span>
+            <button onClick={() => setBulkAction('APPROVE')} disabled={bulkLoading} className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50">Duyệt hàng loạt</button>
+            <button onClick={() => setBulkAction('REJECT')} disabled={bulkLoading} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50">Từ chối hàng loạt</button>
+            <button onClick={() => { setSelectedIds(new Set()); setBulkAction(null); setBulkReason(''); }} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50">Bỏ chọn</button>
+          </>
+        )}
+      </div>
+
+      {bulkAction && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-6">
+          <p className="text-sm font-medium text-slate-700 mb-2">Hàng loạt {bulkAction}: {selectedIds.size} tin. {bulkAction === 'REJECT' ? 'Lý do (bắt buộc):' : ''}</p>
+          {bulkAction === 'REJECT' && <input type="text" value={bulkReason} onChange={(e) => setBulkReason(e.target.value)} placeholder="Lý do từ chối" className="w-full max-w-md border border-slate-200 rounded-lg px-3 py-2 text-sm mb-2 focus:ring-2 focus:ring-slate-300 outline-none" />}
+          <div className="flex gap-2">
+            <button onClick={handleBulkModerate} disabled={bulkLoading || (bulkAction === 'REJECT' && !bulkReason.trim())} className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800 disabled:opacity-50">Xác nhận</button>
+            <button onClick={() => { setBulkAction(null); setBulkReason(''); }} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50">Hủy</button>
           </div>
+        </div>
+      )}
 
-          {bulkAction && (
-            <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
-              <p className="text-sm font-medium text-gray-700 mb-2">Bulk {bulkAction}: {selectedIds.size} listings. {bulkAction === 'REJECT' ? 'Lý do (bắt buộc):' : ''}</p>
-              {bulkAction === 'REJECT' && <input type="text" value={bulkReason} onChange={(e) => setBulkReason(e.target.value)} placeholder="Lý do từ chối" className="w-full max-w-md border rounded-lg px-3 py-2 text-sm mb-2" />}
-              <div className="flex gap-2">
-                <button onClick={handleBulkModerate} disabled={bulkLoading || (bulkAction === 'REJECT' && !bulkReason.trim())} className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm disabled:opacity-50">Xác nhận</button>
-                <button onClick={() => { setBulkAction(null); setBulkReason(''); }} className="px-4 py-2 border rounded-lg text-sm">Hủy</button>
-              </div>
-            </div>
-          )}
-
-          {/* Filter */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-            <div className="flex gap-4 items-end">
-              <div className="flex-1">
-                <label className="block text-sm font-semibold text-gray-900 mb-2">Status</label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
-                    setPagination({ ...pagination, page: 1 });
-                  }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
-                >
-                  <option value="">All Status</option>
-                  <option value="PENDING_APPROVAL">PENDING_APPROVAL</option>
-                  <option value="PUBLISHED">PUBLISHED</option>
-                  <option value="DRAFT">DRAFT</option>
-                  <option value="SOLD">SOLD</option>
-                  <option value="REJECTED">REJECTED</option>
-                </select>
-              </div>
-            </div>
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-6">
+        <div className="flex gap-4 items-end">
+          <div className="flex-1 max-w-xs">
+            <label className="block text-sm font-medium text-slate-700 mb-1">Trạng thái</label>
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPagination({ ...pagination, page: 1 });
+              }}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-800 focus:ring-2 focus:ring-slate-300 outline-none"
+            >
+              <option value="">Tất cả</option>
+              <option value="PENDING_APPROVAL">PENDING_APPROVAL</option>
+              <option value="PUBLISHED">PUBLISHED</option>
+              <option value="DRAFT">DRAFT</option>
+              <option value="SOLD">SOLD</option>
+              <option value="REJECTED">REJECTED</option>
+            </select>
           </div>
+        </div>
+      </div>
 
-          {/* Listings Table */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            {loading ? (
-              <div className="p-8 text-center">
-                <div className="animate-spin h-8 w-8 border-4 border-gray-900 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading listings...</p>
-              </div>
-            ) : (
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        {loading ? (
+          <AdminLoadingState message="Đang tải tin đăng..." />
+        ) : (
               <>
                 <div className="overflow-x-auto">
                   <table className="w-full">
@@ -400,9 +396,8 @@ export const AdminListings: React.FC = () => {
                   </div>
                 </div>
               </>
-            )}
-          </div>
-        </div>
+        )}
+      </div>
 
       {/* Action Modal */}
       {showActionModal && selectedListing && (
@@ -466,6 +461,6 @@ export const AdminListings: React.FC = () => {
           onClose={hideToast}
         />
       )}
-    </div>
+    </AdminPageLayout>
   );
 };

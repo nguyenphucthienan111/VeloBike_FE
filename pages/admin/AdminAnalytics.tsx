@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
+import { AdminPageLayout, AdminPageHeader, AdminErrorBanner, AdminLoadingState } from '../../components/AdminPageLayout';
 
 interface AnalyticsData {
   period: string;
@@ -55,71 +56,58 @@ export const AdminAnalytics: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">Analytics</h1>
-            <select
-              value={period}
-              onChange={(e) => setPeriod(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
-            >
-              <option value="day">Last 24 Hours</option>
-              <option value="week">Last 7 Days</option>
-              <option value="month">Last 30 Days</option>
-              <option value="year">Last Year</option>
-            </select>
-          </div>
-
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex justify-between items-center">
-              <p className="text-sm text-red-700">{error}</p>
-              <button
-                onClick={() => fetchAnalytics()}
-                className="px-3 py-1 text-sm font-medium text-red-700 border border-red-300 rounded hover:bg-red-100"
-              >
-                Thử lại
-              </button>
-            </div>
-          )}
-
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="animate-spin h-12 w-12 border-4 border-gray-900 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading analytics...</p>
-              </div>
-            </div>
-          ) : analytics && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <p className="text-sm text-gray-600 mb-2">Orders</p>
-                <p className="text-3xl font-bold text-gray-900">{analytics.orders}</p>
-                <p className="text-xs text-gray-500 mt-2">In {period}</p>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <p className="text-sm text-gray-600 mb-2">Revenue</p>
-                <p className="text-3xl font-bold text-gray-900">
-                  {formatCurrency(analytics.revenue)}
-                </p>
-                <p className="text-xs text-gray-500 mt-2">Platform fees</p>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <p className="text-sm text-gray-600 mb-2">New Sellers</p>
-                <p className="text-3xl font-bold text-gray-900">{analytics.newSellers}</p>
-                <p className="text-xs text-gray-500 mt-2">Registered in {period}</p>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <p className="text-sm text-gray-600 mb-2">Reviews</p>
-                <p className="text-3xl font-bold text-gray-900">{analytics.reviews}</p>
-                <p className="text-xs text-gray-500 mt-2">In {period}</p>
-              </div>
-            </div>
-          )}
+    <AdminPageLayout>
+      <div className="flex justify-between items-center mb-8">
+        <AdminPageHeader title="Phân tích" subtitle="Thống kê theo thời gian" />
+        <div className="flex-1 max-w-[200px] ml-4">
+          <select
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
+            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-800 focus:ring-2 focus:ring-slate-300 outline-none"
+          >
+            <option value="day">24 giờ qua</option>
+            <option value="week">7 ngày qua</option>
+            <option value="month">30 ngày qua</option>
+            <option value="year">1 năm qua</option>
+          </select>
         </div>
-    </div>
+      </div>
+
+      {error && (
+        <div className="mb-6 flex items-center justify-between gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
+          <span>{error}</span>
+          <button onClick={() => fetchAnalytics()} className="px-3 py-1.5 text-sm font-medium border border-red-300 rounded-lg hover:bg-red-100">
+            Thử lại
+          </button>
+        </div>
+      )}
+
+      {loading ? (
+        <AdminLoadingState message="Đang tải phân tích..." />
+      ) : analytics ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đơn hàng</p>
+            <p className="mt-1 text-2xl font-bold text-slate-900">{analytics.orders}</p>
+            <p className="text-xs text-slate-500 mt-1">Trong kỳ</p>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Doanh thu</p>
+            <p className="mt-1 text-2xl font-bold text-slate-900">{formatCurrency(analytics.revenue)}</p>
+            <p className="text-xs text-slate-500 mt-1">Phí nền tảng</p>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Seller mới</p>
+            <p className="mt-1 text-2xl font-bold text-slate-900">{analytics.newSellers}</p>
+            <p className="text-xs text-slate-500 mt-1">Đăng ký trong kỳ</p>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đánh giá</p>
+            <p className="mt-1 text-2xl font-bold text-slate-900">{analytics.reviews}</p>
+            <p className="text-xs text-slate-500 mt-1">Trong kỳ</p>
+          </div>
+        </div>
+      ) : null}
+    </AdminPageLayout>
   );
 };

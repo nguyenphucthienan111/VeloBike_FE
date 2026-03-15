@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../constants';
 import { useToast, Toast } from '../../components/Toast';
 import { Flag, CheckCircle, XCircle, Eye, AlertTriangle } from 'lucide-react';
+import { AdminPageLayout, AdminPageHeader } from '../../components/AdminPageLayout';
 
 interface Report {
   _id: string;
@@ -137,25 +138,25 @@ export const AdminReports: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Report Management</h1>
+    <AdminPageLayout>
+      <div className="flex justify-between items-center mb-8">
+        <AdminPageHeader title="Quản lý báo cáo" subtitle="Xem và xử lý báo cáo từ người dùng" />
         <div className="flex gap-2">
-          <select 
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+          <select
+            className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-slate-300 outline-none"
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
           >
-            <option value="">All Status</option>
-            <option value="PENDING">Pending</option>
-            <option value="REVIEWED">Reviewed</option>
-            <option value="RESOLVED">Resolved</option>
-            <option value="DISMISSED">Dismissed</option>
+            <option value="">Tất cả trạng thái</option>
+            <option value="PENDING">Chờ xử lý</option>
+            <option value="REVIEWED">Đã xem</option>
+            <option value="RESOLVED">Đã xử lý</option>
+            <option value="DISMISSED">Từ chối</option>
           </select>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
@@ -370,6 +371,6 @@ export const AdminReports: React.FC = () => {
         isVisible={toast.isVisible}
         onClose={hideToast}
       />
-    </div>
+    </AdminPageLayout>
   );
 };

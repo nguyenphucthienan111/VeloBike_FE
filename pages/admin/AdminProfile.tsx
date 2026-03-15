@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
+import { AdminPageLayout, AdminPageHeader, AdminErrorBanner, AdminLoadingState } from '../../components/AdminPageLayout';
 
 interface UserProfile {
   id: string;
@@ -172,19 +173,16 @@ export const AdminProfile: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin h-12 w-12 border-4 border-accent border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading profile...</p>
-        </div>
-      </div>
+      <AdminPageLayout>
+        <AdminLoadingState message="Đang tải hồ sơ..." />
+      </AdminPageLayout>
     );
   }
 
   return (
-    <div className="p-6 pt-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Messages */}
+    <AdminPageLayout>
+      <AdminPageHeader title="Hồ sơ của tôi" subtitle="Thông tin tài khoản admin" />
+      {/* Messages */}
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-sm text-red-700">{error}</p>
@@ -410,7 +408,6 @@ export const AdminProfile: React.FC = () => {
               </div>
           </div>
         </div>
-      </div>
-    </div>
+    </AdminPageLayout>
   );
 };

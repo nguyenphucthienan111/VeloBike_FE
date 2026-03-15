@@ -448,8 +448,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         </div>
       </footer>
       )}
-      {/* Chatbot */}
-      <Chatbot />
+      {/* Chatbot - chỉ hiển thị cho buyer */}
+      {userRole === 'BUYER' && <Chatbot />}
     </div>
   );
 };
