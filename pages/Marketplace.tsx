@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Filter, ChevronDown, Check, Search, Loader, AlertCircle } from 'lucide-react';
 import { BikeCard } from '../components/BikeCard';
 import { useListings } from '../hooks/useListings';
+import { API_BASE_URL } from '../constants';
 
 const BIKE_TYPES = ['ROAD', 'MTB', 'GRAVEL', 'TRIATHLON', 'E_BIKE'];
 const BRAND_OTHER = '__OTHER__'; // Sentinel cho "Khác" – hãng không thuộc danh sách admin
@@ -21,6 +22,82 @@ const FALLBACK_CATEGORIES = [
 
 export const Marketplace: React.FC = () => {
   const { listings, loading, error, facets, fetch, fetchFacets } = useListings();
+  const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
+  const [wishlistToggling, setWishlistToggling] = useState<string | null>(null);
+  const [canWishlist, setCanWishlist] = useState(() => typeof window !== 'undefined' && !!localStorage.getItem('accessToken'));
+
+  useEffect(() => {
+    const check = () => setCanWishlist(!!localStorage.getItem('accessToken'));
+    check();
+    window.addEventListener('authStatusChanged', check);
+    window.addEventListener('authChange', check);
+    return () => {
+      window.removeEventListener('authStatusChanged', check);
+      window.removeEventListener('authChange', check);
+    };
+  }, []);
+
+  const fetchWishlistIds = useCallback(() => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      setWishlistIds(new Set());
+      return;
+    }
+    fetch(`${API_BASE_URL}/wishlist`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.data && Array.isArray(data.data)) {
+          const ids = new Set((data.data as any[]).map((i: any) => i.listingId?._id).filter(Boolean));
+          setWishlistIds(ids);
+        } else setWishlistIds(new Set());
+      })
+      .catch(() => setWishlistIds(new Set()));
+  }, []);
+
+  useEffect(() => {
+    fetchWishlistIds();
+  }, [fetchWishlistIds]);
+
+  useEffect(() => {
+    const onRefresh = () => fetchWishlistIds();
+    window.addEventListener('wishlistRefresh', onRefresh);
+    return () => window.removeEventListener('wishlistRefresh', onRefresh);
+  }, [fetchWishlistIds]);
+
+  const handleWishlistToggle = async (listingId: string) => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
+    setWishlistToggling(listingId);
+    const inWishlist = wishlistIds.has(listingId);
+    try {
+      if (inWishlist) {
+        const res = await fetch(`${API_BASE_URL}/wishlist/${listingId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          setWishlistIds((prev) => {
+            const next = new Set(prev);
+            next.delete(listingId);
+            return next;
+          });
+          window.dispatchEvent(new Event('wishlistRefresh'));
+        }
+      } else {
+        const res = await fetch(`${API_BASE_URL}/wishlist`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ listingId }),
+        });
+        if (res.ok) {
+          setWishlistIds((prev) => new Set(prev).add(listingId));
+          window.dispatchEvent(new Event('wishlistRefresh'));
+        }
+      }
+    } finally {
+      setWishlistToggling(null);
+    }
+  };
 
   // Brand options từ facets (không gọi admin API)
   const baseBrandOptions = (facets?.brands ?? [])
@@ -366,7 +443,12 @@ export const Marketplace: React.FC = () => {
                   {getPaginatedListings()
                     .filter((bike) => bike && bike.id) // Extra safety check
                     .map((bike) => (
-                      <BikeCard key={bike.id} bike={bike as any} />
+                      <BikeCard
+                        key={bike.id}
+                        bike={bike as any}
+                        inWishlist={wishlistIds.has(bike.id)}
+                        onWishlistToggle={canWishlist ? handleWishlistToggle : undefined}
+                      />
                     ))}
                 </div>
 

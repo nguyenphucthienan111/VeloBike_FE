@@ -19,6 +19,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const [userRole, setUserRole] = useState<string | null>(null);
   const [orderCount, setOrderCount] = useState<number>(0);
   const [notificationUnread, setNotificationUnread] = useState<number>(0);
+  const [wishlistCount, setWishlistCount] = useState<number>(0);
   const [refreshKey, setRefreshKey] = useState(0);
   
   // Hide header for seller, admin, and inspector dashboard pages
@@ -139,6 +140,31 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       .catch(() => setNotificationUnread(0));
   }, [isAuthenticated, refreshKey]);
 
+  // Số lượng wishlist (icon tim) - GET /api/wishlist/count
+  const fetchWishlistCount = () => {
+    if (!isAuthenticated || (userRole !== 'BUYER' && userRole !== 'SELLER')) {
+      setWishlistCount(0);
+      return;
+    }
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
+    fetch(`${API_BASE_URL}/wishlist/count`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => res.status === 401 ? null : res.json())
+      .then((data) => {
+        if (data?.data != null) setWishlistCount(Number(data.data));
+        else setWishlistCount(0);
+      })
+      .catch(() => setWishlistCount(0));
+  };
+  useEffect(() => {
+    fetchWishlistCount();
+  }, [isAuthenticated, userRole, refreshKey]);
+  useEffect(() => {
+    const onRefresh = () => fetchWishlistCount();
+    window.addEventListener('wishlistRefresh', onRefresh);
+    return () => window.removeEventListener('wishlistRefresh', onRefresh);
+  }, [isAuthenticated, userRole]);
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
@@ -208,8 +234,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                   {/* BUYER: đầy đủ icon mua hàng */}
                   {userRole === 'BUYER' && (
                     <>
-                      <Link to="/buyer/wishlist" className="text-accent hover:text-accent/80 transition-colors p-1 rounded-full hover:bg-gray-100" title="Wishlist">
+                      <Link to="/buyer/wishlist" className="text-accent hover:text-accent/80 transition-colors relative p-1 rounded-full hover:bg-gray-100" title="Wishlist">
                         <Heart size={20} />
+                        {wishlistCount > 0 && (
+                          <span className="absolute -top-0.5 -right-0.5 bg-accent text-white text-[10px] font-bold min-w-[1rem] h-4 px-1 rounded-full flex items-center justify-center">
+                            {wishlistCount > 99 ? '99+' : wishlistCount}
+                          </span>
+                        )}
                       </Link>
                       <Link to="/buyer/orders" className="text-accent hover:text-accent/80 transition-colors relative p-1 rounded-full hover:bg-gray-100" title="Orders">
                         <ShoppingBag size={20} />
@@ -243,8 +274,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                         <MessageCircle size={18} />
                         <span>Tin nhắn</span>
                       </Link>
-                      <Link to="/buyer/wishlist" className="text-accent hover:text-accent/80 transition-colors p-1 rounded-full hover:bg-gray-100" title="Danh sách yêu thích">
+                      <Link to="/buyer/wishlist" className="text-accent hover:text-accent/80 transition-colors relative p-1 rounded-full hover:bg-gray-100" title="Danh sách yêu thích">
                         <Heart size={20} />
+                        {wishlistCount > 0 && (
+                          <span className="absolute -top-0.5 -right-0.5 bg-accent text-white text-[10px] font-bold min-w-[1rem] h-4 px-1 rounded-full flex items-center justify-center">
+                            {wishlistCount > 99 ? '99+' : wishlistCount}
+                          </span>
+                        )}
                       </Link>
                       <Link to="/buyer/orders" className="text-accent hover:text-accent/80 transition-colors relative p-1 rounded-full hover:bg-gray-100" title="Đơn hàng">
                         <ShoppingBag size={20} />

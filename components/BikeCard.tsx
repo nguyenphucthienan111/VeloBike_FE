@@ -1,13 +1,15 @@
 import React from 'react';
 import { BikeListing, InspectionStatus } from '../types';
-import { MapPin, ShieldCheck, Activity } from 'lucide-react';
+import { MapPin, ShieldCheck, Activity, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface BikeCardProps {
   bike: BikeListing;
+  inWishlist?: boolean;
+  onWishlistToggle?: (listingId: string) => void;
 }
 
-export const BikeCard: React.FC<BikeCardProps> = ({ bike }) => {
+export const BikeCard: React.FC<BikeCardProps> = ({ bike, inWishlist, onWishlistToggle }) => {
   const formatPrice = (price: number) => {
     if (!price || isNaN(price)) return '0 VND';
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
@@ -40,6 +42,26 @@ export const BikeCard: React.FC<BikeCardProps> = ({ bike }) => {
           </div>
         )}
         
+        {/* Wishlist heart - top right (only when onWishlistToggle provided) */}
+        {onWishlistToggle && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onWishlistToggle(bike.id);
+            }}
+            className="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/90 backdrop-blur shadow-sm hover:bg-white transition-colors"
+            title={inWishlist ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
+            aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+          >
+            <Heart
+              size={20}
+              className={inWishlist ? 'fill-red-500 text-red-500' : 'text-gray-500 hover:text-red-400'}
+            />
+          </button>
+        )}
+
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-2">
            {bike.isVerified && (

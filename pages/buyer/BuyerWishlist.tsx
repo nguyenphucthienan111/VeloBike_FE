@@ -96,6 +96,7 @@ export const BuyerWishlist: React.FC = () => {
 
       if (res.ok) {
         setItems(prev => prev.filter(i => i.listingId?._id !== listingId));
+        window.dispatchEvent(new Event('wishlistRefresh'));
       }
     } catch {
       // silent fail
@@ -115,6 +116,7 @@ export const BuyerWishlist: React.FC = () => {
 
       if (res.ok) {
         setItems([]);
+        window.dispatchEvent(new Event('wishlistRefresh'));
       }
     } catch {
       // silent
