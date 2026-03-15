@@ -54,6 +54,12 @@ export const BuyerNotifications: React.FC = () => {
     fetchNotifications();
   }, []);
 
+  useEffect(() => {
+    const onRefresh = () => fetchNotifications();
+    window.addEventListener('ordersAndNotificationsRefresh', onRefresh);
+    return () => window.removeEventListener('ordersAndNotificationsRefresh', onRefresh);
+  }, []);
+
   const markAsRead = async (id: string) => {
     const token = localStorage.getItem('accessToken');
     if (!token) return;

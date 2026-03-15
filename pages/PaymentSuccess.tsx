@@ -42,20 +42,40 @@ export const PaymentSuccess: React.FC = () => {
           setIsPolling(false);
           setLoading(false);
           showToast('Thanh toán đơn hàng thành công!', 'success');
-          // Clear pending
           localStorage.removeItem('pendingOrderId');
           localStorage.removeItem('pendingListingId');
+          window.dispatchEvent(new Event('ordersAndNotificationsRefresh'));
           return;
         }
 
-        // If still CREATED, try to force sync with PayOS (Localhost workaround)
         if (order.status === 'CREATED') {
-            // Extract REAL orderCode from timeline
+            // PayOS redirects to ?status=PAID&orderCode=xxx#/payment/success - query is BEFORE hash, so use window.location.search (HashRouter doesn't see it)
+            const mainSearch = new URLSearchParams(window.location.search);
+            const urlPaid = mainSearch.get('status') === 'PAID';
+            const urlOrderCode = mainSearch.get('orderCode');
             const timelineNote = order.timeline?.find((t: any) => t.note?.includes('orderCode:'))?.note;
-            const realOrderCode = timelineNote ? timelineNote.split('orderCode: ')[1] : null;
-            
+            const timelineOrderCode = timelineNote ? timelineNote.split('orderCode: ')[1]?.trim() : null;
+            const realOrderCode = (urlPaid && urlOrderCode) ? urlOrderCode.trim() : timelineOrderCode;
             if (realOrderCode) {
-                await checkPayOSAndSync(realOrderCode, pendingOrderId, token);
+                const synced = await checkPayOSAndSync(realOrderCode, pendingOrderId, token);
+                if (synced) {
+                  const refetch = await fetch(`${API_BASE_URL}/orders/${pendingOrderId}`, {
+                    headers: { 'Authorization': `Bearer ${token.trim()}` }
+                  });
+                  if (refetch.ok) {
+                    const refetchData = await refetch.json();
+                    const updated = refetchData.data;
+                    if (updated?.status === 'ESCROW_LOCKED' || updated?.status === 'IN_INSPECTION' || updated?.status === 'INSPECTION_PASSED') {
+                      setOrderDetails(updated);
+                      setIsPolling(false);
+                      setLoading(false);
+                      showToast('Thanh toán đơn hàng thành công!', 'success');
+                      localStorage.removeItem('pendingOrderId');
+                      localStorage.removeItem('pendingListingId');
+                      window.dispatchEvent(new Event('ordersAndNotificationsRefresh'));
+                    }
+                  }
+                }
             }
         }
       }
@@ -64,35 +84,28 @@ export const PaymentSuccess: React.FC = () => {
     }
   };
 
-  const checkPayOSAndSync = async (orderCode: string, orderId: string, token: string) => {
+  const checkPayOSAndSync = async (orderCode: string, orderId: string, token: string): Promise<boolean> => {
       try {
-          // 1. Check PayOS status using orderCode (NOT orderId)
-          // Note: PaymentController.getPaymentInfo expects orderCode (number)
           const infoRes = await fetch(`${API_BASE_URL}/payment/info/${orderCode}`, {
              headers: { 'Authorization': `Bearer ${token}` }
           });
-          
-          if (infoRes.ok) {
-              const infoData = await infoRes.json();
-              if (infoData.data?.status === 'PAID') {
-                  // 2. Trigger Webhook manually
-                  // Construct body to match PaymentService.handlePaymentWebhook expectations
-                  const webhookBody = {
-                      code: "00000",
-                      orderCode: Number(orderCode),
-                      data: infoData.data
-                  };
-
-                  console.log('Payment detected on PayOS, triggering manual webhook...', webhookBody);
-                  await fetch(`${API_BASE_URL}/payment/webhook`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(webhookBody)
-                  });
-              }
-          }
+          if (!infoRes.ok) return false;
+          const infoData = await infoRes.json();
+          if (infoData.data?.status !== 'PAID') return false;
+          const webhookBody = {
+              code: "00000",
+              orderCode: Number(orderCode),
+              data: infoData.data
+          };
+          const webhookRes = await fetch(`${API_BASE_URL}/payment/webhook`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(webhookBody)
+          });
+          return webhookRes.ok;
       } catch (e) {
           console.error("Sync failed", e);
+          return false;
       }
   };
 

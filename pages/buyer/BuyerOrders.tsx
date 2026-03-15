@@ -71,6 +71,7 @@ export const BuyerOrders: React.FC = () => {
       }
 
       if (data.success && data.paymentLink) {
+        localStorage.setItem('pendingOrderId', orderId);
         window.location.href = data.paymentLink;
       } else {
         throw new Error('Phản hồi không hợp lệ từ hệ thống thanh toán');
@@ -190,6 +191,19 @@ export const BuyerOrders: React.FC = () => {
 
   useEffect(() => {
     fetchOrders();
+  }, []);
+
+  useEffect(() => {
+    const onRefresh = () => fetchOrders();
+    window.addEventListener('ordersAndNotificationsRefresh', onRefresh);
+    return () => window.removeEventListener('ordersAndNotificationsRefresh', onRefresh);
+  }, []);
+
+  // Refetch when user returns to this tab (e.g. after paying in same/different tab) so status is up to date
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchOrders(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, []);
 
   const handleCheckPayment = async (orderId: string, silent = false) => {
