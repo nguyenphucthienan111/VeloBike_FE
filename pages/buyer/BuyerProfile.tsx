@@ -120,6 +120,25 @@ export const BuyerProfile: React.FC = () => {
       setSuccess('');
       const token = localStorage.getItem('accessToken');
 
+      // Upload avatar first if a new file was selected
+      if (avatarFile) {
+        const formDataAvatar = new FormData();
+        formDataAvatar.append('avatar', avatarFile);
+
+        const avatarRes = await fetch(`${API_BASE_URL}/users/me/avatar`, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formDataAvatar,
+        });
+
+        if (!avatarRes.ok) {
+          const data = await avatarRes.json();
+          setError(data.message || 'Failed to upload avatar');
+          setSaving(false);
+          return;
+        }
+      }
+
       const body = {
         fullName: formData.fullName,
         phone: formData.phone || '',
@@ -286,17 +305,6 @@ export const BuyerProfile: React.FC = () => {
                     onChange={handleInputChange}
                     placeholder="Enter your phone number"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">Bio</label>
-                  <textarea
-                    name="bio"
-                    value={formData.bio}
-                    onChange={handleInputChange}
-                    placeholder="Tell us about yourself"
-                    rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:border-gray-900"
                   />
                 </div>
               </div>
