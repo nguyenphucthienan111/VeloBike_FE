@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Toast, useToast } from '../../components/Toast';
 import { API_BASE_URL } from '../../constants';
@@ -26,6 +26,20 @@ export const AddProduct: React.FC = () => {
   const [uploadedVideo, setUploadedVideo] = useState<File | null>(null);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [videoPreviews, setVideoPreviews] = useState<string>('');
+
+  // Double check KYC status
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        if (user.role === 'SELLER' && user.kycStatus !== 'VERIFIED' && user.kycStatus !== 'APPROVED') {
+          showToast('Tài khoản chưa được xác thực KYC. Vui lòng hoàn tất xác thực.', 'error');
+          navigate('/seller/kyc');
+        }
+      } catch {}
+    }
+  }, [navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -356,7 +370,6 @@ export const AddProduct: React.FC = () => {
                   id="image-upload"
                 />
                 <label htmlFor="image-upload" className="cursor-pointer block">
-                  <div className="text-4xl mb-2">📸</div>
                   <p className="text-gray-700 font-medium">Drag and drop images here or <span className="text-blue-600 underline">click to select</span></p>
                   <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF - Max 5MB per image</p>
                 </label>
@@ -393,7 +406,6 @@ export const AddProduct: React.FC = () => {
                   id="video-upload"
                 />
                 <label htmlFor="video-upload" className="cursor-pointer block">
-                  <div className="text-3xl mb-2">🎥</div>
                   <p className="text-gray-700 font-medium"><span className="text-blue-600 underline">Select video</span> or drag and drop here</p>
                   <p className="text-xs text-gray-500 mt-1">MP4, WebM - Max 100MB</p>
                 </label>

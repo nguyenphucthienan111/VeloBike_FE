@@ -111,7 +111,7 @@ export const PaymentCancel: React.FC = () => {
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4">
           <button
-            onClick={() => navigate(-2)}
+            onClick={handleBackToProduct}
             className="flex-1 bg-accent text-white py-3 px-6 rounded-lg font-semibold hover:bg-accent/90 transition flex items-center justify-center"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />

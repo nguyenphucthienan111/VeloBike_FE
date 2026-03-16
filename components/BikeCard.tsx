@@ -1,32 +1,67 @@
 import React from 'react';
 import { BikeListing, InspectionStatus } from '../types';
-import { MapPin, ShieldCheck, Activity } from 'lucide-react';
+import { MapPin, ShieldCheck, Activity, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface BikeCardProps {
   bike: BikeListing;
+  inWishlist?: boolean;
+  onWishlistToggle?: (listingId: string) => void;
 }
 
-export const BikeCard: React.FC<BikeCardProps> = ({ bike }) => {
+export const BikeCard: React.FC<BikeCardProps> = ({ bike, inWishlist, onWishlistToggle }) => {
   const formatPrice = (price: number) => {
     if (!price || isNaN(price)) return '0 VND';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND', minimumFractionDigits: 0 }).format(price);
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
   };
 
   if (!bike || !bike.id) {
     return null; // Don't render if bike data is invalid
   }
 
+  const isOutOfStock = ['RESERVED', 'SOLD', 'IN_INSPECTION'].includes(bike.status);
+
   return (
-    <Link to={`/bike/${bike.id}`} className="group block bg-white border border-gray-100 hover:shadow-xl transition-all duration-300 ease-out overflow-hidden">
+    <Link to={`/bike/${bike.id}`} className="group block bg-white border border-gray-100 hover:shadow-xl transition-all duration-300 ease-out overflow-hidden relative">
       {/* Image Container */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
         <img 
           src={bike.imageUrl} 
           alt={bike.title} 
-          className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-in-out"
+          className={`w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-in-out ${isOutOfStock ? 'grayscale opacity-70' : ''}`}
         />
         
+        {/* Out of Stock Overlay */}
+        {isOutOfStock && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10 backdrop-blur-[2px]">
+            <div className={`px-6 py-3 font-bold text-base uppercase tracking-widest transform -rotate-12 shadow-2xl border-4 border-white/20 rounded-lg ${
+              bike.status === 'SOLD' ? 'bg-gray-600 text-white' : 'bg-amber-600 text-white'
+            }`}>
+              {bike.status === 'SOLD' ? 'Đã bán' : 'Đã có người đặt'}
+            </div>
+          </div>
+        )}
+        
+        {/* Wishlist heart - top right (only when onWishlistToggle provided) */}
+        {onWishlistToggle && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onWishlistToggle(bike.id);
+            }}
+            className="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/90 backdrop-blur shadow-sm hover:bg-white transition-colors"
+            title={inWishlist ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
+            aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+          >
+            <Heart
+              size={20}
+              className={inWishlist ? 'fill-red-500 text-red-500' : 'text-gray-500 hover:text-red-400'}
+            />
+          </button>
+        )}
+
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-2">
            {bike.isVerified && (
@@ -35,18 +70,20 @@ export const BikeCard: React.FC<BikeCardProps> = ({ bike }) => {
               Verified
             </span>
            )}
-           {bike.inspectionStatus === InspectionStatus.PASSED && (
+           {bike.inspectionStatus === InspectionStatus.PASSED && bike.conditionScore > 0 && (
              <span className="bg-accent/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 uppercase tracking-wider">
-               Passed 50-Point
+               Passed {bike.conditionScore}/10
              </span>
            )}
         </div>
 
-        {/* Condition Score Bubble */}
-        <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur text-black text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-sm">
-          <Activity size={12} className="text-accent" />
-          {bike.conditionScore}/10
-        </div>
+        {/* Condition Score Bubble - only show when có inspectionScore thật */}
+        {bike.conditionScore > 0 && (
+          <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur text-black text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-sm">
+            <Activity size={12} className="text-accent" />
+            {bike.conditionScore}/10
+          </div>
+        )}
       </div>
 
       {/* Content */}

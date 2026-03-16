@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SellerHeaderUserMenu } from '../../components/SellerHeaderUserMenu';
+import { API_BASE_URL } from '../../constants';
 
 interface DashboardStats {
   totalListings: number;
@@ -64,7 +65,12 @@ export const SellerDashboard: React.FC = () => {
       }
 
       // Fetch analytics dashboard
-      const analyticsRes = await fetch('http://localhost:5000/api/analytics/seller/dashboard', {
+      const analyticsRes = await fetch(`${API_BASE_URL}/analytics/seller/dashboard`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      // Fetch recent orders for the table (richer data than transactions)
+      const ordersRes = await fetch(`${API_BASE_URL}/orders?role=seller&limit=5`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
@@ -81,11 +87,25 @@ export const SellerDashboard: React.FC = () => {
         });
 
         setTopListings(data.data?.topListings || []);
-        setRecentTransactions(data.data?.recentTransactions || []);
+        
+        // Use orders if available, otherwise fallback (though fallback is likely incomplete)
+        if (ordersRes.ok) {
+            const ordersData = await ordersRes.json();
+            const mappedOrders = ordersData.data.map((order: any) => ({
+                id: order._id,
+                buyerName: order.buyerId?.fullName || 'Unknown',
+                productTitle: order.listingId?.title || 'Unknown Product',
+                amount: order.totalAmount || 0,
+                status: order.status
+            }));
+            setRecentTransactions(mappedOrders);
+        } else {
+            setRecentTransactions(data.data?.recentTransactions || []);
+        }
       }
 
       // Fetch notifications
-      const notifRes = await fetch('http://localhost:5000/api/notifications', {
+      const notifRes = await fetch(`${API_BASE_URL}/notifications`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
@@ -178,6 +198,15 @@ export const SellerDashboard: React.FC = () => {
                   </div>
                 )}
               </div>
+
+              {/* Message Button */}
+              <button 
+                onClick={() => navigate('/seller/messages')}
+                className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-gray-50 text-gray-700"
+                title="Tin nhắn"
+              >
+                💬
+              </button>
               
               <SellerHeaderUserMenu user={user} />
             </div>

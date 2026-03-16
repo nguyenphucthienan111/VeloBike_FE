@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { InspectorSidebar } from '../../components/InspectorSidebar';
 import { InspectorHeader } from '../../components/InspectorHeader';
+import { API_BASE_URL } from '../../constants';
 
 interface ChecklistItem {
   component: string;
@@ -26,6 +27,13 @@ interface OrderInfo {
     brand: string;
     model: string;
     type: string;
+    media: {
+      thumbnails: string[];
+    };
+    generalInfo: {
+      brand: string;
+      model: string;
+    };
   };
   buyerId: {
     fullName: string;
@@ -44,7 +52,7 @@ export const InspectionForm: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
-  const [orderInfo, setOrderInfo] = useState<OrderInfo | null>(null);
+  const [orderInfo, setOrderInfo] = useState<any>(null); // Changed type to any to match BE response structure flexibly
   const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
   const [overallVerdict, setOverallVerdict] = useState<'PASSED' | 'FAILED' | 'SUGGEST_ADJUSTMENT' | ''>('');
   const [overallScore, setOverallScore] = useState<number | ''>('');
@@ -54,27 +62,38 @@ export const InspectionForm: React.FC = () => {
 
   useEffect(() => {
     if (orderId) {
-      fetchChecklist();
+      fetchData();
     }
   }, [orderId]);
 
-  const fetchChecklist = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('accessToken');
       if (!token) return;
 
-      // Fetch checklist based on order
-      const checklistResponse = await fetch(`http://localhost:5000/api/inspections/checklist/order/${orderId}`, {
+      // 1. Fetch Order Details
+      const orderResponse = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      
+      if (orderResponse.ok) {
+        const orderData = await orderResponse.json();
+        setOrderInfo(orderData.data);
+      }
+
+      // 2. Fetch checklist based on order
+      const checklistResponse = await fetch(`${API_BASE_URL}/inspections/checklist/order/${orderId}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
       if (checklistResponse.ok) {
         const checklistData = await checklistResponse.json();
-        setChecklist(checklistData.data || []);
+        const items = checklistData.data?.checklist || [];
+        setChecklist(items);
         
         // Initialize checkpoints
-        const initialCheckpoints: Checkpoint[] = (checklistData.data || []).map((item: ChecklistItem) => ({
+        const initialCheckpoints: Checkpoint[] = items.map((item: ChecklistItem) => ({
           component: item.component,
           status: '',
           observation: '',
@@ -84,12 +103,9 @@ export const InspectionForm: React.FC = () => {
         }));
         setCheckpoints(initialCheckpoints);
       }
-
-      // Fetch order info (you might need to create this endpoint or use existing one)
-      // For now, we'll skip this and use placeholder
     } catch (error) {
-      console.error('Error fetching checklist:', error);
-      setError('Error loading checklist');
+      console.error('Error fetching data:', error);
+      setError('Error loading inspection data');
     } finally {
       setLoading(false);
     }
@@ -118,7 +134,7 @@ export const InspectionForm: React.FC = () => {
         const formData = new FormData();
         formData.append('file', files[i]);
 
-        const response = await fetch('http://localhost:5000/api/upload', {
+        const response = await fetch(`${API_BASE_URL}/upload`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` },
           body: formData,
@@ -137,6 +153,12 @@ export const InspectionForm: React.FC = () => {
       console.error('Error uploading images:', error);
       alert('Error uploading images');
     }
+  };
+
+  const handleRemoveImage = (checkpointIndex: number, imageIndex: number) => {
+    const updated = [...checkpoints];
+    updated[checkpointIndex].evidenceImageUrls = updated[checkpointIndex].evidenceImageUrls.filter((_, i) => i !== imageIndex);
+    setCheckpoints(updated);
   };
 
   const handleSubmit = async () => {
@@ -175,7 +197,7 @@ export const InspectionForm: React.FC = () => {
         inspectorNote: inspectorNote || undefined,
       };
 
-      const response = await fetch('http://localhost:5000/api/inspections', {
+      const response = await fetch(`${API_BASE_URL}/inspections`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -247,6 +269,46 @@ export const InspectionForm: React.FC = () => {
             </div>
           )}
 
+          {/* Order Info Card */}
+          {orderInfo && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+              <div className="flex gap-6">
+                <div className="w-32 h-32 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 bg-gray-100">
+                  {orderInfo.listingId?.media?.thumbnails?.[0] ? (
+                    <img 
+                      src={orderInfo.listingId.media.thumbnails[0]} 
+                      alt={orderInfo.listingId.title} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold text-gray-900 mb-2">{orderInfo.listingId?.title}</h2>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-500">Brand/Model</p>
+                      <p className="font-medium">{orderInfo.listingId?.generalInfo?.brand} {orderInfo.listingId?.generalInfo?.model}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Type</p>
+                      <p className="font-medium">{orderInfo.listingId?.type}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Buyer</p>
+                      <p className="font-medium">{orderInfo.buyerId?.fullName} ({orderInfo.buyerId?.email})</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Seller</p>
+                      <p className="font-medium">{orderInfo.sellerId?.fullName} ({orderInfo.sellerId?.email})</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Checkpoints */}
           <div className="space-y-6 mb-6">
             {checkpoints.map((checkpoint, index) => (
@@ -311,7 +373,19 @@ export const InspectionForm: React.FC = () => {
                     {checkpoint.evidenceImageUrls.length > 0 && (
                       <div className="mt-2 flex gap-2 flex-wrap">
                         {checkpoint.evidenceImageUrls.map((url, imgIndex) => (
-                          <img key={imgIndex} src={url} alt="Evidence" className="w-20 h-20 object-cover rounded border" />
+                          <div key={imgIndex} className="relative group">
+                            <img src={url} alt="Evidence" className="w-20 h-20 object-cover rounded border" />
+                            <button
+                              onClick={() => handleRemoveImage(index, imgIndex)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                              title="Remove image"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                              </svg>
+                            </button>
+                          </div>
                         ))}
                       </div>
                     )}

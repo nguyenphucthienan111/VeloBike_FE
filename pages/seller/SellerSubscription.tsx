@@ -1,246 +1,264 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../constants';
+import { useToast } from '../../components/Toast';
+import { Toast } from '../../components/Toast';
+import { Check, Sparkles, Zap, Crown, HelpCircle, Loader2, CreditCard } from 'lucide-react';
 
 interface Plan {
-  id: string;
   name: string;
+  displayName: string;
   price: number;
   features: string[];
-  isPopular: boolean;
-  current: boolean;
+  isPopular?: boolean;
 }
 
-export const SellerSubscription: React.FC = () => {
-  const [currentPlan, setCurrentPlan] = useState('professional');
+interface Subscription {
+  planType: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  autoRenew: boolean;
+}
 
-  const plans: Plan[] = [
-    {
-      id: 'basic',
-      name: 'Basic',
-      price: 0,
-      features: [
-        'Tối đa 10 sản phẩm',
-        'Hỗ trợ cơ bản',
-        'Thanh toán thường xuyên',
-      ],
-      isPopular: false,
-      current: currentPlan === 'basic',
-    },
-    {
-      id: 'professional',
-      name: 'Professional',
-      price: 299000,
-      features: [
-        'Tối đa 100 sản phẩm',
-        'Hỗ trợ ưu tiên',
-        'Xem chi tiết khách hàng',
-        'Marketing tools',
-        'Lên hạng tìm kiếm',
-      ],
-      isPopular: true,
-      current: currentPlan === 'professional',
-    },
-    {
-      id: 'premium',
-      name: 'Premium',
-      price: 999000,
-      features: [
-        'Sản phẩm không giới hạn',
-        'Hỗ trợ VIP 24/7',
-        'Xem chi tiết khách hàng',
-        'Marketing tools nâng cao',
-        'Lên hạng tìm kiếm toàn bộ',
-        'API access',
-        'Custom branding',
-      ],
-      isPopular: false,
-      current: currentPlan === 'premium',
-    },
-  ];
+const PLAN_ICONS: Record<string, React.ReactNode> = {
+  FREE: <CreditCard size={20} className="text-gray-500" />,
+  BASIC: <Zap size={20} className="text-amber-500" />,
+  PRO: <Sparkles size={20} className="text-blue-500" />,
+  PREMIUM: <Crown size={20} className="text-amber-600" />,
+};
+
+export const SellerSubscription: React.FC = () => {
+  const { toast, showToast, hideToast } = useToast();
+  const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('accessToken');
+      const plansRes = await fetch(`${API_BASE_URL}/subscriptions/plans`);
+      const plansData = await plansRes.json();
+      const subRes = await fetch(`${API_BASE_URL}/subscriptions/my-subscription`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const subData = await subRes.json();
+      if (plansData.success) setPlans(plansData.data);
+      if (subData.success) setCurrentSubscription(subData.data.subscription);
+    } catch (error) {
+      console.error('Error fetching subscription data:', error);
+      showToast('Không tải được dữ liệu gói đăng ký', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatCurrency = (value: number) => {
     if (value === 0) return 'Miễn phí';
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
   };
 
-  const handleUpgrade = (planId: string) => {
-    if (planId === currentPlan) return;
-    alert(`Nâng cấp lên ${plans.find(p => p.id === planId)?.name} thành công!`);
-    setCurrentPlan(planId);
+  const handleSubscribe = async (planType: string) => {
+    if (planType === currentSubscription?.planType) return;
+    try {
+      setProcessing(true);
+      const token = localStorage.getItem('accessToken');
+      if (planType === 'FREE') {
+        const response = await fetch(`${API_BASE_URL}/subscriptions/subscribe`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ planType })
+        });
+        const data = await response.json();
+        if (data.success) {
+          showToast('Đăng ký gói miễn phí thành công!', 'success');
+          fetchData();
+        } else {
+          showToast(data.message || 'Đăng ký thất bại', 'error');
+        }
+        return;
+      }
+      const response = await fetch(`${API_BASE_URL}/subscriptions/create-payment-link`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ planType })
+      });
+      const data = await response.json();
+      if (data.success && data.data.paymentLink) {
+        window.location.href = data.data.paymentLink;
+      } else {
+        showToast(data.message || 'Tạo link thanh toán thất bại', 'error');
+      }
+    } catch (error) {
+      console.error('Error subscribing:', error);
+      showToast('Có lỗi xảy ra', 'error');
+    } finally {
+      setProcessing(false);
+    }
   };
 
-  const handleDowngrade = (planId: string) => {
-    alert(`Hạ cấp xuống ${plans.find(p => p.id === planId)?.name} thành công!`);
-    setCurrentPlan(planId);
-  };
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-accent animate-spin" />
+      </div>
+    );
+  }
+
+  const currentPlanDisplay = plans.find(p => p.name === currentSubscription?.planType)?.displayName || currentSubscription?.planType;
+  const endDateStr = currentSubscription?.endDate
+    ? new Date(currentSubscription.endDate).toLocaleDateString('vi-VN')
+    : '—';
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={hideToast}
+      />
+
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold text-gray-900">Gói Đăng Ký</h1>
-          <p className="text-gray-600 mt-1">Nâng cấp để mở rộng khả năng của bạn</p>
+      <div className="border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+        <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+            Gói đăng ký
+          </h1>
+          <p className="mt-2 text-gray-600 text-lg">
+            Nâng cấp để đăng thêm tin, giảm phí hoa hồng và nổi bật hơn với buyer.
+          </p>
+          {/* Current plan pill */}
+          <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-gray-100 px-4 py-2 text-sm">
+            <span className="text-gray-600">Gói hiện tại:</span>
+            <span className="font-semibold text-gray-900">{currentPlanDisplay}</span>
+            <span className="text-gray-500">· Hết hạn {endDateStr}</span>
+          </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Current Plan Info */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-          <div className="flex gap-3">
-            <div className="text-2xl">ℹ️</div>
-            <div>
-              <p className="font-medium text-blue-900 mb-1">Gói Hiện Tại</p>
-              <p className="text-sm text-blue-800">
-                Bạn đang sử dụng gói <strong>{plans.find(p => p.current)?.name}</strong>. Gia hạn vào <strong>28/02/2026</strong>.
-              </p>
-            </div>
-          </div>
-        </div>
+      {/* Plans grid */}
+      <div className="max-w-6xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {plans.map((plan) => {
+            const isCurrent = currentSubscription?.planType === plan.name;
+            const isPopular = plan.name === 'PRO';
 
-        {/* Plans */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-          {plans.map((plan) => (
-            <div
-              key={plan.id}
-              className={`relative rounded-lg overflow-hidden transition-all ${
-                plan.current
-                  ? 'ring-2 ring-accent scale-105'
-                  : plan.isPopular
-                  ? 'ring-2 ring-blue-300'
-                  : ''
-              }`}
-            >
-              {/* Card */}
-              <div className={`${plan.isPopular ? 'bg-white' : 'bg-white'} shadow-lg rounded-lg overflow-hidden h-full flex flex-col`}>
+            return (
+              <div
+                key={plan.name}
+                className={`relative flex flex-col rounded-2xl border-2 bg-white transition-all duration-200 ${
+                  isCurrent
+                    ? 'border-green-500 shadow-lg shadow-green-500/10 scale-[1.02]'
+                    : isPopular
+                    ? 'border-accent shadow-md hover:shadow-lg'
+                    : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                }`}
+              >
                 {/* Badge */}
-                {plan.isPopular && (
-                  <div className="bg-gradient-to-r from-accent to-red-600 text-white px-4 py-2 text-center font-bold text-sm">
-                    PHỔ BIẾN NHẤT
+                {isCurrent && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-green-500 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">
+                    Đang dùng
                   </div>
                 )}
-                {plan.current && (
-                  <div className="bg-green-500 text-white px-4 py-2 text-center font-bold text-sm">
-                    GÓI HIỆN TẠI
+                {isPopular && !isCurrent && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accent px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">
+                    Phổ biến
                   </div>
                 )}
 
-                {/* Content */}
-                <div className="p-8 flex flex-col flex-1">
-                  {/* Plan Name */}
-                  <div className="mb-4">
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-bold text-gray-900">
-                        {plan.price === 0 ? '0' : (plan.price / 1000).toFixed(0)}
-                      </span>
-                      {plan.price > 0 && (
-                        <span className="text-gray-600">K/tháng</span>
-                      )}
-                    </div>
+                <div className="p-6 flex flex-col flex-1">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 text-gray-600">
+                      {PLAN_ICONS[plan.name] || <CreditCard size={20} />}
+                    </span>
+                    <h3 className="text-lg font-bold text-gray-900">{plan.displayName}</h3>
                   </div>
 
-                  {/* Features */}
-                  <ul className="space-y-3 mb-8 flex-1">
+                  <div className="mb-6">
+                    {plan.price === 0 ? (
+                      <span className="text-2xl font-bold text-gray-900">Miễn phí</span>
+                    ) : (
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-bold text-gray-900">
+                          {(plan.price / 1000).toLocaleString()}
+                        </span>
+                        <span className="text-gray-500 font-medium">k</span>
+                        <span className="text-gray-500 text-sm">/tháng</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <ul className="space-y-3 flex-1 mb-6">
                     {plan.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-start gap-3">
-                        <span className="text-green-600 flex-shrink-0 mt-0.5">✓</span>
-                        <span className="text-gray-700 text-sm">{feature}</span>
+                      <li key={idx} className="flex items-start gap-2.5">
+                        <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+                        <span className="text-gray-700 text-sm leading-snug">{feature}</span>
                       </li>
                     ))}
                   </ul>
 
-                  {/* Button */}
-                  {plan.current ? (
-                    <button disabled className="w-full px-4 py-3 bg-gray-100 text-gray-600 rounded-lg font-medium cursor-not-allowed">
-                      Gói Hiện Tại
-                    </button>
-                  ) : plan.id === 'basic' || (currentPlan === 'professional' && plan.id === 'basic') ? (
-                    <button
-                      onClick={() => handleDowngrade(plan.id)}
-                      className="w-full px-4 py-3 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 font-medium transition-colors"
-                    >
-                      Hạ Cấp
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleUpgrade(plan.id)}
-                      className={`w-full px-4 py-3 rounded-lg font-medium transition-colors ${
-                        plan.isPopular
-                          ? 'bg-accent text-white hover:bg-red-600'
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
-                      }`}
-                    >
-                      {currentPlan === 'basic' ? 'Nâng Cấp' : 'Nâng Cấp'}
-                    </button>
-                  )}
+                  <button
+                    onClick={() => handleSubscribe(plan.name)}
+                    disabled={isCurrent || processing}
+                    className={`w-full py-3 px-4 rounded-xl font-semibold text-sm transition-colors ${
+                      isCurrent
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : isPopular
+                        ? 'bg-accent text-white hover:opacity-90'
+                        : 'bg-gray-900 text-white hover:bg-gray-800'
+                    }`}
+                  >
+                    {isCurrent
+                      ? 'Đang sử dụng'
+                      : processing
+                      ? 'Đang xử lý...'
+                      : plan.price === 0
+                      ? 'Chọn gói'
+                      : 'Nâng cấp ngay'}
+                  </button>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Benefits Comparison */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-8 py-6 bg-gray-50 border-b">
-            <h2 className="text-xl font-bold text-gray-900">So Sánh Tính Năng</h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="px-8 py-4 text-left text-sm font-semibold text-gray-900">Tính Năng</th>
-                  <th className="px-8 py-4 text-center text-sm font-semibold text-gray-900">Basic</th>
-                  <th className="px-8 py-4 text-center text-sm font-semibold text-gray-900">Professional</th>
-                  <th className="px-8 py-4 text-center text-sm font-semibold text-gray-900">Premium</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {[
-                  { feature: 'Số Sản Phẩm', basic: '10', pro: '100', premium: 'Không giới hạn' },
-                  { feature: 'Hỗ Trợ', basic: 'Email', pro: 'Ưu tiên', premium: 'VIP 24/7' },
-                  { feature: 'Xem Chi Tiết Khách', basic: '❌', pro: '✅', premium: '✅' },
-                  { feature: 'Marketing Tools', basic: '❌', pro: '✅', premium: '✅ Nâng cao' },
-                  { feature: 'API Access', basic: '❌', pro: '❌', premium: '✅' },
-                  { feature: 'Custom Branding', basic: '❌', pro: '❌', premium: '✅' },
-                ].map((row, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50">
-                    <td className="px-8 py-4 text-sm font-medium text-gray-900">{row.feature}</td>
-                    <td className="px-8 py-4 text-center text-sm text-gray-700">{row.basic}</td>
-                    <td className="px-8 py-4 text-center text-sm text-gray-700">{row.pro}</td>
-                    <td className="px-8 py-4 text-center text-sm text-gray-700">{row.premium}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+            );
+          })}
         </div>
 
         {/* FAQ */}
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Câu Hỏi Thường Gặp</h2>
-          <div className="space-y-4">
+        <section className="mt-16 pt-12 border-t border-gray-200">
+          <h2 className="flex items-center gap-2 text-xl font-bold text-gray-900 mb-6">
+            <HelpCircle className="w-6 h-6 text-accent" />
+            Câu hỏi thường gặp
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-1 max-w-3xl">
             {[
               {
                 q: 'Tôi có thể thay đổi gói bất cứ lúc nào không?',
-                a: 'Có, bạn có thể nâng cấp hoặc hạ cấp gói bất cứ lúc nào. Thay đổi sẽ được áp dụng ngay lập tức.',
+                a: 'Có, bạn có thể nâng cấp gói bất cứ lúc nào. Gói mới có hiệu lực ngay sau khi thanh toán thành công.',
               },
               {
-                q: 'Hoàn tiền như thế nào nếu tôi hạ cấp?',
-                a: 'Không hoàn tiền, nhưng bạn sẽ được hoàn lại tỷ lệ dùng đúng cho kỳ tiếp theo.',
+                q: 'Gói miễn phí có thời hạn không?',
+                a: 'Gói miễn phí (FREE) không giới hạn thời gian nhưng bị giới hạn số tin đăng và tính năng.',
               },
               {
-                q: 'Gói nào phù hợp nhất với tôi?',
-                a: 'Nếu bạn vừa bắt đầu, chọn Basic. Nếu bạn bán thường xuyên, chọn Professional. Premium dành cho những người bán quy mô lớn.',
+                q: 'Thanh toán như thế nào?',
+                a: 'Chúng tôi hỗ trợ thanh toán qua QR Code / chuyển khoản qua cổng PayOS an toàn.',
               },
             ].map((item, idx) => (
-              <div key={idx} className="bg-white rounded-lg shadow p-6">
-                <p className="font-bold text-gray-900 mb-2">{item.q}</p>
-                <p className="text-gray-700">{item.a}</p>
+              <div
+                key={idx}
+                className="rounded-xl border border-gray-200 bg-white p-5 hover:border-gray-300 transition-colors"
+              >
+                <p className="font-semibold text-gray-900 mb-1.5">{item.q}</p>
+                <p className="text-gray-600 text-sm leading-relaxed">{item.a}</p>
               </div>
             ))}
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );

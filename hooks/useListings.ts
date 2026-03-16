@@ -177,10 +177,11 @@ export const useListings = (): UseListingsReturn => {
                 return false;
               }
               
-              // Accept PUBLISHED listings (BE should already filter, but check anyway)
+              // Accept PUBLISHED, RESERVED, SOLD, IN_INSPECTION listings
               // Also accept PENDING_APPROVAL for testing if no PUBLISHED listings exist
-              if (listing.status && listing.status !== 'PUBLISHED' && listing.status !== 'PENDING_APPROVAL') {
-                return false; // Skip non-published/non-pending listings
+              const allowedStatuses = ['PUBLISHED', 'PENDING_APPROVAL', 'RESERVED', 'SOLD', 'IN_INSPECTION'];
+              if (listing.status && !allowedStatuses.includes(listing.status)) {
+                return false; // Skip invalid statuses
               }
               
               // sellerId can be null, object, or string/ObjectId - check safely

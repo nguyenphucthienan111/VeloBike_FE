@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Filter, ChevronDown, Check, Search, Loader, AlertCircle } from 'lucide-react';
 import { BikeCard } from '../components/BikeCard';
 import { useListings } from '../hooks/useListings';
+import { API_BASE_URL } from '../constants';
 
 const BIKE_TYPES = ['ROAD', 'MTB', 'GRAVEL', 'TRIATHLON', 'E_BIKE'];
 const BRAND_OTHER = '__OTHER__'; // Sentinel cho "Khác" – hãng không thuộc danh sách admin
@@ -21,6 +22,82 @@ const FALLBACK_CATEGORIES = [
 
 export const Marketplace: React.FC = () => {
   const { listings, loading, error, facets, fetch, fetchFacets } = useListings();
+  const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
+  const [wishlistToggling, setWishlistToggling] = useState<string | null>(null);
+  const [canWishlist, setCanWishlist] = useState(() => typeof window !== 'undefined' && !!localStorage.getItem('accessToken'));
+
+  useEffect(() => {
+    const check = () => setCanWishlist(!!localStorage.getItem('accessToken'));
+    check();
+    window.addEventListener('authStatusChanged', check);
+    window.addEventListener('authChange', check);
+    return () => {
+      window.removeEventListener('authStatusChanged', check);
+      window.removeEventListener('authChange', check);
+    };
+  }, []);
+
+  const fetchWishlistIds = useCallback(() => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      setWishlistIds(new Set());
+      return;
+    }
+    fetch(`${API_BASE_URL}/wishlist`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.data && Array.isArray(data.data)) {
+          const ids = new Set((data.data as any[]).map((i: any) => i.listingId?._id).filter(Boolean));
+          setWishlistIds(ids);
+        } else setWishlistIds(new Set());
+      })
+      .catch(() => setWishlistIds(new Set()));
+  }, []);
+
+  useEffect(() => {
+    fetchWishlistIds();
+  }, [fetchWishlistIds]);
+
+  useEffect(() => {
+    const onRefresh = () => fetchWishlistIds();
+    window.addEventListener('wishlistRefresh', onRefresh);
+    return () => window.removeEventListener('wishlistRefresh', onRefresh);
+  }, [fetchWishlistIds]);
+
+  const handleWishlistToggle = async (listingId: string) => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
+    setWishlistToggling(listingId);
+    const inWishlist = wishlistIds.has(listingId);
+    try {
+      if (inWishlist) {
+        const res = await fetch(`${API_BASE_URL}/wishlist/${listingId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          setWishlistIds((prev) => {
+            const next = new Set(prev);
+            next.delete(listingId);
+            return next;
+          });
+          window.dispatchEvent(new Event('wishlistRefresh'));
+        }
+      } else {
+        const res = await fetch(`${API_BASE_URL}/wishlist`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ listingId }),
+        });
+        if (res.ok) {
+          setWishlistIds((prev) => new Set(prev).add(listingId));
+          window.dispatchEvent(new Event('wishlistRefresh'));
+        }
+      }
+    } finally {
+      setWishlistToggling(null);
+    }
+  };
 
   // Brand options từ facets (không gọi admin API)
   const baseBrandOptions = (facets?.brands ?? [])
@@ -136,7 +213,9 @@ export const Marketplace: React.FC = () => {
     const validListings = listings
       .filter((listing) => {
         if (!listing || !listing._id) return false;
-        if (listing.status !== 'PUBLISHED') return false;
+        // Filter status
+        const allowedStatuses = ['PUBLISHED', 'RESERVED', 'SOLD', 'IN_INSPECTION'];
+        if (!allowedStatuses.includes(listing.status)) return false;
         // Check sellerId safely
         if (!listing.sellerId) return false;
         if (typeof listing.sellerId === 'object' && !listing.sellerId._id && !listing.sellerId.fullName) {
@@ -159,6 +238,7 @@ export const Marketplace: React.FC = () => {
           }
         }
         
+        const hasInspectionScore = typeof listing.inspectionScore === 'number' && listing.inspectionScore > 0;
         return {
           id: listing._id || listing.id || '',
           title: listing.title || 'Untitled',
@@ -168,9 +248,11 @@ export const Marketplace: React.FC = () => {
           price: listing.pricing?.amount || 0,
           originalPrice: listing.pricing?.originalPrice || listing.pricing?.amount || 0,
           type: listing.type || 'ROAD',
+          status: listing.status || 'PUBLISHED',
           size: listing.generalInfo?.size || 'M',
-          conditionScore: 8.5, // Mock score
-          inspectionStatus: 'PASSED' as any,
+          conditionScore: hasInspectionScore ? listing.inspectionScore : 0,
+          inspectionStatus: hasInspectionScore ? 'PASSED' : 'PENDING',
+          inspectionRequired: !!listing.inspectionRequired,
           imageUrl: listing.media?.thumbnails?.[0] || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect fill='%23e5e7eb' width='400' height='400'/%3E%3Ctext fill='%239ca3af' x='200' y='200' font-size='20' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E",
           location: listing.location?.address || 'Unknown',
           specs: {
@@ -361,7 +443,12 @@ export const Marketplace: React.FC = () => {
                   {getPaginatedListings()
                     .filter((bike) => bike && bike.id) // Extra safety check
                     .map((bike) => (
-                      <BikeCard key={bike.id} bike={bike as any} />
+                      <BikeCard
+                        key={bike.id}
+                        bike={bike as any}
+                        inWishlist={wishlistIds.has(bike.id)}
+                        onWishlistToggle={canWishlist ? handleWishlistToggle : undefined}
+                      />
                     ))}
                 </div>
 

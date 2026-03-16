@@ -77,10 +77,8 @@ export const GoogleLogin: React.FC<GoogleLoginProps> = ({ onSuccess, onError }) 
       console.log('User role:', role, 'Redirecting...');
       
       let redirectPath = '/';
-      if (role === 'SELLER') {
-        redirectPath = '/seller/dashboard';
-      } else if (role === 'BUYER') {
-        redirectPath = '/buyer/dashboard';
+      if (role === 'SELLER' || role === 'BUYER') {
+        redirectPath = '/marketplace';
       } else if (role === 'ADMIN') {
         redirectPath = '/admin/dashboard';
       } else if (role === 'INSPECTOR') {

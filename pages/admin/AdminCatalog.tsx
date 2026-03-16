@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
+import { AdminPageLayout, AdminPageHeader } from '../../components/AdminPageLayout';
 
 interface Brand {
   _id: string;
@@ -198,14 +199,11 @@ export const AdminCatalog: React.FC = () => {
   };
 
   return (
-    <div>
-      <div className="p-8 overflow-auto">
-        <div className="max-w-6xl w-full">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">Catalog</h1>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-            {/* Section: Brands */}
-            <section className="flex flex-col bg-white rounded-xl border border-gray-200 overflow-hidden min-h-[320px]">
+    <AdminPageLayout>
+      <AdminPageHeader title="Catalog" subtitle="Quản lý thương hiệu và danh mục" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+        {/* Section: Brands */}
+        <section className="flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden min-h-[320px]">
               <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between shrink-0">
                 <div>
                   <h2 className="text-base font-semibold text-gray-900">Brands</h2>
@@ -321,8 +319,6 @@ export const AdminCatalog: React.FC = () => {
                 )}
               </div>
             </section>
-          </div>
-        </div>
       </div>
 
       {/* Brand modal */}
@@ -386,6 +382,6 @@ export const AdminCatalog: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </AdminPageLayout>
   );
 };

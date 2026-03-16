@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Package, BarChart3, ShoppingBag, Wallet, MessageCircle, Star, User, CreditCard, LogOut, Store } from 'lucide-react';
+import { LayoutDashboard, Package, BarChart3, ShoppingBag, MessageCircle, Star, User, CreditCard, LogOut, Store } from 'lucide-react';
 
 interface SellerHeaderUserMenuProps {
   user: { fullName?: string; avatar?: string } | null;
@@ -12,13 +12,12 @@ const mainNav = [
   { path: '/seller/inventory', label: 'Inventory', icon: Package },
   { path: '/seller/analytics', label: 'Sales', icon: BarChart3 },
   { path: '/seller/orders', label: 'Orders', icon: ShoppingBag },
-  { path: '/seller/wallet', label: 'Ví', icon: Wallet },
   { path: '/seller/messages', label: 'Messages', icon: MessageCircle },
   { path: '/seller/reviews', label: 'Reviews', icon: Star },
 ] as const;
 
 const accountNav = [
-  { path: '/seller/profile', label: 'Hồ sơ', icon: User },
+  { path: '/seller/profile', label: 'Cài đặt tài khoản', icon: User },
   { path: '/seller/subscription', label: 'Gói đăng ký', icon: CreditCard },
 ] as const;
 
@@ -44,6 +43,23 @@ export const SellerHeaderUserMenu: React.FC<SellerHeaderUserMenuProps> = ({ user
   };
 
   const handleNav = (path: string) => {
+    // Nếu chưa verified mà cố vào trang seller (trừ profile/kyc) -> chặn
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const u = JSON.parse(userStr);
+        // Nếu là SELLER nhưng chưa VERIFIED/APPROVED
+        if (u.role === 'SELLER' && u.kycStatus !== 'VERIFIED' && u.kycStatus !== 'APPROVED') {
+          // Cho phép vào profile, subscription, logout, marketplace
+          const allowed = ['/seller/profile', '/seller/subscription', '/marketplace', '/seller/kyc'];
+          if (!allowed.includes(path)) {
+            navigate('/seller/kyc');
+            setOpen(false);
+            return;
+          }
+        }
+      } catch {}
+    }
     navigate(path);
     setOpen(false);
   };

@@ -12,22 +12,15 @@ interface Checkpoint {
 }
 
 interface InspectionDetail {
-  id: string;
+  _id: string;
   orderId: string;
   overallVerdict: string;
   overallScore: number;
   grade: string;
   checkpoints: Checkpoint[];
   inspectorNote?: string;
-  submittedAt: string;
-  order: {
-    status: string;
-    listingId: {
-      title: string;
-      brand: string;
-      model: string;
-    };
-  };
+  createdAt: string; // Use createdAt instead of submittedAt
+  listingId: string;
 }
 
 export const InspectionDetail: React.FC = () => {
@@ -35,6 +28,7 @@ export const InspectionDetail: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [inspection, setInspection] = useState<InspectionDetail | null>(null);
+  const [orderInfo, setOrderInfo] = useState<any>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -56,6 +50,16 @@ export const InspectionDetail: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         setInspection(data.data);
+
+        // Fetch Order Details to get Listing Info
+        const orderResponse = await fetch(`http://localhost:5000/api/orders/${orderId}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        if (orderResponse.ok) {
+          const orderData = await orderResponse.json();
+          setOrderInfo(orderData.data);
+        }
       } else {
         setError('Failed to load inspection details');
       }
@@ -149,9 +153,9 @@ export const InspectionDetail: React.FC = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Listing</p>
-                <p className="font-semibold text-gray-900">{inspection.order.listingId.title}</p>
+                <p className="font-semibold text-gray-900">{orderInfo?.listingId?.title || 'Unknown Listing'}</p>
                 <p className="text-xs text-gray-600">
-                  {inspection.order.listingId.brand} {inspection.order.listingId.model}
+                  {orderInfo?.listingId?.generalInfo?.brand} {orderInfo?.listingId?.generalInfo?.model}
                 </p>
               </div>
               <div>
@@ -162,12 +166,12 @@ export const InspectionDetail: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-600 mb-1">Score</p>
-                <p className="font-semibold text-gray-900">{inspection.overallScore.toFixed(1)} / 10</p>
+                <p className="font-semibold text-gray-900">{inspection.overallScore?.toFixed(1) || 'N/A'} / 10</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600 mb-1">Grade</p>
                 <p className={`text-3xl font-bold ${getGradeColor(inspection.grade)}`}>
-                  {inspection.grade}
+                  {inspection.grade || '-'}
                 </p>
               </div>
             </div>
@@ -216,7 +220,7 @@ export const InspectionDetail: React.FC = () => {
           {/* Submission Info */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <p className="text-sm text-gray-600">
-              Submitted on {new Date(inspection.submittedAt).toLocaleString()}
+              Submitted on {new Date(inspection.createdAt).toLocaleString()}
             </p>
             <p className="text-sm text-gray-600 mt-1">
               Order ID: <span className="font-mono">{inspection.orderId}</span>

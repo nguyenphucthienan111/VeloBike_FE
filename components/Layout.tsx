@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { ShoppingBag, Menu, User, ShieldCheck, Heart, Bell, MessageCircle, ChevronRight, Settings, HelpCircle, LogOut, Store, CreditCard, LayoutDashboard, Wallet } from 'lucide-react';
+import { ShoppingBag, Menu, User, ShieldCheck, Heart, Bell, MessageCircle, ChevronRight, Settings, LogOut, Store, CreditCard, LayoutDashboard } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../constants';
 import { handleSessionExpired } from '../utils/auth';
+
+import { Chatbot } from './Chatbot';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
@@ -17,6 +19,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const [userRole, setUserRole] = useState<string | null>(null);
   const [orderCount, setOrderCount] = useState<number>(0);
   const [notificationUnread, setNotificationUnread] = useState<number>(0);
+  const [wishlistCount, setWishlistCount] = useState<number>(0);
   const [refreshKey, setRefreshKey] = useState(0);
   
   // Hide header for seller, admin, and inspector dashboard pages
@@ -137,6 +140,53 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       .catch(() => setNotificationUnread(0));
   }, [isAuthenticated, refreshKey]);
 
+  // Refetch notification count khi trang Notifications đánh dấu đã đọc
+  useEffect(() => {
+    const onRefresh = () => {
+      const token = localStorage.getItem('accessToken');
+      if (!token || !isAuthenticated) return;
+      fetch(`${API_BASE_URL}/notifications?page=1&limit=1`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => (res.status === 401 ? null : res.json()))
+        .then((data) => {
+          if (data?.success && data?.pagination?.unreadCount != null) {
+            setNotificationUnread(data.pagination.unreadCount);
+          } else {
+            setNotificationUnread(0);
+          }
+        })
+        .catch(() => setNotificationUnread(0));
+    };
+    window.addEventListener('ordersAndNotificationsRefresh', onRefresh);
+    return () => window.removeEventListener('ordersAndNotificationsRefresh', onRefresh);
+  }, [isAuthenticated]);
+
+  // Số lượng wishlist (icon tim) - GET /api/wishlist/count
+  const fetchWishlistCount = () => {
+    if (!isAuthenticated || (userRole !== 'BUYER' && userRole !== 'SELLER')) {
+      setWishlistCount(0);
+      return;
+    }
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
+    fetch(`${API_BASE_URL}/wishlist/count`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => res.status === 401 ? null : res.json())
+      .then((data) => {
+        if (data?.data != null) setWishlistCount(Number(data.data));
+        else setWishlistCount(0);
+      })
+      .catch(() => setWishlistCount(0));
+  };
+  useEffect(() => {
+    fetchWishlistCount();
+  }, [isAuthenticated, userRole, refreshKey]);
+  useEffect(() => {
+    const onRefresh = () => fetchWishlistCount();
+    window.addEventListener('wishlistRefresh', onRefresh);
+    return () => window.removeEventListener('wishlistRefresh', onRefresh);
+  }, [isAuthenticated, userRole]);
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
@@ -147,7 +197,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     }
   }, [profileOpen]);
 
-  const profileUrl = userRole === 'SELLER' ? '/seller/profile' : userRole === 'INSPECTOR' ? '/inspector/profile' : userRole === 'ADMIN' ? '/admin/profile' : '/buyer/profile';
+  // Cài đặt tài khoản: khi ở giao diện buyer (marketplace, home...) → buyer profile; khi ở seller dashboard → seller profile
+  const profileUrl = isSellerPage && userRole === 'SELLER' ? '/seller/profile'
+    : isInspectorPage && userRole === 'INSPECTOR' ? '/inspector/profile'
+    : isAdminPage && userRole === 'ADMIN' ? '/admin/profile'
+    : '/buyer/profile';
 
   const handleLogout = () => {
     setProfileOpen(false);
@@ -181,10 +235,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               </Link>
             </div>
 
-            {/* Desktop Nav: BUYER và SELLER (khi về mua hàng) đều dùng menu buyer: HOME, MARKETPLACE, DASHBOARD, INSPECTION */}
+            {/* Desktop Nav: chỉ BUYER và SELLER — Admin/Inspector dùng giao diện role riêng */}
             <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center space-x-6">
-              {userRole === 'INSPECTOR' ? (
-                null
+              {(userRole === 'ADMIN' || userRole === 'INSPECTOR') ? (
+                <Link to={userRole === 'ADMIN' ? '/admin/dashboard' : '/inspector/dashboard'} className="text-xs font-medium text-gray-500 hover:text-accent transition-colors">
+                  {userRole === 'ADMIN' ? 'ADMIN' : 'INSPECTOR'}
+                </Link>
               ) : (
                 <>
                   <Link to="/" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname === '/' ? 'text-black' : 'text-gray-500'}`}>HOME</Link>
@@ -204,8 +260,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                   {/* BUYER: đầy đủ icon mua hàng */}
                   {userRole === 'BUYER' && (
                     <>
-                      <Link to="/buyer/wishlist" className="text-accent hover:text-accent/80 transition-colors p-1 rounded-full hover:bg-gray-100" title="Wishlist">
+                      <Link to="/buyer/wishlist" className="text-accent hover:text-accent/80 transition-colors relative p-1 rounded-full hover:bg-gray-100" title="Wishlist">
                         <Heart size={20} />
+                        {wishlistCount > 0 && (
+                          <span className="absolute -top-0.5 -right-0.5 bg-accent text-white text-[10px] font-bold min-w-[1rem] h-4 px-1 rounded-full flex items-center justify-center">
+                            {wishlistCount > 99 ? '99+' : wishlistCount}
+                          </span>
+                        )}
                       </Link>
                       <Link to="/buyer/orders" className="text-accent hover:text-accent/80 transition-colors relative p-1 rounded-full hover:bg-gray-100" title="Orders">
                         <ShoppingBag size={20} />
@@ -227,7 +288,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                         <MessageCircle size={18} />
                         <span>Tin nhắn</span>
                       </Link>
-                      <Link to="/sell" className="flex items-center bg-black text-white hover:bg-gray-800 rounded-full px-4 py-2 text-sm font-medium transition-colors">
+                      <Link to="/seller/kyc" className="flex items-center bg-black text-white hover:bg-gray-800 rounded-full px-4 py-2 text-sm font-medium transition-colors">
                         Post listing
                       </Link>
                     </>
@@ -239,8 +300,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                         <MessageCircle size={18} />
                         <span>Tin nhắn</span>
                       </Link>
-                      <Link to="/buyer/wishlist" className="text-accent hover:text-accent/80 transition-colors p-1 rounded-full hover:bg-gray-100" title="Danh sách yêu thích">
+                      <Link to="/buyer/wishlist" className="text-accent hover:text-accent/80 transition-colors relative p-1 rounded-full hover:bg-gray-100" title="Danh sách yêu thích">
                         <Heart size={20} />
+                        {wishlistCount > 0 && (
+                          <span className="absolute -top-0.5 -right-0.5 bg-accent text-white text-[10px] font-bold min-w-[1rem] h-4 px-1 rounded-full flex items-center justify-center">
+                            {wishlistCount > 99 ? '99+' : wishlistCount}
+                          </span>
+                        )}
                       </Link>
                       <Link to="/buyer/orders" className="text-accent hover:text-accent/80 transition-colors relative p-1 rounded-full hover:bg-gray-100" title="Đơn hàng">
                         <ShoppingBag size={20} />
@@ -289,23 +355,18 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                             </div>
                           </div>
                         </Link>
-                        {/* Seller: chỉ khi role SELLER */}
-                        {userRole === 'SELLER' && (
+                        {/* Seller: hiện cho cả BUYER và SELLER. BUYER phải xác thực eKYC trước khi dùng */}
+                        {(userRole === 'BUYER' || userRole === 'SELLER') && (
                           <div className="py-2 border-t border-gray-100">
                             <p className="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Seller</p>
-                            <Link to="/seller/dashboard" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
+                            <Link to={userRole === 'SELLER' ? '/seller/dashboard' : '/seller/kyc'} onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
                               <Store size={18} className="text-gray-500 flex-shrink-0" />
                               <span className="flex-1">Cửa hàng / chuyên trang</span>
                               <ChevronRight size={16} className="text-gray-400" />
                             </Link>
-                            <Link to="/seller/dashboard" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
+                            <Link to={userRole === 'SELLER' ? '/seller/dashboard' : '/seller/kyc'} onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
                               <LayoutDashboard size={18} className="text-gray-500 flex-shrink-0" />
                               <span className="flex-1">Quản lý tin</span>
-                              <ChevronRight size={16} className="text-gray-400" />
-                            </Link>
-                            <Link to="/seller/wallet" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
-                              <Wallet size={18} className="text-gray-500 flex-shrink-0" />
-                              <span className="flex-1">Ví</span>
                               <ChevronRight size={16} className="text-gray-400" />
                             </Link>
                           </div>
@@ -316,16 +377,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                           <Link to={profileUrl} onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
                             <Settings size={18} className="text-gray-500 flex-shrink-0" />
                             <span className="flex-1">Cài đặt tài khoản</span>
-                            <ChevronRight size={16} className="text-gray-400" />
-                          </Link>
-                          <Link to="#" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
-                            <HelpCircle size={18} className="text-gray-500 flex-shrink-0" />
-                            <span className="flex-1">Trợ giúp</span>
-                            <ChevronRight size={16} className="text-gray-400" />
-                          </Link>
-                          <Link to="#" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
-                            <MessageCircle size={18} className="text-gray-500 flex-shrink-0" />
-                            <span className="flex-1">Đóng góp ý kiến</span>
                             <ChevronRight size={16} className="text-gray-400" />
                           </Link>
                           <button type="button" onClick={handleLogout} className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 w-full">
@@ -397,6 +448,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         </div>
       </footer>
       )}
+      {/* Chatbot - chỉ hiển thị cho buyer */}
+      {userRole === 'BUYER' && <Chatbot />}
     </div>
   );
 };

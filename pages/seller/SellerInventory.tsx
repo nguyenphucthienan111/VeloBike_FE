@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SellerHeaderUserMenu } from '../../components/SellerHeaderUserMenu';
 import { Toast, useToast } from '../../components/Toast';
+import { API_BASE_URL } from '../../constants';
 
 interface Listing {
   _id: string;
@@ -100,7 +101,7 @@ export const SellerInventory: React.FC = () => {
 
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`http://localhost:5000/api/listings/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/listings/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -109,7 +110,8 @@ export const SellerInventory: React.FC = () => {
         setListings(listings.filter(l => l._id !== id));
         showToast('Product deleted successfully!', 'success');
       } else {
-        showToast('Failed to delete product', 'error');
+        const data = await response.json().catch(() => ({}));
+        showToast(data?.message || 'Failed to delete product', 'error');
       }
     } catch (error) {
       console.error('Error deleting listing:', error);

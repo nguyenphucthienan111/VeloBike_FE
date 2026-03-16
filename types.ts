@@ -36,9 +36,11 @@ export interface BikeListing {
   price: number;
   originalPrice: number;
   type: BikeType;
+  status: string;
   size: string;
-  conditionScore: number; // 1-10
+  conditionScore: number; // 0 = chưa kiểm định, 1-10 = điểm kiểm định
   inspectionStatus: InspectionStatus;
+  inspectionRequired?: boolean;
   imageUrl: string;
   location: string;
   specs: Specs;

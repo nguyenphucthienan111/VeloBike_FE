@@ -14,6 +14,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const [isChecking, setIsChecking] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [unauthRole, setUnauthRole] = useState<string | null>(null);
   const location = useLocation();
 
   useEffect(() => {
@@ -23,22 +24,24 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
       if (!token || !userStr) {
         setIsAuthorized(false);
+        setUnauthRole(null);
         setIsChecking(false);
         return;
       }
 
       try {
         const user = JSON.parse(userStr);
-        
-        // Check if user role is in allowed roles
         if (allowedRoles.includes(user.role)) {
           setIsAuthorized(true);
+          setUnauthRole(null);
         } else {
           setIsAuthorized(false);
+          setUnauthRole(user.role || null);
         }
       } catch (err) {
         console.error('Error parsing user data:', err);
         setIsAuthorized(false);
+        setUnauthRole(null);
       }
 
       setIsChecking(false);
@@ -59,7 +62,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!isAuthorized) {
-    // Redirect to login with return URL
+    if (unauthRole === 'ADMIN') return <Navigate to="/admin/dashboard" replace />;
+    if (unauthRole === 'INSPECTOR') return <Navigate to="/inspector/dashboard" replace />;
     return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
