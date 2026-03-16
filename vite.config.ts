@@ -17,6 +17,7 @@ export default defineConfig(({ mode }: ConfigEnv) => {
         hmr: {
           clientPort: 3000,
         },
+        historyApiFallback: true,
       },
       plugins: [react()],
       define: {
