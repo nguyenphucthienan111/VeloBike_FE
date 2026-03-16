@@ -3,7 +3,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ShieldCheck, Ruler, Truck, ChevronLeft, AlertCircle, CheckCircle, Eye, MapPin, MessageCircle, Flag } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { API_BASE_URL } from '../constants';
-import { Toast, useToast } from '../components/Toast';
+import { Toast } from '../components/Toast';
+import { useToast } from '../hooks/useToast';
 import { ReportModal } from '../components/ReportModal';
 
 interface ListingData {

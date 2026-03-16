@@ -2,7 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, Package, ArrowRight, Loader2, AlertTriangle } from 'lucide-react';
 import { API_BASE_URL } from '../constants';
-import { Toast, useToast } from '../components/Toast';
+import { Toast } from '../components/Toast';
+import { useToast } from '../hooks/useToast';
 
 export const PaymentSuccess: React.FC = () => {
   const [searchParams] = useSearchParams();

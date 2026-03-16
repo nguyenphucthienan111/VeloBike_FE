@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Toast, useToast } from '../../components/Toast';
+import { Toast } from '../../components/Toast';
+import { useToast } from '../../hooks/useToast';
 
 export const EditProduct: React.FC = () => {
   const navigate = useNavigate();

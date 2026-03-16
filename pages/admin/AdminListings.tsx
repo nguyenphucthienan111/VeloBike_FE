@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useToast, Toast } from '../../components/Toast';
+import { Toast } from '../../components/Toast';
+import { useToast } from '../../hooks/useToast';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
 import { AdminPageLayout, AdminPageHeader, AdminErrorBanner, AdminLoadingState } from '../../components/AdminPageLayout';
 

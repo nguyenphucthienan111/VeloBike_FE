@@ -1,123 +1,54 @@
 import React, { useEffect } from 'react';
+import { CheckCircle, XCircle, Info, X } from 'lucide-react';
 
-export type ToastType = 'success' | 'error' | 'info' | 'warning';
-
-interface ToastProps {
+export interface ToastMessage {
+  id: string;
+  type: 'success' | 'error' | 'info';
   message: string;
-  type: ToastType;
-  isVisible: boolean;
-  onClose: () => void;
-  duration?: number;
 }
 
-export const Toast: React.FC<ToastProps> = ({
-  message,
-  type,
-  isVisible,
-  onClose,
-  duration = 3000,
-}) => {
+interface ToastProps {
+  toasts: ToastMessage[];
+  onRemove: (id: string) => void;
+}
+
+const icons = {
+  success: <CheckCircle size={18} className="text-green-500 flex-shrink-0" />,
+  error: <XCircle size={18} className="text-red-500 flex-shrink-0" />,
+  info: <Info size={18} className="text-blue-500 flex-shrink-0" />,
+};
+
+const styles = {
+  success: 'border-green-200 bg-green-50',
+  error: 'border-red-200 bg-red-50',
+  info: 'border-blue-200 bg-blue-50',
+};
+
+const ToastItem: React.FC<{ toast: ToastMessage; onRemove: (id: string) => void }> = ({ toast, onRemove }) => {
   useEffect(() => {
-    if (isVisible && duration > 0) {
-      const timer = setTimeout(() => {
-        onClose();
-      }, duration);
-      return () => clearTimeout(timer);
-    }
-  }, [isVisible, duration, onClose]);
-
-  if (!isVisible) return null;
-
-  const styles = {
-    success: {
-      bg: 'bg-green-500',
-      icon: '✓',
-      border: 'border-green-600',
-    },
-    error: {
-      bg: 'bg-red-500',
-      icon: '✕',
-      border: 'border-red-600',
-    },
-    info: {
-      bg: 'bg-blue-500',
-      icon: 'ℹ',
-      border: 'border-blue-600',
-    },
-    warning: {
-      bg: 'bg-yellow-500',
-      icon: '⚠',
-      border: 'border-yellow-600',
-    },
-  };
-
-  const style = styles[type];
+    const timer = setTimeout(() => onRemove(toast.id), 4000);
+    return () => clearTimeout(timer);
+  }, [toast.id, onRemove]);
 
   return (
-    <div 
-      className="fixed top-4 right-4 z-50"
-      style={{
-        animation: 'slideInRight 0.3s ease-out',
-      }}
-    >
-      <style>{`
-        @keyframes slideInRight {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-      `}</style>
-      <div
-        className={`${style.bg} text-white px-6 py-4 rounded-lg shadow-xl border-l-4 ${style.border} min-w-[300px] max-w-[500px] flex items-center gap-3 backdrop-blur-sm`}
-      >
-        <div className="flex-shrink-0 text-xl font-bold">{style.icon}</div>
-        <div className="flex-1">
-          <p className="font-medium">{message}</p>
-        </div>
-        <button
-          onClick={onClose}
-          className="flex-shrink-0 hover:opacity-80 transition-opacity text-white text-lg font-bold"
-          aria-label="Close"
-        >
-          ×
-        </button>
-      </div>
+    <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg text-sm max-w-sm w-full ${styles[toast.type]} animate-slide-in`}>
+      {icons[toast.type]}
+      <span className="flex-1 text-gray-800">{toast.message}</span>
+      <button onClick={() => onRemove(toast.id)} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
+        <X size={16} />
+      </button>
     </div>
   );
 };
 
-// Hook để dùng Toast dễ dàng hơn
-export const useToast = () => {
-  const [toast, setToast] = React.useState<{
-    message: string;
-    type: ToastType;
-    isVisible: boolean;
-  }>({
-    message: '',
-    type: 'info',
-    isVisible: false,
-  });
+export const Toast: React.FC<ToastProps> = ({ toasts, onRemove }) => {
+  if (toasts.length === 0) return null;
 
-  const showToast = (message: string, type: ToastType = 'info') => {
-    setToast({
-      message,
-      type,
-      isVisible: true,
-    });
-  };
-
-  const hideToast = () => {
-    setToast((prev) => ({ ...prev, isVisible: false }));
-  };
-
-  return {
-    toast,
-    showToast,
-    hideToast,
-  };
+  return (
+    <div className="fixed top-5 right-5 z-[9999] flex flex-col gap-2">
+      {toasts.map(toast => (
+        <ToastItem key={toast.id} toast={toast} onRemove={onRemove} />
+      ))}
+    </div>
+  );
 };

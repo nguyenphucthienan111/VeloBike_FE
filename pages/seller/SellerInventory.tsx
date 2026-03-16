@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SellerHeaderUserMenu } from '../../components/SellerHeaderUserMenu';
-import { Toast, useToast } from '../../components/Toast';
+import { Toast } from '../../components/Toast';
+import { useToast } from '../../hooks/useToast';
 import { API_BASE_URL } from '../../constants';
 
 interface Listing {

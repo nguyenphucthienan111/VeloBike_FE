@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../constants';
-import { useToast } from '../../components/Toast';
 import { Toast } from '../../components/Toast';
+import { useToast } from '../../hooks/useToast';
 import { Check, Sparkles, Zap, Crown, HelpCircle, Loader2, CreditCard } from 'lucide-react';
 
 interface Plan {

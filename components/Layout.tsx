@@ -3,10 +3,24 @@ import { ShoppingBag, Menu, User, ShieldCheck, Heart, Bell, MessageCircle, Chevr
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../constants';
 import { handleSessionExpired } from '../utils/auth';
-
 import { Chatbot } from './Chatbot';
+import { useFCM } from '../hooks/useFCM';
+import { Toast } from './Toast';
+import { useToast } from '../hooks/useToast';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  useFCM();
+  const { toasts, addToast, removeToast } = useToast();
+
+  // Listen for global toast events from useAuth
+  React.useEffect(() => {
+    const handler = (e: Event) => {
+      const { type, message } = (e as CustomEvent).detail;
+      addToast(type, message);
+    };
+    window.addEventListener('showToast', handler);
+    return () => window.removeEventListener('showToast', handler);
+  }, [addToast]);
   const location = useLocation();
   const navigate = useNavigate();
   const profileRef = useRef<HTMLDivElement>(null);
@@ -450,6 +464,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       )}
       {/* Chatbot - hiển thị cho buyer và seller */}
       {(userRole === 'BUYER' || userRole === 'SELLER') && <Chatbot />}
+      <Toast toasts={toasts} onRemove={removeToast} />
     </div>
   );
 };

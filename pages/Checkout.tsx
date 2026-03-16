@@ -3,7 +3,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 import { API_BASE_URL } from '../constants';
 import { handleSessionExpired } from '../utils/auth';
-import { Toast, useToast } from '../components/Toast';
+import { Toast } from '../components/Toast';
+import { useToast } from '../hooks/useToast';
 
 interface ListingData {
   _id: string;

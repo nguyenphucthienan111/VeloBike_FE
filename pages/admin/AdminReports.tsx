@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../constants';
-import { useToast, Toast } from '../../components/Toast';
+import { Toast } from '../../components/Toast';
+import { useToast } from '../../hooks/useToast';
 import { Flag, CheckCircle, XCircle, Eye, AlertTriangle } from 'lucide-react';
 import { AdminPageLayout, AdminPageHeader } from '../../components/AdminPageLayout';
 
