@@ -109,6 +109,8 @@ export const SellerKyc: React.FC = () => {
       const data = await res.json();
       if (!res.ok) {
         setError(data?.message || 'Gửi eKYC thất bại.');
+        // Notification đã được lưu DB bởi BE, refresh bell count
+        setTimeout(() => window.dispatchEvent(new Event('ordersAndNotificationsRefresh')), 1000);
         return;
       }
 
@@ -149,9 +151,9 @@ export const SellerKyc: React.FC = () => {
             setSuccess('KYC đã được duyệt tự động! Đang chuyển hướng...');
             setTimeout(() => navigate('/seller/dashboard'), 1500);
           } else {
-            setKycStatus('PENDING'); // Hiển thị trạng thái chờ
+            setKycStatus('PENDING');
             setSuccess('Hồ sơ KYC đã được gửi thành công và đang chờ Admin duyệt. Vui lòng quay lại sau.');
-            // Không navigate, để user đọc thông báo
+            setTimeout(() => window.dispatchEvent(new Event('ordersAndNotificationsRefresh')), 1000);
           }
         }
       } catch (err) {

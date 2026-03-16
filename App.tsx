@@ -15,7 +15,6 @@ import { UserProfile } from './pages/UserProfile';
 import { PaymentSuccess } from './pages/PaymentSuccess';
 import { PaymentCancel } from './pages/PaymentCancel';
 import { Checkout } from './pages/Checkout';
-import { BuyerDashboard } from './pages/buyer/BuyerDashboard';
 import { BuyerOrders } from './pages/buyer/BuyerOrders';
 import { BuyerWishlist } from './pages/buyer/BuyerWishlist';
 import { BuyerProfile } from './pages/buyer/BuyerProfile';
@@ -33,6 +32,7 @@ import { SellerProfile } from './pages/seller/SellerProfile';
 import { SellerSubscription } from './pages/seller/SellerSubscription';
 import { SellerNotifications } from './pages/seller/SellerNotifications';
 import { SellerKyc } from './pages/seller/SellerKyc';
+import { SubscriptionSuccess } from './pages/seller/SubscriptionSuccess';
 import { AddProduct } from './pages/seller/AddProduct';
 import { EditProduct } from './pages/seller/EditProduct';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
@@ -86,11 +86,7 @@ const App: React.FC = () => {
           <Route path="/profile" element={<BuyerSellerOnlyGate><UserProfile /></BuyerSellerOnlyGate>} />
           
           {/* Buyer Routes */}
-          <Route path="/buyer/dashboard" element={
-            <ProtectedRoute allowedRoles={['BUYER', 'SELLER']}>
-              <BuyerDashboard />
-            </ProtectedRoute>
-          } />
+          <Route path="/buyer/dashboard" element={<Navigate to="/" replace />} />
           <Route path="/buyer/orders" element={
             <ProtectedRoute allowedRoles={['BUYER', 'SELLER']}>
               <BuyerOrders />
@@ -124,6 +120,12 @@ const App: React.FC = () => {
               <SellerKyc />
             </ProtectedRoute>
           } />
+          <Route path="/subscription/success" element={
+            <ProtectedRoute allowedRoles={['BUYER', 'SELLER']}>
+              <SubscriptionSuccess />
+            </ProtectedRoute>
+          } />
+          <Route path="/subscription/cancel" element={<Navigate to="/seller/subscription" replace />} />
           <Route path="/seller" element={
             <ProtectedRoute allowedRoles={['BUYER', 'SELLER']}>
               <SellerGate>

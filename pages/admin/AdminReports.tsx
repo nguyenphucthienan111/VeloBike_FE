@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../constants';
-import { Toast } from '../../components/Toast';
-import { useToast } from '../../hooks/useToast';
 import { Flag, CheckCircle, XCircle, Eye, AlertTriangle } from 'lucide-react';
 import { AdminPageLayout, AdminPageHeader } from '../../components/AdminPageLayout';
+import { Toast } from '../../components/Toast';
+import { useToast } from '../../hooks/useToast';
 
 interface Report {
   _id: string;
@@ -33,7 +33,7 @@ interface Report {
 }
 
 export const AdminReports: React.FC = () => {
-  const { toast, showToast, hideToast } = useToast();
+  const { toasts, addToast, removeToast } = useToast();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
@@ -76,11 +76,11 @@ export const AdminReports: React.FC = () => {
         setReports(data.data);
         setPagination(prev => ({ ...prev, ...data.pagination }));
       } else {
-        showToast(data.message || 'Failed to fetch reports', 'error');
+        addToast('error', data.message || 'Failed to fetch reports');
       }
     } catch (error) {
       console.error('Error fetching reports:', error);
-      showToast('Error fetching reports', 'error');
+      addToast('error', 'Error fetching reports');
     } finally {
       setLoading(false);
     }
@@ -109,15 +109,15 @@ export const AdminReports: React.FC = () => {
 
       const data = await response.json();
       if (data.success) {
-        showToast('Report reviewed successfully', 'success');
+        addToast('success', 'Report reviewed successfully');
         setSelectedReport(null);
         fetchReports();
       } else {
-        showToast(data.message || 'Failed to review report', 'error');
+        addToast('error', data.message || 'Failed to review report');
       }
     } catch (error) {
       console.error('Error reviewing report:', error);
-      showToast('Error reviewing report', 'error');
+      addToast('error', 'Error reviewing report');
     } finally {
       setSubmitting(false);
     }
@@ -365,12 +365,9 @@ export const AdminReports: React.FC = () => {
         </div>
       )}
 
-      {/* Toast Notification */}
       <Toast
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.isVisible}
-        onClose={hideToast}
+        toasts={toasts}
+        onRemove={removeToast}
       />
     </AdminPageLayout>
   );

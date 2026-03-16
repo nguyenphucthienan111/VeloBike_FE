@@ -96,7 +96,7 @@ export const useAuth = (): UseAuthReturn => {
             navigate(from, { replace: true });
           } else {
             console.log('➡️ Redirecting to /marketplace');
-            navigate('/marketplace');
+            navigate('/');
           }
         } else if (role === 'ADMIN') {
           console.log('➡️ Redirecting to /admin/dashboard');

@@ -259,9 +259,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 <>
                   <Link to="/" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname === '/' ? 'text-black' : 'text-gray-500'}`}>HOME</Link>
                   <Link to="/marketplace" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname === '/marketplace' ? 'text-black' : 'text-gray-500'}`}>MARKETPLACE</Link>
-                  {(userRole === 'BUYER' || userRole === 'SELLER') && (
-                    <Link to="/buyer/dashboard" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname === '/buyer/dashboard' ? 'text-black' : 'text-gray-500'}`}>DASHBOARD</Link>
-                  )}
                   <Link to="/inspection" className="text-xs font-medium text-gray-500 hover:text-accent transition-colors">INSPECTION SERVICE</Link>
                 </>
               )}

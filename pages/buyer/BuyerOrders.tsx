@@ -2,11 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MessageCircle, CreditCard, XCircle, RefreshCw, AlertTriangle, CheckCircle, Truck } from 'lucide-react';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
-import { Toast } from '../../components/Toast';
-import { useToast } from '../../hooks/useToast';
 import { DisputeModal } from '../../components/DisputeModal';
 import { ConfirmReceivedModal } from '../../components/ConfirmReceivedModal';
 import { ReviewModal } from '../../components/ReviewModal';
+
+const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
+  const t = type === 'warning' ? 'info' : type;
+  window.dispatchEvent(new CustomEvent('showToast', { detail: { type: t, message } }));
+};
 
 interface OrderListing {
   _id: string;
@@ -48,7 +51,6 @@ export const BuyerOrders: React.FC = () => {
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { toast, showToast, hideToast } = useToast();
 
   const handlePayment = async (orderId: string) => {
     try {
@@ -356,12 +358,6 @@ export const BuyerOrders: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          isVisible={toast.isVisible}
-          onClose={hideToast}
-        />
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-sm text-red-700">{error}</p>

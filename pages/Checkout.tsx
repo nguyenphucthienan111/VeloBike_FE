@@ -38,7 +38,7 @@ export const Checkout: React.FC = () => {
     province: '',
     zipCode: '',
   });
-  const { toast, showToast } = useToast();
+  const { toasts, addToast, removeToast } = useToast();
 
   const [currentUser, setCurrentUser] = useState<any>(null);
 
@@ -163,7 +163,7 @@ export const Checkout: React.FC = () => {
     const userStr = localStorage.getItem('user');
     
     if (!token || !userStr) {
-      showToast('Vui lòng đăng nhập', 'warning');
+      addToast('warning', 'Vui lòng đăng nhập');
       navigate('/login');
       return;
     }
@@ -171,26 +171,26 @@ export const Checkout: React.FC = () => {
 
     const user = JSON.parse(userStr);
     if (user.role === 'ADMIN' || user.role === 'INSPECTOR') {
-      showToast('Tài khoản Admin/Inspector không thể mua hàng', 'error');
+      addToast('error', 'Tài khoản Admin/Inspector không thể mua hàng');
       return;
     }
     if (listing.status !== 'PUBLISHED') {
-      showToast('Sản phẩm không khả dụng', 'error');
+      addToast('error', 'Sản phẩm không khả dụng');
       return;
     }
     if (listing.sellerId?._id === user.id) {
-      showToast('Bạn không thể mua sản phẩm của chính mình', 'error');
+      addToast('error', 'Bạn không thể mua sản phẩm của chính mình');
       return;
     }
 
     const { fullName, phone, street, district, city } = shippingAddress;
     if (!fullName?.trim() || !phone?.trim() || !street?.trim() || !district?.trim() || !city?.trim()) {
-      showToast('Vui lòng nhập đủ địa chỉ giao hàng (Tên, SĐT, Đường, Quận/Huyện, TP)', 'warning');
+      addToast('warning', 'Vui lòng nhập đủ địa chỉ giao hàng (Tên, SĐT, Đường, Quận/Huyện, TP)');
       return;
     }
 
     setOrderLoading(true);
-    showToast('Đang xử lý...', 'info');
+    addToast('info', 'Đang xử lý...');
 
     try {
       let orderId = existingOrderId;
@@ -216,7 +216,7 @@ export const Checkout: React.FC = () => {
           }
           if (orderData.message?.includes('đã có người đặt mua') || orderData.message?.includes('already')) {
             setHasActiveOrder(true);
-            showToast('Đơn hàng đã tồn tại. Đang tải lại...', 'info');
+            addToast('info', 'Đơn hàng đã tồn tại. Đang tải lại...');
             setTimeout(() => window.location.reload(), 1500);
             return;
           }
@@ -229,7 +229,7 @@ export const Checkout: React.FC = () => {
         orderId = orderData.data._id;
         const actualInspectionFee = orderData.data.financials?.inspectionFee || 0;
         if (inspectionRequired && actualInspectionFee === 0) {
-          showToast('🎉 Miễn phí kiểm định!', 'success');
+          addToast('success', '🎉 Miễn phí kiểm định!');
         }
       }
 
@@ -261,7 +261,7 @@ export const Checkout: React.FC = () => {
         throw new Error(err.message || 'Cập nhật địa chỉ thất bại');
       }
 
-      showToast('Đang chuyển đến thanh toán...', 'success');
+      addToast('success', 'Đang chuyển đến thanh toán...');
       console.log('Creating payment link...');
 
       const paymentRes = await fetch(`${API_BASE_URL}/payment/create-link`, {
@@ -275,7 +275,7 @@ export const Checkout: React.FC = () => {
       if (!paymentRes.ok) {
         if (paymentRes.status === 401) handleSessionExpired();
         if (paymentData.message?.includes('signature') || paymentData.message?.includes('PayOS')) {
-          showToast('Lỗi cấu hình thanh toán. Liên hệ quản trị viên.', 'error');
+          addToast('error', 'Lỗi cấu hình thanh toán. Liên hệ quản trị viên.');
           return;
         }
         throw new Error(paymentData.message || 'Không tạo được link thanh toán');
@@ -507,7 +507,10 @@ export const Checkout: React.FC = () => {
           {orderLoading ? 'ĐANG XỬ LÝ...' : (isOwner ? 'SẢN PHẨM CỦA BẠN' : (existingOrderId ? 'TIẾP TỤC THANH TOÁN' : (hasActiveOrder ? 'ĐÃ CÓ NGƯỜI ĐẶT' : 'THANH TOÁN')))}
         </button>
       </div>
-      <Toast />
+      <Toast toasts={toasts} onRemove={removeToast} />
     </div>
   );
 };
+
+
+

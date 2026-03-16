@@ -21,7 +21,7 @@ const FALLBACK_CATEGORIES = [
 ];
 
 export const Marketplace: React.FC = () => {
-  const { listings, loading, error, facets, fetch, fetchFacets } = useListings();
+  const { listings, loading, error, facets, fetch: fetchListings, fetchFacets } = useListings();
   const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
   const [wishlistToggling, setWishlistToggling] = useState<string | null>(null);
   const [canWishlist, setCanWishlist] = useState(() => typeof window !== 'undefined' && !!localStorage.getItem('accessToken'));
@@ -43,7 +43,7 @@ export const Marketplace: React.FC = () => {
       setWishlistIds(new Set());
       return;
     }
-    fetch(`${API_BASE_URL}/wishlist`, { headers: { Authorization: `Bearer ${token}` } })
+    window.fetch(`${API_BASE_URL}/wishlist`, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.data && Array.isArray(data.data)) {
@@ -71,7 +71,7 @@ export const Marketplace: React.FC = () => {
     const inWishlist = wishlistIds.has(listingId);
     try {
       if (inWishlist) {
-        const res = await fetch(`${API_BASE_URL}/wishlist/${listingId}`, {
+        const res = await window.fetch(`${API_BASE_URL}/wishlist/${listingId}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -84,7 +84,7 @@ export const Marketplace: React.FC = () => {
           window.dispatchEvent(new Event('wishlistRefresh'));
         }
       } else {
-        const res = await fetch(`${API_BASE_URL}/wishlist`, {
+        const res = await window.fetch(`${API_BASE_URL}/wishlist`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ listingId }),
@@ -145,7 +145,7 @@ export const Marketplace: React.FC = () => {
   // Fetch listings when filters change
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetch({
+      fetchListings({
         type: typeForApi,
         brand: brandForApi,
         minPrice: minPrice ? Number(minPrice) : undefined,

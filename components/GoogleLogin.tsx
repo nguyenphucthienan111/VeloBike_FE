@@ -50,7 +50,7 @@ export const GoogleLogin: React.FC<GoogleLoginProps> = ({ onSuccess, onError }) 
       } else if (role === 'INSPECTOR') {
         navigate('/inspector/dashboard');
       } else {
-        navigate('/marketplace');
+        navigate('/');
       }
 
       if (onSuccess) onSuccess();
