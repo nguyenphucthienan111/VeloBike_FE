@@ -288,9 +288,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                         <MessageCircle size={18} />
                         <span>Tin nhắn</span>
                       </Link>
-                      <Link to="/seller/kyc" className="flex items-center bg-black text-white hover:bg-gray-800 rounded-full px-4 py-2 text-sm font-medium transition-colors">
-                        Post listing
-                      </Link>
                     </>
                   )}
                   {/* SELLER khi về trang mua hàng: giữ đầy đủ tính năng buyer (wishlist, đơn hàng, thông báo) + nút seller */}
@@ -323,6 +320,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                             {notificationUnread > 99 ? '99+' : notificationUnread}
                           </span>
                         )}
+                      </Link>
+                      <Link to="/seller/add-product" className="flex items-center bg-black text-white hover:bg-gray-800 rounded-full px-4 py-2 text-sm font-medium transition-colors">
+                        Post listing
                       </Link>
                     </>
                   )}
