@@ -1,14 +1,16 @@
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
 
-// Same config as firebase.ts - hardcode here since service worker can't read env vars
+// Read config from query params injected at registration time
+const params = new URL(self.location.href).searchParams;
+
 firebase.initializeApp({
-  apiKey: "AIzaSyAjcrc8t5LIISa303X00apUFYm-hbrtrNQ",
-  authDomain: "velobike-9d912.firebaseapp.com",
-  projectId: "velobike-9d912",
-  storageBucket: "velobike-9d912.firebasestorage.app",
-  messagingSenderId: "682683625862",
-  appId: "1:682683625862:web:393f6be8a4eb96baf4bc07",
+  apiKey: params.get('apiKey'),
+  authDomain: params.get('authDomain'),
+  projectId: params.get('projectId'),
+  storageBucket: params.get('storageBucket'),
+  messagingSenderId: params.get('messagingSenderId'),
+  appId: params.get('appId'),
 });
 
 const messaging = firebase.messaging();

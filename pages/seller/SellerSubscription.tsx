@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../constants';
-import { Toast } from '../../components/Toast';
-import { useToast } from '../../hooks/useToast';
 import { Check, Sparkles, Zap, Crown, HelpCircle, Loader2, CreditCard } from 'lucide-react';
+
+const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+  window.dispatchEvent(new CustomEvent('showToast', { detail: { type, message } }));
+};
 
 interface Plan {
   name: string;
@@ -28,7 +30,6 @@ const PLAN_ICONS: Record<string, React.ReactNode> = {
 };
 
 export const SellerSubscription: React.FC = () => {
-  const { toast, showToast, hideToast } = useToast();
   const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,12 +118,6 @@ export const SellerSubscription: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.isVisible}
-        onClose={hideToast}
-      />
 
       {/* Header */}
       <div className="border-b border-gray-200 bg-white/80 backdrop-blur-sm">

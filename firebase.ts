@@ -34,7 +34,11 @@ export const requestNotificationPermission = async (): Promise<string | null> =>
       return null;
     }
 
-    const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+    // Register SW manually and inject config via query params
+    const swUrl = `/firebase-messaging-sw.js?apiKey=${firebaseConfig.apiKey}&authDomain=${firebaseConfig.authDomain}&projectId=${firebaseConfig.projectId}&storageBucket=${firebaseConfig.storageBucket}&messagingSenderId=${firebaseConfig.messagingSenderId}&appId=${firebaseConfig.appId}`;
+    const swRegistration = await navigator.serviceWorker.register(swUrl);
+
+    const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: swRegistration });
     console.log('[FCM] Token:', token);
     return token;
   } catch (err) {

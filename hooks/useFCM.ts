@@ -11,7 +11,6 @@ export const useFCM = () => {
       const fcmToken = await requestNotificationPermission();
       if (!fcmToken) return;
 
-      // Send token to BE
       await fetch(`${API_BASE_URL}/users/me/fcm-token`, {
         method: 'PUT',
         headers: {
@@ -24,7 +23,6 @@ export const useFCM = () => {
 
     setup();
 
-    // Handle foreground notifications (app is open)
     const unsubscribe = onForegroundMessage((payload) => {
       const { title, body } = payload.notification || {};
       if (title && Notification.permission === 'granted') {

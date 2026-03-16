@@ -30,11 +30,12 @@ interface RecentTransaction {
 
 interface Notification {
   id: string;
+  _id: string;
   title: string;
   message: string;
   type: string;
   createdAt: string;
-  read: boolean;
+  isRead: boolean;
 }
 
 export const SellerDashboard: React.FC = () => {
@@ -165,13 +166,24 @@ export const SellerDashboard: React.FC = () => {
               {/* Notifications */}
               <div className="relative">
                 <button 
-                  onClick={() => setShowNotifications(!showNotifications)}
+                  onClick={async () => {
+                    const next = !showNotifications;
+                    setShowNotifications(next);
+                    if (next && notifications.some(n => !n.isRead)) {
+                      const token = localStorage.getItem('accessToken');
+                      await fetch(`${API_BASE_URL}/notifications/read-all`, {
+                        method: 'PUT',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                      });
+                      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+                    }
+                  }}
                   className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-gray-50 relative"
                 >
                   🔔
-                  {notifications.filter(n => !n.read).length > 0 && (
+                  {notifications.filter(n => !n.isRead).length > 0 && (
                     <span className="absolute top-0 right-0 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                      {notifications.filter(n => !n.read).length}
+                      {notifications.filter(n => !n.isRead).length}
                     </span>
                   )}
                 </button>
@@ -185,7 +197,7 @@ export const SellerDashboard: React.FC = () => {
                     {notifications.length > 0 ? (
                       <div className="divide-y divide-gray-100">
                         {notifications.map((notif) => (
-                          <div key={notif.id} className={`p-4 hover:bg-gray-50 transition-colors ${!notif.read ? 'bg-blue-50' : ''}`}>
+                          <div key={notif._id || notif.id} className={`p-4 hover:bg-gray-50 transition-colors ${!notif.isRead ? 'bg-blue-50' : ''}`}>
                             <p className="font-semibold text-gray-900 text-sm">{notif.title}</p>
                             <p className="text-gray-600 text-sm mt-1">{notif.message}</p>
                             <p className="text-xs text-gray-500 mt-2">{new Date(notif.createdAt).toLocaleString()}</p>

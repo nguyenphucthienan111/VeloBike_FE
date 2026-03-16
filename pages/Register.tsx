@@ -314,7 +314,7 @@ export const Register: React.FC = () => {
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !formData.agreeToTerms}
                 className="w-full bg-black text-white font-bold py-3 uppercase tracking-widest rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-6"
               >
                 {loading ? 'Creating Account...' : 'Create Account'}

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SellerHeaderUserMenu } from '../../components/SellerHeaderUserMenu';
-import { Toast } from '../../components/Toast';
-import { useToast } from '../../hooks/useToast';
 import { API_BASE_URL } from '../../constants';
+
+const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+  window.dispatchEvent(new CustomEvent('showToast', { detail: { type, message } }));
+};
 
 interface Listing {
   _id: string;
@@ -32,7 +34,6 @@ export const SellerInventory: React.FC = () => {
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [bulkStatus, setBulkStatus] = useState('PUBLISHED');
   const [user, setUser] = useState<any>(null);
-  const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -476,13 +477,6 @@ export const SellerInventory: React.FC = () => {
             </div>
           </div>
         </div>
-    <Toast
-      message={toast.message}
-      type={toast.type}
-      isVisible={toast.isVisible}
-      onClose={hideToast}
-      duration={3000}
-    />
     </div>
   );
 };
