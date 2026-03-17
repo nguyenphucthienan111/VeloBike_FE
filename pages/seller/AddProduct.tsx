@@ -41,6 +41,11 @@ export const AddProduct: React.FC = () => {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [videoPreviews, setVideoPreviews] = useState<string>('');
 
+  // Load catalog (categories + brands)
+  useEffect(() => {
+    fetchCatalog();
+  }, []);
+
   // Double check KYC status + validate profile đầy đủ trước khi đăng bài
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
@@ -320,7 +325,7 @@ export const AddProduct: React.FC = () => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
                   required
                 >
-                  <option value="">{catalogLoading ? 'Loading categories...' : 'Select category'}</option>
+                  <option value="" disabled>{catalogLoading ? 'Loading...' : 'Select bike type'}</option>
                   {categories
                     .filter((c: CatalogCategory) => c.isActive)
                     .sort((a, b) => a.name.localeCompare(b.name))

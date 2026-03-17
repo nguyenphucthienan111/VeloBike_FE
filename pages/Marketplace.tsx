@@ -101,20 +101,13 @@ export const Marketplace: React.FC = () => {
     }
   };
 
-  // Brand options từ facets (fallback khi catalog brand trống)
+  // Brand options: chỉ lấy từ facets (brands thực sự có listing)
   const baseBrandOptions = (facets?.brands ?? [])
     .map((b: any) => (typeof b === 'string' ? b : b?.name || b?._id || ''))
-    .filter((b: string) => b);
-  // Ưu tiên lấy từ admin catalog brands; nếu không có thì fallback facets
-  const brandOptionsSource =
-    brands && brands.length > 0
-      ? brands
-          .filter((b) => b.isActive)
-          .map((b) => b.name)
-          .sort((a, b) => a.localeCompare(b))
-      : baseBrandOptions;
-  const brandOptions = [...brandOptionsSource, BRAND_OTHER];
-  const catalogBrandNames = brandOptionsSource.map((b) => b.toLowerCase().trim());
+    .filter((b: string) => b)
+    .sort((a: string, b: string) => a.localeCompare(b));
+  const brandOptions = baseBrandOptions;
+  const catalogBrandNames = baseBrandOptions.map((b: string) => b.toLowerCase().trim());
 
   // Filters state (đồng bộ: không chọn gì = hiện tất cả)
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -133,24 +126,14 @@ export const Marketplace: React.FC = () => {
     fetchCatalog();
   }, [fetchCatalog]);
 
-  // Category options: ưu tiên admin categories, fallback facets.types, cuối cùng FALLBACK_CATEGORIES
-  const categoryOptions =
-    categories && categories.length > 0
-      ? categories
-          .filter((c) => c.isActive)
-          .map((c) => {
-            const type = getTypeForCategory(c.slug, c.name);
-            return type
-              ? {
-                  label: c.name,
-                  value: type,
-                }
-              : null;
-          })
-          .filter((opt): opt is { label: string; value: string } => !!opt)
-      : facets?.types?.length > 0
-      ? facets.types.map((t: string) => ({ label: TYPE_TO_LABEL[t] || t, value: t }))
-      : FALLBACK_CATEGORIES;
+  // Category options: chỉ lấy từ facets (types thực sự có listing)
+  const TYPE_TO_LABEL_FULL: Record<string, string> = {
+    ROAD: 'Road Bike', MTB: 'Mountain Bike', GRAVEL: 'Gravel Bike',
+    TRIATHLON: 'Triathlon', E_BIKE: 'E-Bike',
+  };
+  const categoryOptions = facets?.types?.length > 0
+    ? facets.types.map((t: string) => ({ label: TYPE_TO_LABEL_FULL[t] || t, value: t }))
+    : [];
 
   // Type cho API: không chọn category nào = ALL; có chọn thì lấy type đầu tiên thuộc BikeType
   const typeForApi =
@@ -163,10 +146,10 @@ export const Marketplace: React.FC = () => {
     fetchFacets();
   }, [fetchFacets]);
 
-  // Khi chọn "Khác" phải lấy tất cả rồi filter FE (API không hỗ trợ "brand not in")
-  const hasOtherBrand = selectedBrands.includes(BRAND_OTHER);
+  // Khi chọn brand thì filter FE theo brand name
+  const hasOtherBrand = false;
   const brandForApi =
-    hasOtherBrand || selectedBrands.length === 0
+    selectedBrands.length === 0
       ? undefined
       : selectedBrands[0];
 
@@ -221,19 +204,9 @@ export const Marketplace: React.FC = () => {
     const end = start + itemsPerPage;
 
     // Filter "Khác" (brand not in catalog) on FE when selected
-    const isOtherBrand = (brand: string) => {
-      const b = (brand || '').toLowerCase().trim();
-      return !catalogBrandNames.some((c) => c === b);
-    };
     const brandFilter = (listing: any) => {
-      const brand = listing?.generalInfo?.brand || '';
       if (selectedBrands.length === 0) return true;
-      if (hasOtherBrand && selectedBrands.length === 1)
-        return isOtherBrand(brand);
-      if (hasOtherBrand) {
-        const realBrands = selectedBrands.filter((b) => b !== BRAND_OTHER);
-        return realBrands.some((rb) => rb === brand) || isOtherBrand(brand);
-      }
+      const brand = listing?.generalInfo?.brand || '';
       return selectedBrands.includes(brand);
     };
 
@@ -266,7 +239,7 @@ export const Marketplace: React.FC = () => {
           }
         }
         
-        const hasInspectionScore = typeof listing.inspectionScore === 'number' && listing.inspectionScore > 0;
+        const hasInspectionScore = typeof (listing as any).inspectionScore === 'number' && (listing as any).inspectionScore > 0;
         return {
           id: listing._id || listing.id || '',
           title: listing.title || 'Untitled',
@@ -278,11 +251,18 @@ export const Marketplace: React.FC = () => {
           type: listing.type || 'ROAD',
           status: listing.status || 'PUBLISHED',
           size: listing.generalInfo?.size || 'M',
-          conditionScore: hasInspectionScore ? listing.inspectionScore : 0,
+          conditionScore: hasInspectionScore ? (listing as any).inspectionScore : 0,
           inspectionStatus: hasInspectionScore ? 'PASSED' : 'PENDING',
-          inspectionRequired: !!listing.inspectionRequired,
+          inspectionRequired: !!(listing as any).inspectionRequired,
           imageUrl: listing.media?.thumbnails?.[0] || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect fill='%23e5e7eb' width='400' height='400'/%3E%3Ctext fill='%239ca3af' x='200' y='200' font-size='20' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E",
-          location: listing.location?.address || 'Unknown',
+          location: (() => {
+            const seller = typeof listing.sellerId === 'object' ? (listing.sellerId as any) : null;
+            const addr = seller?.address;
+            if (addr) {
+              return addr.city || addr.province || addr.district || listing.location?.address || 'Unknown';
+            }
+            return listing.location?.address || 'Unknown';
+          })(),
           specs: {
             groupset: listing.specs?.groupset || 'Standard',
           },

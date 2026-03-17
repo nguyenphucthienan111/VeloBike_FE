@@ -89,7 +89,7 @@ export const ProductDetail: React.FC = () => {
   const thumbItemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
-  const [sellerContact, setSellerContact] = useState<{ phone?: string; address?: { street?: string; district?: string; city?: string; province?: string } } | null>(null);
+  const [sellerContact, setSellerContact] = useState<{ fullName?: string; phone?: string; address?: { street?: string; district?: string; city?: string; province?: string } } | null>(null);
 
   const changeImage = (index: number) => {
     setImgVisible(false);
@@ -753,12 +753,18 @@ export const ProductDetail: React.FC = () => {
             </div>
 
             {/* Contact */}
-            {sellerContact && (sellerContact.phone || sellerContact.address?.city) && (
+            {sellerContact && (sellerContact.fullName || sellerContact.phone || sellerContact.address?.city) && (
               <div className="border-t border-gray-100 pt-6">
                 <h3 className="font-bold mb-3 text-sm flex items-center gap-2">
                   <MapPin size={16} className="text-gray-400" /> Contact
                 </h3>
                 <div className="space-y-1.5 text-sm text-gray-600">
+                  {sellerContact.fullName && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400">👤</span>
+                      <span className="font-medium text-gray-800">{sellerContact.fullName}</span>
+                    </div>
+                  )}
                   {sellerContact.phone && (
                     <div className="flex items-center gap-2">
                       <span className="text-gray-400">📞</span>

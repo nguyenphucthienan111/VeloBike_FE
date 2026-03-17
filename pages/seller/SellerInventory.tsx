@@ -357,7 +357,7 @@ export const SellerInventory: React.FC = () => {
                   <th className="w-16 px-3 py-4 text-left text-sm font-semibold text-gray-600">Views</th>
                   <th className="w-36 px-3 py-4 text-left text-sm font-semibold text-gray-600">Status</th>
                   <th className="w-24 px-3 py-4 text-left text-sm font-semibold text-gray-600">Created</th>
-                  <th className="w-28 px-3 py-4 text-left text-sm font-semibold text-gray-600">Actions</th>
+                  <th className="w-36 px-3 py-4 text-left text-sm font-semibold text-gray-600">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -420,7 +420,7 @@ export const SellerInventory: React.FC = () => {
                         {new Date(listing.createdAt).toLocaleDateString('en-US')}
                       </td>
                       <td className="px-3 py-4">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center flex-wrap gap-2">
                           <button
                             onClick={() => navigate(`/seller/edit-listing/${listing._id}`)}
                             className="text-blue-600 hover:underline text-sm font-medium"

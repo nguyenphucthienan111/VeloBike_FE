@@ -52,6 +52,8 @@ export interface Listing {
   createdAt: string;
   boostedUntil?: string;
   boostCount?: number;
+  inspectionScore?: number;
+  inspectionRequired?: boolean;
 }
 
 interface ListingsResponse {
