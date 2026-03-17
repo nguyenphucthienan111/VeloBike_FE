@@ -17,8 +17,8 @@ const mainNav = [
 ] as const;
 
 const accountNav = [
-  { path: '/seller/profile', label: 'Cài đặt tài khoản', icon: User },
-  { path: '/seller/subscription', label: 'Gói đăng ký', icon: CreditCard },
+  { path: '/seller/profile', label: 'Account settings', icon: User },
+  { path: '/seller/subscription', label: 'Subscription plan', icon: CreditCard },
 ] as const;
 
 export const SellerHeaderUserMenu: React.FC<SellerHeaderUserMenuProps> = ({ user, className = '' }) => {
@@ -87,30 +87,7 @@ export const SellerHeaderUserMenu: React.FC<SellerHeaderUserMenuProps> = ({ user
       {open && (
         <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50 max-h-[80vh] overflow-y-auto">
           <div className="px-3 py-1.5">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Cửa hàng</p>
-          </div>
-          {mainNav.map((item) => (
-            <button
-              key={item.path}
-              type="button"
-              onClick={() => handleNav(item.path)}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
-            >
-              <item.icon size={18} className="text-gray-500 shrink-0" />
-              {item.label}
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => handleNav('/marketplace')}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
-          >
-            <Store size={18} className="text-gray-500 shrink-0" />
-            Mua hàng / Marketplace
-          </button>
-          <div className="border-t border-gray-100 my-2" />
-          <div className="px-3 py-1.5">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Tài khoản</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Account</p>
           </div>
           {accountNav.map((item) => (
             <button
@@ -133,7 +110,7 @@ export const SellerHeaderUserMenu: React.FC<SellerHeaderUserMenuProps> = ({ user
             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50"
           >
             <LogOut size={18} className="shrink-0" />
-            Đăng xuất
+            Sign out
           </button>
         </div>
       )}

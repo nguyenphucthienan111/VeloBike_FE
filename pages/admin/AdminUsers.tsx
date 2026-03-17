@@ -85,7 +85,7 @@ export const AdminUsers: React.FC = () => {
 
   const handleBulkStatus = async (isActive: boolean) => {
     if (selectedIds.size === 0) {
-      alert('Chọn ít nhất một user');
+      alert('Please select at least one user');
       return;
     }
     setBulkLoading(true);
@@ -184,29 +184,29 @@ export const AdminUsers: React.FC = () => {
 
   return (
     <AdminPageLayout>
-      <AdminPageHeader title="Quản lý users" subtitle="Tìm kiếm, lọc và quản lý tài khoản người dùng" />
+      <AdminPageHeader title="User management" subtitle="Search, filter, and manage user accounts" />
       {error && <AdminErrorBanner message={error} />}
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Tìm kiếm</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Search</label>
             <input
               type="text"
-              placeholder="Email, tên, ID..."
+              placeholder="Email, name, ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-300 focus:border-slate-400 outline-none"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Vai trò</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
             <select
               value={filters.role}
               onChange={(e) => setFilters({ ...filters, role: e.target.value })}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-800 focus:ring-2 focus:ring-slate-300 outline-none"
             >
-              <option value="">Tất cả</option>
+              <option value="">All</option>
               <option value="BUYER">BUYER</option>
               <option value="SELLER">SELLER</option>
               <option value="INSPECTOR">INS</option>
@@ -214,15 +214,15 @@ export const AdminUsers: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Trạng thái</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
             <select
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-800 focus:ring-2 focus:ring-slate-300 outline-none"
             >
-              <option value="">Tất cả</option>
-              <option value="active">Đang hoạt động</option>
-              <option value="inactive">Vô hiệu hóa</option>
+              <option value="">All</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
             </select>
           </div>
           <div className="flex items-end">
@@ -230,7 +230,7 @@ export const AdminUsers: React.FC = () => {
               onClick={() => setFilters({ role: '', status: '' })}
               className="w-full px-4 py-2 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 text-sm font-medium transition-colors"
             >
-              Xóa bộ lọc
+              Clear filters
             </button>
           </div>
         </div>
@@ -238,16 +238,16 @@ export const AdminUsers: React.FC = () => {
 
       {selectedIds.size > 0 && (
         <div className="flex gap-2 items-center mb-4">
-          <span className="text-sm text-slate-600">{selectedIds.size} đã chọn</span>
-          <button onClick={() => handleBulkStatus(true)} disabled={bulkLoading} className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50">Kích hoạt hàng loạt</button>
-          <button onClick={() => handleBulkStatus(false)} disabled={bulkLoading} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50">Vô hiệu hóa hàng loạt</button>
-          <button onClick={() => setSelectedIds(new Set())} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50">Bỏ chọn</button>
+          <span className="text-sm text-slate-600">{selectedIds.size} selected</span>
+          <button onClick={() => handleBulkStatus(true)} disabled={bulkLoading} className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50">Activate selected</button>
+          <button onClick={() => handleBulkStatus(false)} disabled={bulkLoading} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50">Disable selected</button>
+          <button onClick={() => setSelectedIds(new Set())} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50">Clear selection</button>
         </div>
       )}
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         {loading ? (
-          <AdminLoadingState message="Đang tải users..." />
+          <AdminLoadingState message="Loading users..." />
         ) : (
           <>
             <div className="overflow-x-auto">
@@ -258,10 +258,10 @@ export const AdminUsers: React.FC = () => {
                       <input type="checkbox" checked={filteredUsers.length > 0 && selectedIds.size === filteredUsers.length} onChange={(e) => setSelectedIds(e.target.checked ? new Set(filteredUsers.map(u => u._id)) : new Set())} className="rounded border-slate-300" />
                     </th>
                     <th className="px-5 py-3.5 text-left font-semibold text-slate-700">User</th>
-                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Vai trò</th>
+                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Role</th>
                     <th className="px-5 py-3.5 text-left font-semibold text-slate-700">KYC</th>
-                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Trạng thái</th>
-                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Thao tác</th>
+                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Status</th>
+                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -296,7 +296,7 @@ export const AdminUsers: React.FC = () => {
                             <span className={`px-2.5 py-1 text-xs font-medium rounded-md border ${
                               user.isActive ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-red-700 bg-red-50 border-red-200'
                             }`}>
-                              {user.isActive ? 'Hoạt động' : 'Vô hiệu'}
+                              {user.isActive ? 'Active' : 'Inactive'}
                             </span>
                           </td>
                           <td className="px-5 py-3.5">
@@ -321,7 +321,7 @@ export const AdminUsers: React.FC = () => {
                                     : 'text-emerald-700 border-emerald-200 hover:bg-emerald-50'
                                 }`}
                               >
-                                {user.isActive ? 'Khóa' : 'Mở khóa'}
+                                {user.isActive ? 'Disable' : 'Enable'}
                               </button>
                             </div>
                           </td>
@@ -335,20 +335,20 @@ export const AdminUsers: React.FC = () => {
                   <p className="text-sm text-slate-600">
                     {((pagination.page - 1) * pagination.limit) + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} / {pagination.total} users
                   </p>
-                  <div className="flex gap-2">
+                      <div className="flex gap-2">
                     <button
                       onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
                       disabled={pagination.page === 1}
                       className="px-3 py-2 border border-slate-200 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
                     >
-                      Trước
+                      Previous
                     </button>
                     <button
                       onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
                       disabled={pagination.page >= pagination.pages}
                       className="px-3 py-2 border border-slate-200 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
                     >
-                      Sau
+                      Next
                     </button>
                   </div>
                 </div>
@@ -356,32 +356,32 @@ export const AdminUsers: React.FC = () => {
         )}
       </div>
 
-      {/* KYC Modal — SELLER hoặc user có hồ sơ KYC (kể cả BUYER đã gửi KYC) */}
+      {/* KYC Modal — SELLER or any user with KYC data (including BUYER who has submitted KYC) */}
       {showKycModal && selectedUser && (selectedUser.role === 'SELLER' || selectedUser.kycStatus === 'PENDING' || (selectedUser.kycData && (selectedUser.kycData.documentType || selectedUser.kycData.documentId || selectedUser.kycData.frontImage || selectedUser.kycData.backImage))) && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto py-4">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 my-auto">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Update KYC Status</h2>
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-gray-900 mb-2">{selectedUser.role === 'SELLER' ? 'Seller' : 'Người dùng'}</label>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">{selectedUser.role === 'SELLER' ? 'Seller' : 'User'}</label>
               <p className="text-gray-700">{selectedUser.fullName} ({selectedUser.email})</p>
               <p className="text-xs text-gray-500 mt-1">Role: {selectedUser.role}</p>
             </div>
 
-            {/* Hồ sơ KYC đã gửi — luôn hiển thị, có hoặc chưa có tài liệu */}
+            {/* Submitted KYC profile — always show, whether documents exist or not */}
             <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">Hồ sơ đã gửi</h3>
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Submitted documents</h3>
               {selectedUser.kycData && (selectedUser.kycData.documentType || selectedUser.kycData.documentId || selectedUser.kycData.frontImage || selectedUser.kycData.backImage) ? (
                 <>
                   <div className="grid grid-cols-2 gap-3 text-sm mb-3">
                     {selectedUser.kycData.documentType && (
                       <div>
-                        <span className="text-gray-500">Loại giấy tờ:</span>
+                        <span className="text-gray-500">Document type:</span>
                         <span className="ml-2 font-medium text-gray-900">{selectedUser.kycData.documentType}</span>
                       </div>
                     )}
                     {selectedUser.kycData.documentId && (
                       <div>
-                        <span className="text-gray-500">Số CCCD/CMND:</span>
+                        <span className="text-gray-500">ID number:</span>
                         <span className="ml-2 font-medium text-gray-900">{selectedUser.kycData.documentId}</span>
                       </div>
                     )}
@@ -389,28 +389,28 @@ export const AdminUsers: React.FC = () => {
                   <div className="grid grid-cols-2 gap-3">
                     {selectedUser.kycData.frontImage ? (
                       <div>
-                        <p className="text-xs text-gray-500 mb-1">Ảnh mặt trước</p>
+                        <p className="text-xs text-gray-500 mb-1">Front side</p>
                         <a href={selectedUser.kycData.frontImage} target="_blank" rel="noopener noreferrer" className="block rounded border border-gray-200 overflow-hidden bg-white">
-                          <img src={selectedUser.kycData.frontImage} alt="Mặt trước" className="w-full h-32 object-contain" />
+                          <img src={selectedUser.kycData.frontImage} alt="Front" className="w-full h-32 object-contain" />
                         </a>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-center h-32 rounded border border-gray-200 bg-white text-gray-400 text-sm">Chưa có ảnh</div>
+                      <div className="flex items-center justify-center h-32 rounded border border-gray-200 bg-white text-gray-400 text-sm">No image</div>
                     )}
                     {selectedUser.kycData.backImage ? (
                       <div>
-                        <p className="text-xs text-gray-500 mb-1">Ảnh mặt sau</p>
+                        <p className="text-xs text-gray-500 mb-1">Back side</p>
                         <a href={selectedUser.kycData.backImage} target="_blank" rel="noopener noreferrer" className="block rounded border border-gray-200 overflow-hidden bg-white">
-                          <img src={selectedUser.kycData.backImage} alt="Mặt sau" className="w-full h-32 object-contain" />
+                          <img src={selectedUser.kycData.backImage} alt="Back" className="w-full h-32 object-contain" />
                         </a>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-center h-32 rounded border border-gray-200 bg-white text-gray-400 text-sm">Chưa có ảnh</div>
+                      <div className="flex items-center justify-center h-32 rounded border border-gray-200 bg-white text-gray-400 text-sm">No image</div>
                     )}
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-gray-500">Seller chưa gửi tài liệu KYC (ảnh CCCD/CMND). Có thể cập nhật trạng thái bên dưới sau khi họ gửi.</p>
+                <p className="text-sm text-gray-500">Seller has not submitted KYC documents yet. You can update the status after they upload them.</p>
               )}
             </div>
 

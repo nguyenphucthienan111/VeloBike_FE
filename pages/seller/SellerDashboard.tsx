@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SellerHeaderUserMenu } from '../../components/SellerHeaderUserMenu';
+import { SellerPageLayout, SellerPageHeader } from '../../components/SellerPageLayout';
 import { API_BASE_URL } from '../../constants';
 import { Crown, Zap, Sparkles, CreditCard, ArrowRight } from 'lucide-react';
 
@@ -179,12 +180,14 @@ export const SellerDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="animate-spin h-12 w-12 border-4 border-accent border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
+      <SellerPageLayout>
+        <div className="flex items-center justify-center py-16">
+          <div className="text-center">
+            <div className="animate-spin h-12 w-12 border-4 border-accent border-t-transparent rounded-full mx-auto mb-4" />
+            <p className="text-gray-600">Loading dashboard...</p>
+          </div>
         </div>
-      </div>
+      </SellerPageLayout>
     );
   }
 
@@ -263,45 +266,33 @@ export const SellerDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Stats Cards - From API */}
-          <div className="grid grid-cols-4 gap-4 mb-8">
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-              <div className="flex justify-between items-start">
-                <span className="text-green-600 text-sm font-semibold">+8.2%</span>
-              </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
               <p className="text-gray-600 text-xs font-semibold mt-4">TOTAL REVENUE</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">{formatCurrency(stats?.totalRevenue || 0)}</p>
-            </div>
+        </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-              <div className="flex justify-between items-start">
-                <span className="text-green-600 text-sm font-semibold">+5.1%</span>
-              </div>
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
               <p className="text-gray-600 text-xs font-semibold mt-4">TOTAL SALES</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">{stats?.totalSales || 0}</p>
-            </div>
+        </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-              <div className="flex justify-between items-start">
-                <span className="text-green-600 text-sm font-semibold">+3.2%</span>
-              </div>
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
               <p className="text-gray-600 text-xs font-semibold mt-4">TOTAL VIEWS</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">{(stats?.totalViews || 0).toLocaleString()}</p>
-            </div>
+        </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-              <div className="flex justify-between items-start">
-                <span className="text-green-600 text-sm font-semibold">+1.5%</span>
-              </div>
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
               <p className="text-gray-600 text-xs font-semibold mt-4">CONVERSION RATE</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">{(stats?.conversionRate || 0).toFixed(1)}%</p>
-            </div>
-          </div>
+        </div>
+      </div>
 
-          {/* Content Grid */}
-          <div className="grid grid-cols-3 gap-6">
-            {/* Recent Transactions */}
-            <div className="col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      {/* Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recent Transactions */}
+        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-lg font-bold text-gray-900">Recent Transactions</h2>
                 <button className="text-purple-600 text-sm font-semibold hover:underline">VIEW ALL</button>
@@ -343,12 +334,12 @@ export const SellerDashboard: React.FC = () => {
                   </tbody>
                 </table>
               </div>
-            </div>
+        </div>
 
-            {/* Right Sidebar */}
-            <div className="space-y-6">
-              {/* Top Listings */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        {/* Right Sidebar */}
+        <div className="space-y-6">
+          {/* Top Listings */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Top Products</h3>
                 <div className="space-y-3">
                   {topListings.length > 0 ? (
@@ -366,7 +357,7 @@ export const SellerDashboard: React.FC = () => {
                     <p className="text-sm text-gray-500">No data yet</p>
                   )}
                 </div>
-              </div>
+          </div>
 
               {/* Subscription Status */}
               {subscription && (() => {
@@ -460,9 +451,9 @@ export const SellerDashboard: React.FC = () => {
                     <p className="text-xs text-gray-500 group-hover:text-purple-500">View reports</p>
                   </button>
                 </div>
-              </div>
-            </div>
           </div>
-    </div>
+        </div>
+      </div>
+    </SellerPageLayout>
   );
 };

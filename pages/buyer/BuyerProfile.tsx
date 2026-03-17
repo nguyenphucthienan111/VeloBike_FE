@@ -8,7 +8,6 @@ interface UserProfile {
   fullName: string;
   phone?: string;
   avatar?: string;
-  bio?: string;
   role?: string;
   address?: string | { street?: string; city?: string; province?: string };
   city?: string;
@@ -31,7 +30,6 @@ export const BuyerProfile: React.FC = () => {
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
-    bio: '',
     address: '',
     city: '',
     country: '',
@@ -65,7 +63,6 @@ export const BuyerProfile: React.FC = () => {
         setFormData({
           fullName: profileData.fullName || '',
           phone: profileData.phone || '',
-          bio: profileData.bio || '',
           address: (typeof addr === 'string' ? addr : addr.street) || '',
           city: (typeof addr === 'object' ? addr.city : '') || profileData.city || '',
           country: (typeof addr === 'object' ? addr.province : '') || profileData.country || '',
@@ -142,12 +139,12 @@ export const BuyerProfile: React.FC = () => {
       const body = {
         fullName: formData.fullName,
         phone: formData.phone || '',
-        bio: formData.bio || '',
         address: {
           street: formData.address || '',
           city: formData.city || '',
           province: formData.country || '',
         },
+        avatar: avatarPreview || profile?.avatar || '',
       };
 
       const response = await fetch(`${API_BASE_URL}/users/me`, {

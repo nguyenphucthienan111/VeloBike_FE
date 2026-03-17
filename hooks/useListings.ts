@@ -266,26 +266,27 @@ export const useListings = (): UseListingsReturn => {
         const types = toStrings(data.data.types || []);
 
         setFacets({
-          types: types.length ? types : ['ROAD', 'MTB', 'GRAVEL', 'TRIATHLON', 'E_BIKE'],
-          brands: brands.length ? brands : ['Specialized', 'Trek', 'Cervélo', 'Pinarello', 'Santa Cruz', 'Giant', 'Colnago'],
+          // Không dùng mock nữa – nếu rỗng thì để FE tự fallback
+          types,
+          brands,
           priceRange: data.data.priceRange || { min: 0, max: 500000000 },
         });
         console.log('✅ Facets fetched:', { brands });
       } else {
-        // Fallback with default brands
+        // Không set mock facets – để FE tự quyết định fallback
         setFacets({
-          types: ['ROAD', 'MTB', 'GRAVEL', 'TRIATHLON', 'E_BIKE'],
-          brands: ['Specialized', 'Trek', 'Cervélo', 'Pinarello', 'Santa Cruz', 'Giant', 'Colnago'],
+          types: [],
+          brands: [],
           priceRange: { min: 0, max: 500000000 },
         });
       }
     } catch (err: any) {
       // Connection refused → dùng fallback, không log rác
       if (!isConnectionError(err)) console.error('❌ Error fetching facets:', err.message);
-      // Fallback facets
+      // Không dùng mock facets – để FE (Marketplace) tự fallback
       setFacets({
-        types: ['ROAD', 'MTB', 'GRAVEL', 'TRIATHLON', 'E_BIKE'],
-        brands: ['Specialized', 'Trek', 'Cervélo', 'Pinarello', 'Santa Cruz', 'Giant', 'Colnago'],
+        types: [],
+        brands: [],
         priceRange: { min: 0, max: 500000000 },
       });
     }

@@ -3,20 +3,20 @@ import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../..
 import { handleSessionExpired } from '../../utils/auth';
 
 const TYPE_LABELS: Record<string, string> = {
-  DEPOSIT: 'Nạp tiền',
-  WITHDRAW: 'Rút tiền',
-  PAYMENT_HOLD: 'Tạm giữ thanh toán',
-  PAYMENT_RELEASE: 'Giải phóng thanh toán',
-  REFUND: 'Hoàn tiền',
-  PLATFORM_FEE: 'Phí nền tảng',
-  INSPECTION_FEE: 'Phí kiểm định',
+  DEPOSIT: 'Deposit',
+  WITHDRAW: 'Withdraw',
+  PAYMENT_HOLD: 'Payment hold',
+  PAYMENT_RELEASE: 'Payment release',
+  REFUND: 'Refund',
+  PLATFORM_FEE: 'Platform fee',
+  INSPECTION_FEE: 'Inspection fee',
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  PENDING: 'Đang xử lý',
-  COMPLETED: 'Hoàn thành',
-  FAILED: 'Thất bại',
-  CANCELLED: 'Đã hủy',
+  PENDING: 'Pending',
+  COMPLETED: 'Completed',
+  FAILED: 'Failed',
+  CANCELLED: 'Cancelled',
 };
 
 interface Transaction {
@@ -45,7 +45,7 @@ export const BuyerPaymentHistory: React.FC = () => {
         setError(null);
         const token = localStorage.getItem('accessToken');
         if (!token) {
-          setError('Vui lòng đăng nhập để xem lịch sử thanh toán.');
+          setError('Please sign in to view your payment history.');
           setLoading(false);
           return;
         }
@@ -55,7 +55,7 @@ export const BuyerPaymentHistory: React.FC = () => {
         });
         const data = await res.json();
         if (!res.ok) {
-          const msg = data?.message || 'Không tải được lịch sử thanh toán.';
+          const msg = data?.message || 'Failed to load payment history.';
           if (res.status === 401 && (msg.includes('authorized') || msg.includes('token'))) {
             handleSessionExpired();
             return;
@@ -67,7 +67,11 @@ export const BuyerPaymentHistory: React.FC = () => {
         setTransactions(Array.isArray(data.data) ? data.data : []);
         setPagination(data.pagination || null);
       } catch (err: unknown) {
-        setError(isConnectionError(err) ? CONNECTION_ERROR_MESSAGE : (err as Error).message || 'Không tải được lịch sử thanh toán.');
+        setError(
+          isConnectionError(err)
+            ? CONNECTION_ERROR_MESSAGE
+            : (err as Error).message || 'Failed to load payment history.'
+        );
         setTransactions([]);
       } finally {
         setLoading(false);
@@ -82,7 +86,7 @@ export const BuyerPaymentHistory: React.FC = () => {
 
   const formatDate = (dateStr: string) => {
     try {
-      return new Date(dateStr).toLocaleString('vi-VN');
+      return new Date(dateStr).toLocaleString();
     } catch {
       return dateStr;
     }
@@ -93,9 +97,9 @@ export const BuyerPaymentHistory: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
-      <h1 className="text-xl font-semibold text-gray-900 mb-4">Lịch sử thanh toán</h1>
+      <h1 className="text-xl font-semibold text-gray-900 mb-4">Payment history</h1>
       {loading && (
-        <p className="text-gray-500">Đang tải...</p>
+        <p className="text-gray-500">Loading...</p>
       )}
       {error && (
         <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-red-800">
@@ -103,7 +107,7 @@ export const BuyerPaymentHistory: React.FC = () => {
         </div>
       )}
       {!loading && !error && transactions.length === 0 && (
-        <p className="text-gray-500">Chưa có giao dịch nào.</p>
+        <p className="text-gray-500">You don&apos;t have any transactions yet.</p>
       )}
       {!loading && !error && transactions.length > 0 && (
         <>
@@ -111,11 +115,11 @@ export const BuyerPaymentHistory: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thời gian</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Loại</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mô tả</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Số tiền</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -144,7 +148,7 @@ export const BuyerPaymentHistory: React.FC = () => {
           {pagination && pagination.pages > 1 && (
             <div className="mt-4 flex items-center justify-between">
               <p className="text-sm text-gray-600">
-                Trang {pagination.page} / {pagination.pages} ({pagination.total} giao dịch)
+                Page {pagination.page} / {pagination.pages} ({pagination.total} transactions)
               </p>
               <div className="flex gap-2">
                 <button
@@ -153,7 +157,7 @@ export const BuyerPaymentHistory: React.FC = () => {
                   onClick={() => setPage((p) => p - 1)}
                   className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-50"
                 >
-                  Trước
+                  Previous
                 </button>
                 <button
                   type="button"
@@ -161,7 +165,7 @@ export const BuyerPaymentHistory: React.FC = () => {
                   onClick={() => setPage((p) => p + 1)}
                   className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-50"
                 >
-                  Sau
+                  Next
                 </button>
               </div>
             </div>

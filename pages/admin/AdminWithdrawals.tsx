@@ -88,7 +88,7 @@ export const AdminWithdrawals: React.FC = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        alert(data.message || 'Đã duyệt');
+        alert(data.message || 'Approved');
         fetchWithdrawals();
         fetchStats();
       } else alert(data.message || 'Failed');
@@ -111,7 +111,7 @@ export const AdminWithdrawals: React.FC = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        alert(data.message || 'Đã xác nhận chuyển khoản');
+        alert(data.message || 'Transfer confirmed');
         setCompleteModal(null);
         setCompleteForm({ transferProof: '', note: '' });
         fetchWithdrawals();
@@ -126,7 +126,7 @@ export const AdminWithdrawals: React.FC = () => {
 
   const handleReject = async () => {
     if (!rejectModal || !rejectReason.trim()) {
-      alert('Vui lòng nhập lý do từ chối');
+      alert('Please enter a rejection reason');
       return;
     }
     setActionLoading(rejectModal._id);
@@ -139,7 +139,7 @@ export const AdminWithdrawals: React.FC = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        alert(data.message || 'Đã từ chối');
+        alert(data.message || 'Rejected');
         setRejectModal(null);
         setRejectReason('');
         fetchWithdrawals();
@@ -167,25 +167,25 @@ export const AdminWithdrawals: React.FC = () => {
 
   return (
     <AdminPageLayout>
-      <AdminPageHeader title="Yêu cầu rút tiền" subtitle="Duyệt, hoàn thành hoặc từ chối yêu cầu rút tiền" />
+      <AdminPageHeader title="Withdrawal requests" subtitle="Approve, complete, or reject withdrawal requests" />
       {error && <AdminErrorBanner message={error} />}
 
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 border-l-4 border-l-amber-500">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Chờ duyệt</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pending</p>
             <p className="mt-1 text-2xl font-bold text-amber-600">{stats.pending ?? 0}</p>
           </div>
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 border-l-4 border-l-blue-500">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đã duyệt</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Approved</p>
             <p className="mt-1 text-2xl font-bold text-blue-600">{stats.approved ?? 0}</p>
           </div>
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 border-l-4 border-l-emerald-500">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Hoàn thành</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Completed</p>
             <p className="mt-1 text-2xl font-bold text-emerald-600">{stats.completed ?? 0}</p>
           </div>
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 border-l-4 border-l-red-500">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Từ chối</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Rejected</p>
             <p className="mt-1 text-2xl font-bold text-red-600">{stats.rejected ?? 0}</p>
           </div>
         </div>
@@ -193,36 +193,36 @@ export const AdminWithdrawals: React.FC = () => {
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-6">
         <div className="flex gap-4 items-center flex-wrap">
-          <label className="text-sm font-medium text-slate-700">Trạng thái</label>
+          <label className="text-sm font-medium text-slate-700">Status</label>
           <select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPagination(p => ({ ...p, page: 1 })); }}
             className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-slate-300 outline-none"
           >
-            <option value="">Tất cả</option>
-            <option value="PENDING">Chờ duyệt</option>
-            <option value="APPROVED">Đã duyệt</option>
-            <option value="COMPLETED">Hoàn thành</option>
-            <option value="REJECTED">Từ chối</option>
+            <option value="">All</option>
+            <option value="PENDING">Pending</option>
+            <option value="APPROVED">Approved</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="REJECTED">Rejected</option>
           </select>
         </div>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         {loading ? (
-          <AdminLoadingState message="Đang tải yêu cầu rút tiền..." />
+          <AdminLoadingState message="Loading withdrawal requests..." />
         ) : withdrawals.length === 0 ? (
-          <div className="py-20 text-center text-slate-500 text-sm">Chưa có yêu cầu rút tiền</div>
+          <div className="py-20 text-center text-slate-500 text-sm">No withdrawal requests yet</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
-                  <th className="text-left px-5 py-3.5 font-semibold text-slate-700">User / Ngân hàng</th>
-                  <th className="text-left px-5 py-3.5 font-semibold text-slate-700">Số tiền</th>
-                  <th className="text-left px-5 py-3.5 font-semibold text-slate-700">Trạng thái</th>
-                  <th className="text-left px-5 py-3.5 font-semibold text-slate-700">Ngày yêu cầu</th>
-                  <th className="text-right px-5 py-3.5 font-semibold text-slate-700">Thao tác</th>
+                  <th className="text-left px-5 py-3.5 font-semibold text-slate-700">User / Bank</th>
+                  <th className="text-left px-5 py-3.5 font-semibold text-slate-700">Amount</th>
+                  <th className="text-left px-5 py-3.5 font-semibold text-slate-700">Status</th>
+                  <th className="text-left px-5 py-3.5 font-semibold text-slate-700">Requested at</th>
+                  <th className="text-right px-5 py-3.5 font-semibold text-slate-700">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -234,7 +234,7 @@ export const AdminWithdrawals: React.FC = () => {
                     </td>
                     <td className="px-5 py-3.5">
                       <p className="font-semibold text-slate-900">{formatCurrency(w.netAmount)}</p>
-                      <p className="text-xs text-slate-500">Phí: {formatCurrency(w.fee || 0)}</p>
+                      <p className="text-xs text-slate-500">Fee: {formatCurrency(w.fee || 0)}</p>
                     </td>
                     <td className="px-5 py-3.5">
                       <span className={`px-2.5 py-1 rounded-md text-xs font-medium border ${getStatusColor(w.status)}`}>{w.status}</span>
@@ -247,12 +247,12 @@ export const AdminWithdrawals: React.FC = () => {
                               onClick={() => handleApprove(w._id)}
                               disabled={!!actionLoading}
                               className="text-green-600 font-medium hover:underline disabled:opacity-50"
-                            >Duyệt</button>
+                            >Approve</button>
                             <button
                               onClick={() => setRejectModal(w)}
                               disabled={!!actionLoading}
                               className="text-red-600 font-medium hover:underline disabled:opacity-50"
-                            >Từ chối</button>
+                            >Reject</button>
                           </div>
                         )}
                         {w.status === 'APPROVED' && (
@@ -260,7 +260,7 @@ export const AdminWithdrawals: React.FC = () => {
                             onClick={() => setCompleteModal(w)}
                             disabled={!!actionLoading}
                             className="text-blue-600 font-medium hover:underline disabled:opacity-50"
-                          >Xác nhận đã chuyển</button>
+                          >Confirm transfer</button>
                         )}
                       </td>
                     </tr>
@@ -278,15 +278,15 @@ export const AdminWithdrawals: React.FC = () => {
               onClick={() => setPagination(p => ({ ...p, page: p.page - 1 }))}
               className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
             >
-              <ChevronLeft className="h-4 w-4" /> Trước
+              <ChevronLeft className="h-4 w-4" /> Previous
             </button>
-            <span className="px-4 py-2 text-sm text-slate-600">Trang {pagination.page} / {pagination.pages}</span>
+            <span className="px-4 py-2 text-sm text-slate-600">Page {pagination.page} / {pagination.pages}</span>
             <button
               disabled={pagination.page >= pagination.pages}
               onClick={() => setPagination(p => ({ ...p, page: p.page + 1 }))}
               className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
             >
-              Sau <ChevronRight className="h-4 w-4" />
+              Next <ChevronRight className="h-4 w-4" />
             </button>
           </div>
         )}
@@ -294,19 +294,19 @@ export const AdminWithdrawals: React.FC = () => {
       {/* Modal Complete */}
       {completeModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-bold mb-4">Xác nhận đã chuyển khoản</h3>
-            <p className="text-gray-600 mb-4">Số tiền: {formatCurrency(completeModal.netAmount)} → {completeModal.bankAccount?.accountNumber}</p>
+            <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold mb-4">Confirm transfer completed</h3>
+            <p className="text-gray-600 mb-4">Amount: {formatCurrency(completeModal.netAmount)} → {completeModal.bankAccount?.accountNumber}</p>
             <div className="space-y-3 mb-4">
               <input
                 type="text"
-                placeholder="Link minh chứng chuyển khoản (tùy chọn)"
+                placeholder="Transfer proof link (optional)"
                 value={completeForm.transferProof}
                 onChange={(e) => setCompleteForm(f => ({ ...f, transferProof: e.target.value }))}
                 className="w-full border rounded-lg px-3 py-2 text-sm"
               />
               <textarea
-                placeholder="Ghi chú (tùy chọn)"
+                placeholder="Note (optional)"
                 value={completeForm.note}
                 onChange={(e) => setCompleteForm(f => ({ ...f, note: e.target.value }))}
                 className="w-full border rounded-lg px-3 py-2 text-sm"
@@ -314,8 +314,8 @@ export const AdminWithdrawals: React.FC = () => {
               />
             </div>
             <div className="flex gap-2 justify-end">
-              <button onClick={() => { setCompleteModal(null); setCompleteForm({ transferProof: '', note: '' }); }} className="px-4 py-2 border rounded-lg">Hủy</button>
-              <button onClick={handleComplete} disabled={!!actionLoading} className="px-4 py-2 bg-green-600 text-white rounded-lg disabled:opacity-50">Xác nhận</button>
+              <button onClick={() => { setCompleteModal(null); setCompleteForm({ transferProof: '', note: '' }); }} className="px-4 py-2 border rounded-lg">Cancel</button>
+              <button onClick={handleComplete} disabled={!!actionLoading} className="px-4 py-2 bg-green-600 text-white rounded-lg disabled:opacity-50">Confirm</button>
             </div>
           </div>
         </div>
@@ -324,19 +324,19 @@ export const AdminWithdrawals: React.FC = () => {
       {/* Modal Reject */}
       {rejectModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-bold mb-4">Từ chối yêu cầu rút tiền</h3>
-            <p className="text-gray-600 mb-4">Lý do từ chối (bắt buộc):</p>
+            <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold mb-4">Reject withdrawal request</h3>
+            <p className="text-gray-600 mb-4">Rejection reason (required):</p>
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
               className="w-full border rounded-lg px-3 py-2 text-sm mb-4"
               rows={3}
-              placeholder="Nhập lý do..."
+              placeholder="Enter reason..."
             />
             <div className="flex gap-2 justify-end">
-              <button onClick={() => { setRejectModal(null); setRejectReason(''); }} className="px-4 py-2 border rounded-lg">Hủy</button>
-              <button onClick={handleReject} disabled={!!actionLoading || !rejectReason.trim()} className="px-4 py-2 bg-red-600 text-white rounded-lg disabled:opacity-50">Từ chối</button>
+              <button onClick={() => { setRejectModal(null); setRejectReason(''); }} className="px-4 py-2 border rounded-lg">Cancel</button>
+              <button onClick={handleReject} disabled={!!actionLoading || !rejectReason.trim()} className="px-4 py-2 bg-red-600 text-white rounded-lg disabled:opacity-50">Reject</button>
             </div>
           </div>
         </div>

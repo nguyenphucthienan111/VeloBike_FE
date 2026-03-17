@@ -56,13 +56,13 @@ export const AdminInspectors: React.FC = () => {
 
   return (
     <AdminPageLayout>
-      <AdminPageHeader title="Quản lý kiểm định viên" subtitle="Xem danh sách và trạng thái kiểm định viên" />
+      <AdminPageHeader title="Inspector management" subtitle="View inspector list and status" />
       {error && <AdminErrorBanner message={error} />}
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-6">
         <div className="flex gap-4 items-end">
           <div className="flex-1 max-w-xs">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Trạng thái</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
             <select
               value={isActiveFilter}
               onChange={(e) => {
@@ -71,9 +71,9 @@ export const AdminInspectors: React.FC = () => {
               }}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-800 focus:ring-2 focus:ring-slate-300 outline-none"
             >
-              <option value="">Tất cả</option>
-              <option value="true">Đang hoạt động</option>
-              <option value="false">Vô hiệu hóa</option>
+              <option value="">All</option>
+              <option value="true">Active</option>
+              <option value="false">Disabled</option>
             </select>
           </div>
         </div>
@@ -81,17 +81,17 @@ export const AdminInspectors: React.FC = () => {
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         {loading ? (
-          <AdminLoadingState message="Đang tải kiểm định viên..." />
+          <AdminLoadingState message="Loading inspectors..." />
         ) : (
           <>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
-                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Kiểm định viên</th>
-                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Liên hệ</th>
-                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Trạng thái</th>
-                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Tham gia</th>
+                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Inspector</th>
+                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Contact</th>
+                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Status</th>
+                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Joined at</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -108,7 +108,7 @@ export const AdminInspectors: React.FC = () => {
                         <span className={`px-2.5 py-1 text-xs font-medium rounded-md border ${
                           inspector.isActive ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-red-700 bg-red-50 border-red-200'
                         }`}>
-                          {inspector.isActive ? 'Hoạt động' : 'Vô hiệu'}
+                          {inspector.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>
                       <td className="px-5 py-3.5 text-slate-600">
@@ -121,7 +121,7 @@ export const AdminInspectors: React.FC = () => {
             </div>
             <div className="px-5 py-4 border-t border-slate-200 flex justify-between items-center bg-slate-50/50">
               <p className="text-sm text-slate-600">
-                {((pagination.page - 1) * pagination.limit) + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} / {pagination.total} kiểm định viên
+                {((pagination.page - 1) * pagination.limit) + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} / {pagination.total} inspectors
               </p>
               <div className="flex gap-2">
                 <button
@@ -129,14 +129,14 @@ export const AdminInspectors: React.FC = () => {
                   disabled={pagination.page === 1}
                   className="px-3 py-2 border border-slate-200 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
                 >
-                  Trước
+                  Previous
                 </button>
                 <button
                   onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
                   disabled={pagination.page >= pagination.pages}
                   className="px-3 py-2 border border-slate-200 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
                 >
-                  Sau
+                  Next
                 </button>
               </div>
             </div>

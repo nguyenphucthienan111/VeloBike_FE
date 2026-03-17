@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Heart } from 'lucide-react';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
 
 interface WishlistListing {
@@ -126,100 +127,116 @@ export const BuyerWishlist: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex items-center justify-between">
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      {/* Header - unified with BuyerNotifications */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+            <Heart size={22} className="text-accent" />
+          </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Wishlist</h1>
-            <p className="mt-2 text-gray-600 text-sm">
-              Save bikes you like to track prices and come back later.
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Wishlist</h1>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Save bikes you love and come back to them later.
             </p>
           </div>
-          {items.length > 0 && (
-            <button
-              onClick={handleClear}
-              disabled={clearing}
-              className="text-xs font-semibold text-red-600 hover:text-red-700 disabled:opacity-50"
-            >
-              {clearing ? 'Clearing...' : 'Clear all'}
-            </button>
-          )}
         </div>
+
+        {items.length > 0 && (
+          <button
+            onClick={handleClear}
+            disabled={clearing}
+            className="inline-flex items-center rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-medium text-gray-700 hover:border-accent hover:text-accent disabled:opacity-60"
+          >
+            {clearing ? 'Clearing...' : 'Clear all'}
+          </button>
+        )}
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      {/* Content card */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
         {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="bg-red-50 text-red-700 px-6 py-4 text-sm border-b border-red-100">
+            {error}
           </div>
         )}
 
         {loading ? (
-          <div className="bg-white rounded-lg shadow p-8 flex flex-col items-center justify-center">
-            <div className="h-10 w-10 border-4 border-gray-300 border-t-gray-900 rounded-full animate-spin mb-4" />
-            <p className="text-gray-500 text-sm">Loading wishlist...</p>
+          <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+            <div className="animate-spin h-8 w-8 border-2 border-accent border-t-transparent rounded-full mb-3" />
+            <p className="text-sm">Loading wishlist...</p>
           </div>
         ) : items.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-10 text-center">
-            <p className="text-gray-600 mb-3">You haven&apos;t added any bikes to your wishlist yet.</p>
+          <div className="px-6 py-12 text-center text-gray-500">
+            <p className="text-sm font-medium mb-2">
+              You haven&apos;t added any bikes to your wishlist yet.
+            </p>
+            <p className="text-xs mb-4">
+              Tap the heart icon on a listing to save it here.
+            </p>
             <Link
               to="/marketplace"
-              className="inline-flex items-center px-4 py-2 bg-black text-white text-sm font-semibold rounded-lg hover:bg-gray-900 transition-colors"
+              className="inline-flex items-center px-4 py-2 bg-black text-white text-xs font-semibold rounded-full hover:bg-gray-900 transition-colors"
             >
               Browse Marketplace
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {items.map((item) => {
-              const listing = item.listingId;
-              if (!listing) return null;
+          <div className="px-4 py-6 sm:px-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {items.map((item) => {
+                const listing = item.listingId;
+                if (!listing) return null;
 
-              return (
-                <div
-                  key={item._id}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col"
-                >
-                  {listing.media?.thumbnails?.[0] ? (
-                    <img
-                      src={listing.media.thumbnails[0]}
-                      alt={listing.title}
-                      className="w-full h-40 object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-40 bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
-                      No Image
-                    </div>
-                  )}
-                  <div className="p-4 flex-1 flex flex-col">
-                    <div className="text-xs text-gray-500 mb-1">
-                      {listing.generalInfo?.brand} {listing.generalInfo?.model} • {listing.generalInfo?.year}
-                    </div>
-                    <h2 className="font-semibold text-gray-900 mb-1 line-clamp-2">{listing.title}</h2>
-                    <div className="text-sm font-bold text-red-600 mb-2">
-                      {formatCurrency(listing.pricing?.amount, listing.pricing?.currency)}
-                    </div>
-                    <div className="text-xs text-gray-500 mb-3">
-                      Seller: {listing.sellerId?.fullName || 'Unknown'}
-                    </div>
-                    <div className="mt-auto flex items-center justify-between gap-2 pt-2">
-                      <Link
-                        to={`/bike/${listing._id}`}
-                        className="flex-1 inline-flex items-center justify-center px-3 py-2 text-xs font-semibold border border-gray-300 rounded-lg hover:bg-gray-50"
-                      >
-                        View details
-                      </Link>
-                      <button
-                        onClick={() => handleRemove(listing._id)}
-                        className="px-3 py-2 text-xs font-semibold text-red-600 hover:text-red-700"
-                      >
-                        Remove
-                      </button>
+                return (
+                  <div
+                    key={item._id}
+                    className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col shadow-xs"
+                  >
+                    {listing.media?.thumbnails?.[0] ? (
+                      <img
+                        src={listing.media.thumbnails[0]}
+                        alt={listing.title}
+                        className="w-full h-40 object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-40 bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
+                        No image
+                      </div>
+                    )}
+                    <div className="p-4 flex-1 flex flex-col">
+                      <div className="text-[11px] text-gray-500 mb-1">
+                        {listing.generalInfo?.brand} {listing.generalInfo?.model} •{' '}
+                        {listing.generalInfo?.year}
+                      </div>
+                      <h2 className="font-semibold text-gray-900 mb-1 text-sm line-clamp-2">
+                        {listing.title}
+                      </h2>
+                      <div className="text-sm font-bold text-accent mb-2">
+                        {formatCurrency(listing.pricing?.amount, listing.pricing?.currency)}
+                      </div>
+                      <div className="text-[11px] text-gray-500 mb-3">
+                        Seller: {listing.sellerId?.fullName || 'Unknown'}
+                      </div>
+                      <div className="mt-auto flex items-center justify-between gap-2 pt-2">
+                        <Link
+                          to={`/bike/${listing._id}`}
+                          className="flex-1 inline-flex items-center justify-center px-3 py-2 text-xs font-semibold border border-gray-300 rounded-full hover:bg-gray-50"
+                        >
+                          View details
+                        </Link>
+                        <button
+                          onClick={() => handleRemove(listing._id)}
+                          className="px-3 py-2 text-xs font-semibold text-red-600 hover:text-red-700"
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         )}
       </div>

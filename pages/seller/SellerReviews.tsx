@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SellerHeaderUserMenu } from '../../components/SellerHeaderUserMenu';
+import { SellerPageLayout, SellerPageHeader } from '../../components/SellerPageLayout';
 
 interface Review {
   id: string;
@@ -128,33 +129,30 @@ export const SellerReviews: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="animate-spin h-12 w-12 border-4 border-accent border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading reviews...</p>
+      <SellerPageLayout>
+        <div className="flex-1 flex items-center justify-center py-16">
+          <div className="text-center">
+            <div className="animate-spin h-12 w-12 border-4 border-accent border-t-transparent rounded-full mx-auto mb-4" />
+            <p className="text-gray-600">Loading reviews...</p>
+          </div>
         </div>
-      </div>
+      </SellerPageLayout>
     );
   }
 
   return (
-    <div className="p-8">
-          {/* Header */}
-          <div className="flex justify-between items-start mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Reviews</h1>
-              <p className="text-sm text-gray-600 mt-1">Manage your reviews and ratings</p>
-            </div>
-
-            {/* Profile Section */}
-            <SellerHeaderUserMenu user={user} />
-          </div>
+    <SellerPageLayout>
+      <SellerPageHeader
+        title="Reviews"
+        subtitle="Manage your seller ratings and respond to buyers."
+        rightSection={<SellerHeaderUserMenu user={user} />}
+      />
 
           {/* Rating Summary */}
           {sellerRating && (
-            <div className="grid grid-cols-2 gap-6 mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
               {/* Overall Rating */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h2 className="text-lg font-bold text-gray-900 mb-4">Overall Rating</h2>
                 <div className="flex items-center gap-4">
                   <div className="text-5xl font-bold text-gray-900">{sellerRating.averageRating.toFixed(1)}</div>
@@ -168,7 +166,7 @@ export const SellerReviews: React.FC = () => {
               </div>
 
               {/* Rating Distribution */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h2 className="text-lg font-bold text-gray-900 mb-4">Rating Distribution</h2>
                 <div className="space-y-2">
                   {[5, 4, 3, 2, 1].map((rating) => (
@@ -193,7 +191,7 @@ export const SellerReviews: React.FC = () => {
           )}
 
           {/* Filter by Rating */}
-          <div className="mb-6 flex gap-2">
+          <div className="mb-6 flex gap-2 flex-wrap">
             <button
               onClick={() => setFilterRating(null)}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
@@ -223,7 +221,7 @@ export const SellerReviews: React.FC = () => {
           <div className="space-y-4">
             {filteredReviews.length > 0 ? (
               filteredReviews.map((review) => (
-                <div key={review.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div key={review.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                   {/* Review Header */}
                   <div className="flex justify-between items-start mb-4">
                     <div>
@@ -308,13 +306,13 @@ export const SellerReviews: React.FC = () => {
                 </div>
               ))
             ) : (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
                 <p className="text-gray-500">
                   {filterRating ? `No reviews with ${filterRating}★ rating` : 'No reviews yet'}
                 </p>
               </div>
             )}
           </div>
-    </div>
+    </SellerPageLayout>
   );
 };

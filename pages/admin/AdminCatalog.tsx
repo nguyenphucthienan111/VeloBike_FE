@@ -200,14 +200,14 @@ export const AdminCatalog: React.FC = () => {
 
   return (
     <AdminPageLayout>
-      <AdminPageHeader title="Catalog" subtitle="Quản lý thương hiệu và danh mục" />
+      <AdminPageHeader title="Catalog" subtitle="Manage brands and bike categories" />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
         {/* Section: Brands */}
         <section className="flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden min-h-[320px]">
               <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between shrink-0">
                 <div>
                   <h2 className="text-base font-semibold text-gray-900">Brands</h2>
-                  <p className="text-xs text-gray-500 mt-0.5">Hãng xe (Cervélo, Trek, …)</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Bike brands (Cervélo, Trek, …)</p>
                 </div>
                 <button onClick={openAddBrand} className="px-3 py-1.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm shrink-0">
                   Add Brand
@@ -216,11 +216,11 @@ export const AdminCatalog: React.FC = () => {
               <div className="p-5 flex-1 flex flex-col min-h-0">
                 {brandError && <p className="text-red-600 mb-3 text-sm">{brandError}</p>}
                 {brandLoading ? (
-                  <p className="text-gray-500 text-sm">Đang tải...</p>
+                  <p className="text-gray-500 text-sm">Loading...</p>
                 ) : brands.length === 0 ? (
                   <div className="flex-1 flex flex-col items-center justify-center py-6 px-4 bg-gray-50/50 rounded-lg border border-dashed border-gray-200">
-                    <p className="text-gray-500 text-sm text-center">Chưa có brand.</p>
-                    <p className="text-gray-400 text-xs mt-1">Bấm &quot;Add Brand&quot; để thêm.</p>
+                    <p className="text-gray-500 text-sm text-center">No brands yet.</p>
+                    <p className="text-gray-400 text-xs mt-1">Click &quot;Add Brand&quot; to create one.</p>
                   </div>
                 ) : (
                   <>
@@ -254,7 +254,9 @@ export const AdminCatalog: React.FC = () => {
                       </table>
                     </div>
                     {brandPagination.pages > 1 && (
-                      <div className="mt-2 pt-2 border-t border-gray-100 text-xs text-gray-500">Trang {brandPagination.page}/{brandPagination.pages} ({brandPagination.total})</div>
+                      <div className="mt-2 pt-2 border-t border-gray-100 text-xs text-gray-500">
+                        Page {brandPagination.page}/{brandPagination.pages} ({brandPagination.total})
+                      </div>
                     )}
                   </>
                 )}
@@ -266,7 +268,7 @@ export const AdminCatalog: React.FC = () => {
               <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between shrink-0">
                 <div>
                   <h2 className="text-base font-semibold text-gray-900">Categories</h2>
-                  <p className="text-xs text-gray-500 mt-0.5">Loại xe (Road, MTB, Gravel, …)</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Bike types (Road, MTB, Gravel, …)</p>
                 </div>
                 <button onClick={openAddCategory} className="px-3 py-1.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm shrink-0">
                   Add Category
@@ -275,11 +277,11 @@ export const AdminCatalog: React.FC = () => {
               <div className="p-5 flex-1 flex flex-col min-h-0">
                 {categoryError && <p className="text-red-600 mb-3 text-sm">{categoryError}</p>}
                 {categoryLoading ? (
-                  <p className="text-gray-500 text-sm">Đang tải...</p>
+                  <p className="text-gray-500 text-sm">Loading...</p>
                 ) : categories.length === 0 ? (
                   <div className="flex-1 flex flex-col items-center justify-center py-6 px-4 bg-gray-50/50 rounded-lg border border-dashed border-gray-200">
-                    <p className="text-gray-500 text-sm text-center">Chưa có category.</p>
-                    <p className="text-gray-400 text-xs mt-1">Bấm &quot;Add Category&quot; để thêm.</p>
+                    <p className="text-gray-500 text-sm text-center">No categories yet.</p>
+                    <p className="text-gray-400 text-xs mt-1">Click &quot;Add Category&quot; to create one.</p>
                   </div>
                 ) : (
                   <>
@@ -313,7 +315,9 @@ export const AdminCatalog: React.FC = () => {
                       </table>
                     </div>
                     {categoryPagination.pages > 1 && (
-                      <div className="mt-2 pt-2 border-t border-gray-100 text-xs text-gray-500">Trang {categoryPagination.page}/{categoryPagination.pages} ({categoryPagination.total})</div>
+                      <div className="mt-2 pt-2 border-t border-gray-100 text-xs text-gray-500">
+                        Page {categoryPagination.page}/{categoryPagination.pages} ({categoryPagination.total})
+                      </div>
                     )}
                   </>
                 )}

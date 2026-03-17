@@ -153,7 +153,7 @@ export const AdminListings: React.FC = () => {
   const handleBulkModerate = async () => {
     if (selectedIds.size === 0 || !bulkAction) return;
     if (bulkAction === 'REJECT' && !bulkReason.trim()) {
-      showToast('Nhập lý do từ chối', 'error');
+      showToast('Please enter a rejection reason', 'error');
       return;
     }
     setBulkLoading(true);
@@ -205,28 +205,38 @@ export const AdminListings: React.FC = () => {
 
   return (
     <AdminPageLayout>
-      <AdminPageHeader title="Quản lý tin đăng" subtitle="Duyệt, từ chối và xuất danh sách tin đăng" />
+      <AdminPageHeader title="Listing moderation" subtitle="Review, approve, reject, and export listings" />
       {error && <AdminErrorBanner message={error} />}
 
       <div className="flex flex-wrap gap-4 items-center mb-4">
         <button onClick={handleExportListings} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50 bg-white">Export CSV</button>
         {selectedIds.size > 0 && (
           <>
-            <span className="text-sm text-slate-600">{selectedIds.size} đã chọn</span>
-            <button onClick={() => setBulkAction('APPROVE')} disabled={bulkLoading} className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50">Duyệt hàng loạt</button>
-            <button onClick={() => setBulkAction('REJECT')} disabled={bulkLoading} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50">Từ chối hàng loạt</button>
-            <button onClick={() => { setSelectedIds(new Set()); setBulkAction(null); setBulkReason(''); }} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50">Bỏ chọn</button>
+            <span className="text-sm text-slate-600">{selectedIds.size} selected</span>
+            <button onClick={() => setBulkAction('APPROVE')} disabled={bulkLoading} className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50">Approve selected</button>
+            <button onClick={() => setBulkAction('REJECT')} disabled={bulkLoading} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50">Reject selected</button>
+            <button onClick={() => { setSelectedIds(new Set()); setBulkAction(null); setBulkReason(''); }} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50">Clear selection</button>
           </>
         )}
       </div>
 
       {bulkAction && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-6">
-          <p className="text-sm font-medium text-slate-700 mb-2">Hàng loạt {bulkAction}: {selectedIds.size} tin. {bulkAction === 'REJECT' ? 'Lý do (bắt buộc):' : ''}</p>
-          {bulkAction === 'REJECT' && <input type="text" value={bulkReason} onChange={(e) => setBulkReason(e.target.value)} placeholder="Lý do từ chối" className="w-full max-w-md border border-slate-200 rounded-lg px-3 py-2 text-sm mb-2 focus:ring-2 focus:ring-slate-300 outline-none" />}
+          <p className="text-sm font-medium text-slate-700 mb-2">
+            Bulk {bulkAction}: {selectedIds.size} listings. {bulkAction === 'REJECT' ? 'Reason (required):' : ''}
+          </p>
+          {bulkAction === 'REJECT' && (
+            <input
+              type="text"
+              value={bulkReason}
+              onChange={(e) => setBulkReason(e.target.value)}
+              placeholder="Enter rejection reason"
+              className="w-full max-w-md border border-slate-200 rounded-lg px-3 py-2 text-sm mb-2 focus:ring-2 focus:ring-slate-300 outline-none"
+            />
+          )}
           <div className="flex gap-2">
-            <button onClick={handleBulkModerate} disabled={bulkLoading || (bulkAction === 'REJECT' && !bulkReason.trim())} className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800 disabled:opacity-50">Xác nhận</button>
-            <button onClick={() => { setBulkAction(null); setBulkReason(''); }} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50">Hủy</button>
+            <button onClick={handleBulkModerate} disabled={bulkLoading || (bulkAction === 'REJECT' && !bulkReason.trim())} className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800 disabled:opacity-50">Confirm</button>
+            <button onClick={() => { setBulkAction(null); setBulkReason(''); }} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50">Cancel</button>
           </div>
         </div>
       )}
@@ -234,7 +244,7 @@ export const AdminListings: React.FC = () => {
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-6">
         <div className="flex gap-4 items-end">
           <div className="flex-1 max-w-xs">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Trạng thái</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
             <select
               value={statusFilter}
               onChange={(e) => {
@@ -243,7 +253,7 @@ export const AdminListings: React.FC = () => {
               }}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-800 focus:ring-2 focus:ring-slate-300 outline-none"
             >
-              <option value="">Tất cả</option>
+              <option value="">All</option>
               <option value="PENDING_APPROVAL">PENDING_APPROVAL</option>
               <option value="PUBLISHED">PUBLISHED</option>
               <option value="DRAFT">DRAFT</option>
@@ -256,7 +266,7 @@ export const AdminListings: React.FC = () => {
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         {loading ? (
-          <AdminLoadingState message="Đang tải tin đăng..." />
+          <AdminLoadingState message="Loading listings..." />
         ) : (
               <>
                 <div className="overflow-x-auto">

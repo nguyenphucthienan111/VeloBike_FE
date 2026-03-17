@@ -323,19 +323,19 @@ export const Messages: React.FC = () => {
     return (
       <div className="max-w-4xl mx-auto px-4 py-12 text-center">
         <div className="animate-spin h-10 w-10 border-2 border-accent border-t-transparent rounded-full mx-auto mb-4" />
-        <p className="text-gray-500">Đang tải tin nhắn...</p>
+        <p className="text-gray-500">Loading messages...</p>
       </div>
     );
   }
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">Tin nhắn</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-4">Messages</h1>
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col" style={{ minHeight: '600px', height: 'calc(100vh - 200px)' }}>
         <div className="flex flex-1 min-h-0">
           <div className="w-64 sm:w-72 border-r border-gray-200 flex flex-col flex-shrink-0">
             <div className="p-4 border-b border-gray-100">
-              <p className="text-sm font-semibold text-gray-700">Cuộc trò chuyện</p>
+              <p className="text-sm font-semibold text-gray-700">Conversations</p>
             </div>
             <div className="flex-1 overflow-y-auto">
               {conversations.length > 0 ? (
@@ -350,7 +350,7 @@ export const Messages: React.FC = () => {
                     className={`w-full text-left p-3 border-b border-gray-50 hover:bg-gray-50 transition-colors ${selected?.id === c.id ? 'bg-gray-100' : ''}`}
                   >
                     <p className="font-medium text-gray-900 text-sm truncate">{c.userName}</p>
-                    <p className="text-xs text-gray-500 truncate mt-0.5">{c.lastMessage || '(Chưa có tin nhắn)'}</p>
+                    <p className="text-xs text-gray-500 truncate mt-0.5">{c.lastMessage || '(No messages yet)'}</p>
                     {c.unreadCount > 0 && (
                       <span className="inline-flex items-center justify-center mt-1 bg-accent text-white text-xs font-bold rounded-full min-w-[1.25rem] h-5 px-1">
                         {c.unreadCount}
@@ -361,8 +361,8 @@ export const Messages: React.FC = () => {
               ) : (
                 <div className="p-6 text-center text-gray-500">
                   <MessageCircle className="w-10 h-10 mx-auto mb-2 text-gray-300" />
-                  <p className="text-sm">Chưa có cuộc trò chuyện</p>
-                  <p className="text-xs mt-1">Liên hệ từ trang chi tiết xe hoặc đơn hàng.</p>
+                  <p className="text-sm">No conversations yet</p>
+                  <p className="text-xs mt-1">Start a chat from listing or order pages.</p>
                 </div>
               )}
             </div>
@@ -381,7 +381,7 @@ export const Messages: React.FC = () => {
               
               <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-white">
                 {messagesLoading ? (
-                  <p className="text-sm text-gray-500 text-center py-4">Đang tải...</p>
+                  <p className="text-sm text-gray-500 text-center py-4">Loading...</p>
                 ) : messages.length > 0 ? (
                   <>
                   {messages.map((message, index) => {
@@ -451,7 +451,7 @@ export const Messages: React.FC = () => {
                           </div>
                           {showTimestamp && (
                             <p className={`text-[10px] text-gray-400 mt-1 px-1 ${isMe ? 'text-right' : 'text-left'}`}>
-                              {new Date(message.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                              {new Date(message.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
                             </p>
                           )}
                         </div>
@@ -461,7 +461,7 @@ export const Messages: React.FC = () => {
                     <div ref={messagesEndRef} />
                   </>
                 ) : (
-                  <p className="text-sm text-gray-500 text-center py-6">Chưa có tin nhắn. Hãy gửi lời chào.</p>
+                  <p className="text-sm text-gray-500 text-center py-6">No messages yet. Say hello to start.</p>
                 )}
               </div>
               
@@ -486,7 +486,7 @@ export const Messages: React.FC = () => {
                         handleSendMessage();
                       }
                     }}
-                    placeholder="Nhập tin nhắn..."
+                    placeholder="Type a message..."
                     className="flex-1 bg-transparent border-none focus:ring-0 resize-none py-3 px-2 max-h-32 text-sm text-gray-800 placeholder-gray-400"
                     rows={1}
                     style={{ minHeight: '44px' }}
@@ -510,13 +510,13 @@ export const Messages: React.FC = () => {
                   </div>
                 </div>
                 <p className="text-center text-xs text-gray-400 mt-2">
-                  Nhấn <strong>Enter</strong> để gửi, <strong>Shift + Enter</strong> để xuống dòng
+                  Press <strong>Enter</strong> to send, <strong>Shift + Enter</strong> for a new line
                 </p>
               </div>
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center text-gray-500 p-6">
-              <p className="text-sm">Chọn một cuộc trò chuyện hoặc liên hệ từ trang xe.</p>
+              <p className="text-sm">Select a conversation or start from a listing page.</p>
             </div>
           )}
         </div>

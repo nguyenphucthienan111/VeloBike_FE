@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { FormInput } from '../components/FormInput';
 import { Alert } from '../components/Alert';
 import { GoogleLogin } from '../components/GoogleLogin';
@@ -23,6 +24,7 @@ export const Login: React.FC = () => {
     email: '',
     password: '',
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

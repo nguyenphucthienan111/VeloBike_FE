@@ -122,9 +122,6 @@ export const Home: React.FC = () => {
             <Link to="/marketplace" className="bg-accent text-white px-8 py-4 font-bold text-sm tracking-widest hover:bg-accent-hover transition-colors flex items-center justify-center gap-2">
               BROWSE BIKES <ArrowRight size={16} />
             </Link>
-            <Link to="/sell" className="bg-transparent border border-white text-white px-8 py-4 font-bold text-sm tracking-widest hover:bg-white hover:text-black transition-colors">
-              SELL YOURS
-            </Link>
           </div>
 
           {/* Auth Buttons - Only show if not authenticated */}
@@ -134,13 +131,13 @@ export const Home: React.FC = () => {
                 to="/login" 
                 className="px-6 py-2 text-sm font-semibold text-white border border-white rounded-lg hover:bg-white hover:text-black transition-colors"
               >
-                Đăng Nhập
+                Log in
               </Link>
               <Link 
                 to="/register" 
                 className="px-6 py-2 text-sm font-semibold text-black bg-white rounded-lg hover:bg-gray-200 transition-colors"
               >
-                Đăng Ký
+                Sign up
               </Link>
             </div>
           )}

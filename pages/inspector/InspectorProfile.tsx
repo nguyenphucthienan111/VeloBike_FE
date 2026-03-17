@@ -136,9 +136,10 @@ export const InspectorProfile: React.FC = () => {
           city: formData.address.city || '',
           province: formData.address.province || '',
         },
+        avatar: avatarPreview || profile?.avatar || '',
       };
 
-      const response = await fetch('http://localhost:5000/api/users/me', {
+      const response = await fetch(`${API_BASE_URL}/users/me`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

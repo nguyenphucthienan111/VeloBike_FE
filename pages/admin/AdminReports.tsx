@@ -141,18 +141,18 @@ export const AdminReports: React.FC = () => {
   return (
     <AdminPageLayout>
       <div className="flex justify-between items-center mb-8">
-        <AdminPageHeader title="Quản lý báo cáo" subtitle="Xem và xử lý báo cáo từ người dùng" />
+        <AdminPageHeader title="Report management" subtitle="View and handle user reports" />
         <div className="flex gap-2">
           <select
             className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-slate-300 outline-none"
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
           >
-            <option value="">Tất cả trạng thái</option>
-            <option value="PENDING">Chờ xử lý</option>
-            <option value="REVIEWED">Đã xem</option>
-            <option value="RESOLVED">Đã xử lý</option>
-            <option value="DISMISSED">Từ chối</option>
+            <option value="">All statuses</option>
+            <option value="PENDING">Pending</option>
+            <option value="REVIEWED">Reviewed</option>
+            <option value="RESOLVED">Resolved</option>
+            <option value="DISMISSED">Dismissed</option>
           </select>
         </div>
       </div>

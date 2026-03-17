@@ -225,36 +225,36 @@ export const SellerInventory: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="animate-spin h-12 w-12 border-4 border-red-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+      <SellerPageLayout>
+        <div className="flex items-center justify-center py-16">
+          <div className="text-center">
+            <div className="animate-spin h-12 w-12 border-4 border-accent border-t-transparent rounded-full mx-auto mb-4" />
+            <p className="text-gray-600">Loading inventory...</p>
+          </div>
         </div>
-      </div>
+      </SellerPageLayout>
     );
   }
 
   return (
-    <div>
-    <div className="p-8">
-          {/* Header */}
-          <div className="flex justify-between items-start mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Inventory</h1>
-              <p className="text-sm text-gray-600 mt-1">Total: {listings.length} products</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate('/seller/add-product')}
-                className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-semibold"
-              >
-                + Add Product
-              </button>
-              <SellerHeaderUserMenu user={user} />
-            </div>
-          </div>
+    <SellerPageLayout>
+      <SellerPageHeader
+        title="Inventory"
+        subtitle={`Total: ${listings.length} products`}
+        rightSection={
+          <>
+            <button
+              onClick={() => navigate('/seller/add-product')}
+              className="px-5 py-2.5 bg-black text-white rounded-full hover:bg-slate-800 text-sm font-medium"
+            >
+              + Add product
+            </button>
+            <SellerHeaderUserMenu user={user} />
+          </>
+        }
+      />
 
-          {/* Bulk Actions */}
+          {/* Bulk actions */}
           {selectedListings.length > 0 && (
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex justify-between items-center">
               <span className="text-blue-900 font-medium">
@@ -277,7 +277,7 @@ export const SellerInventory: React.FC = () => {
             </div>
           )}
 
-          {/* Bulk Status Update Modal */}
+          {/* Bulk status update */}
           {showBulkActions && (
             <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
               <div className="flex gap-3 items-center">
@@ -306,8 +306,8 @@ export const SellerInventory: React.FC = () => {
             </div>
           )}
 
-          {/* Search & Filters */}
-          <div className="flex gap-4 mb-8">
+          {/* Search & filters */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <input
               type="text"
               placeholder="Search products..."
@@ -337,8 +337,8 @@ export const SellerInventory: React.FC = () => {
             </select>
           </div>
 
-          {/* Listings Table */}
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          {/* Listings table */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
@@ -455,27 +455,13 @@ export const SellerInventory: React.FC = () => {
             </table>
           </div>
 
-          {/* Stats Footer */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <p className="text-gray-600 text-sm mb-3">Active Products</p>
-              <p className="text-4xl font-bold text-gray-900">
-                {listings.filter(l => l.status === 'PUBLISHED').length}
-              </p>
-            </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <p className="text-gray-600 text-sm mb-3">Total Views</p>
-              <p className="text-4xl font-bold text-gray-900">
-                {listings.reduce((sum, l) => sum + l.views, 0).toLocaleString()}
-              </p>
-            </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <p className="text-gray-600 text-sm mb-3">Total Revenue</p>
-              <p className="text-3xl font-bold text-gray-900">
-                {formatCurrency(listings.reduce((sum, l) => sum + l.amount, 0))}
-              </p>
-            </div>
-          </div>
+      {/* Stats footer */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <p className="text-gray-600 text-sm mb-3">Active Products</p>
+          <p className="text-4xl font-bold text-gray-900">
+            {listings.filter((l) => l.status === 'PUBLISHED').length}
+          </p>
         </div>
     </div>
   );
