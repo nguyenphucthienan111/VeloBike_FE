@@ -5,6 +5,7 @@ import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../..
 import { DisputeModal } from '../../components/DisputeModal';
 import { ConfirmReceivedModal } from '../../components/ConfirmReceivedModal';
 import { ReviewModal } from '../../components/ReviewModal';
+import { InspectorRatingModal } from '../../components/InspectorRatingModal';
 
 const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
   const t = type === 'warning' ? 'info' : type;
@@ -122,8 +123,31 @@ export const BuyerOrders: React.FC = () => {
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [showConfirmReceivedModal, setShowConfirmReceivedModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showInspectorRatingModal, setShowInspectorRatingModal] = useState(false);
+  const [selectedInspectionId, setSelectedInspectionId] = useState<string | null>(null);
+  const [selectedInspectorName, setSelectedInspectorName] = useState('Inspector');
   const [selectedOrderForAction, setSelectedOrderForAction] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+
+  const handleOpenInspectorRating = async (orderId: string) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const res = await fetch(`${API_BASE_URL}/inspections/${orderId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const inspection = data.data;
+        setSelectedInspectionId(inspection._id);
+        setSelectedInspectorName(inspection.inspectorId?.fullName || 'Inspector');
+        setShowInspectorRatingModal(true);
+      } else {
+        showToast('Không tìm thấy thông tin inspection', 'error');
+      }
+    } catch {
+      showToast('Lỗi kết nối', 'error');
+    }
+  };
 
   const handleConfirmReceived = async () => {
     if (!selectedOrderForAction) return;
@@ -537,6 +561,15 @@ export const BuyerOrders: React.FC = () => {
                               Review
                             </button>
                           )}
+                          {(['INSPECTION_PASSED', 'SHIPPING', 'DELIVERED', 'COMPLETED'].includes(order.status)) && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenInspectorRating(order._id)}
+                              className="inline-flex items-center gap-1 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 px-3 py-1.5 rounded transition-colors shadow-sm"
+                            >
+                              ⭐ Rate Inspector
+                            </button>
+                          )}
                           <div className="flex flex-wrap gap-2 items-center">
                             {listing?._id && (
                               <Link
@@ -599,6 +632,15 @@ export const BuyerOrders: React.FC = () => {
           onSuccess={() => {
             showToast('Review submitted successfully', 'success');
           }}
+        />
+      )}
+
+      {showInspectorRatingModal && selectedInspectionId && (
+        <InspectorRatingModal
+          inspectionId={selectedInspectionId}
+          inspectorName={selectedInspectorName}
+          onClose={() => setShowInspectorRatingModal(false)}
+          onSuccess={() => showToast('Đánh giá inspector thành công', 'success')}
         />
       )}
     </div>

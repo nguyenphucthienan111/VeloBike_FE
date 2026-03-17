@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Star } from 'lucide-react';
 import { InspectorSidebar } from '../../components/InspectorSidebar';
 import { InspectorHeader } from '../../components/InspectorHeader';
+import { API_BASE_URL } from '../../constants';
 
 interface UserProfile {
   id: string;
+  _id?: string;
   email: string;
   fullName: string;
   phone?: string;
@@ -20,6 +23,7 @@ interface UserProfile {
   isActive?: boolean;
   emailVerified?: boolean;
   createdAt?: string;
+  reputation?: { score: number; reviewCount: number };
 }
 
 export const InspectorProfile: React.FC = () => {
@@ -257,6 +261,35 @@ export const InspectorProfile: React.FC = () => {
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Reputation Card */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 className="text-lg font-bold text-gray-900 mb-4">Reputation</h2>
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-4xl font-bold text-gray-900">
+                    {profile?.reputation?.score?.toFixed(1) ?? '5.0'}
+                  </span>
+                  <div>
+                    <div className="flex gap-0.5">
+                      {[1,2,3,4,5].map((s) => {
+                        const score = profile?.reputation?.score ?? 5;
+                        return (
+                          <Star key={s} size={16}
+                            className={s <= Math.round(score) ? 'text-yellow-400' : 'text-gray-300'}
+                            fill={s <= Math.round(score) ? 'currentColor' : 'none'} />
+                        );
+                      })}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {profile?.reputation?.reviewCount ?? 0} đánh giá
+                    </p>
+                  </div>
+                </div>
+                <button onClick={() => navigate('/inspector/reviews')}
+                  className="w-full text-sm text-gray-600 hover:text-gray-900 underline text-left">
+                  Xem tất cả đánh giá →
+                </button>
               </div>
             </div>
 

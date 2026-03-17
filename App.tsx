@@ -56,6 +56,7 @@ import { MyInspections } from './pages/inspector/MyInspections';
 import { InspectionDetail } from './pages/inspector/InspectionDetail';
 import { InspectorProfile } from './pages/inspector/InspectorProfile';
 import { InspectorWallet } from './pages/inspector/InspectorWallet';
+import { InspectorReviews } from './pages/inspector/InspectorReviews';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { SellerGate } from './components/SellerGate';
 import { BuyerSellerOnlyGate } from './components/BuyerSellerOnlyGate';
@@ -201,6 +202,11 @@ const App: React.FC = () => {
           <Route path="/inspector/wallet" element={
             <ProtectedRoute allowedRoles={['INSPECTOR']}>
               <InspectorWallet />
+            </ProtectedRoute>
+          } />
+          <Route path="/inspector/reviews" element={
+            <ProtectedRoute allowedRoles={['INSPECTOR']}>
+              <InspectorReviews />
             </ProtectedRoute>
           } />
           <Route path="/inspector/profile" element={
