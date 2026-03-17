@@ -132,14 +132,17 @@ export const ProductDetail: React.FC = () => {
   };
 
   // Chỉ BUYER và SELLER mua hàng được — Admin/Inspector không
-  const canPurchase = (() => {
+  // Seller không được mua sản phẩm của chính mình
+  const canPurchase = React.useMemo(() => {
     const userStr = localStorage.getItem('user');
     if (!userStr) return true;
     try {
       const u = JSON.parse(userStr);
-      return u?.role === 'BUYER' || u?.role === 'SELLER';
+      if (u?.role !== 'BUYER' && u?.role !== 'SELLER') return false;
+      if (listing?.sellerId?._id && u?._id && listing.sellerId._id === u._id) return false;
+      return true;
     } catch { return true; }
-  })();
+  }, [listing]);
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -663,10 +666,17 @@ export const ProductDetail: React.FC = () => {
                     {!canPurchase && listing?.status === 'PUBLISHED' && (
                       <div className="bg-gray-100 border border-gray-200 rounded-lg p-4 mb-3">
                         <p className="text-sm text-gray-700 font-medium">
-                          Admin/Inspector accounts cannot make purchases.
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Sign in with a Buyer or Seller account to place an order.
+                          {(() => {
+                            const userStr = localStorage.getItem('user');
+                            try {
+                              const u = JSON.parse(userStr || '{}');
+                              if (listing?.sellerId?._id && u?._id && listing.sellerId._id === u._id) {
+      return "This is your product, you can't buy your own product.";
+    }
+
+                            } catch {}
+                            return 'Admin/Inspector accounts cannot make purchases.';
+                          })()}
                         </p>
                       </div>
                     )}

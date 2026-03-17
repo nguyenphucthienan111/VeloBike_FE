@@ -31,8 +31,8 @@ export const Chatbot: React.FC = () => {
   }, [isOpen]);
 
   useEffect(() => {
-    // Vị trí mặc định: gần góc phải dưới
-    const initX = window.innerWidth - 96;
+    // Vị trí mặc định: gần góc phải dưới, cách phải đủ để không đè ScrollToTop
+    const initX = window.innerWidth - 160;
     const initY = window.innerHeight - 96;
     setPosition({ x: initX, y: initY });
   }, []);

@@ -59,10 +59,12 @@ import { InspectorWallet } from './pages/inspector/InspectorWallet';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { SellerGate } from './components/SellerGate';
 import { BuyerSellerOnlyGate } from './components/BuyerSellerOnlyGate';
+import { ScrollToTop } from './components/ScrollToTop';
 
 const App: React.FC = () => {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Layout>
         <Routes>
           <Route path="/" element={<BuyerSellerOnlyGate><Home /></BuyerSellerOnlyGate>} />

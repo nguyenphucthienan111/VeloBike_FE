@@ -268,6 +268,7 @@ export const Marketplace: React.FC = () => {
           },
           sellerName,
           isVerified,
+          planBadge: (listing.sellerId as any)?.planType || null,
         };
       })
       .filter((bike) => bike.id); // Filter out any bikes without ID

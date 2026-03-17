@@ -99,9 +99,16 @@ export const SellerInventory: React.FC = () => {
     }
   };
 
-  const handleDeleteListing = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this product?')) return;
+  const [confirmModal, setConfirmModal] = useState<{ open: boolean; listingId: string | null }>({ open: false, listingId: null });
 
+  const handleDeleteListing = async (id: string) => {
+    setConfirmModal({ open: true, listingId: id });
+  };
+
+  const confirmDelete = async () => {
+    const id = confirmModal.listingId;
+    setConfirmModal({ open: false, listingId: null });
+    if (!id) return;
     try {
       const token = localStorage.getItem('accessToken');
       const response = await fetch(`${API_BASE_URL}/listings/${id}`, {
@@ -204,6 +211,25 @@ export const SellerInventory: React.FC = () => {
       }
     } catch (error) {
       console.error('Error submitting for approval:', error);
+      showToast('An error occurred', 'error');
+    }
+  };
+
+  const handleBoostListing = async (id: string) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(`${API_BASE_URL}/listings/${id}/boost`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && data.success) {
+        showToast('Listing boosted successfully!', 'success');
+        fetchListings();
+      } else {
+        showToast(data?.message || 'Failed to boost listing', 'error');
+      }
+    } catch (error) {
       showToast('An error occurred', 'error');
     }
   };
@@ -364,7 +390,7 @@ export const SellerInventory: React.FC = () => {
                 {filteredListings.length > 0 ? (
                   filteredListings.map((listing) => (
                     <tr key={listing._id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-3 py-4">
+                      <td className="px-3 py-4 align-middle">
                         <input
                           type="checkbox"
                           checked={selectedListings.includes(listing._id)}
@@ -372,7 +398,7 @@ export const SellerInventory: React.FC = () => {
                           className="w-4 h-4 rounded border-gray-300"
                         />
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-4 py-4 align-middle">
                         <div className="flex items-center gap-3">
                           {/* Product Image */}
                           <div className="flex-shrink-0">
@@ -402,42 +428,51 @@ export const SellerInventory: React.FC = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 py-4">
+                      <td className="px-3 py-4 align-middle">
                         <span className="text-gray-700">{listing.type}</span>
                       </td>
-                      <td className="px-3 py-4 font-medium text-gray-900">
+                      <td className="px-3 py-4 align-middle font-medium text-gray-900">
                         {formatCurrency(listing.pricing?.amount || listing.amount || 0)}
                       </td>
-                      <td className="px-3 py-4 text-gray-600">
+                      <td className="px-3 py-4 align-middle text-gray-600">
                         <span className="text-gray-400">#</span> {listing.views}
                       </td>
-                      <td className="px-3 py-4">
+                      <td className="px-3 py-4 align-middle">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(listing.status)}`}>
                           {listing.status}
                         </span>
                       </td>
-                      <td className="px-3 py-4 text-gray-600 text-sm">
+                      <td className="px-3 py-4 align-middle text-gray-600 text-sm">
                         {new Date(listing.createdAt).toLocaleDateString('en-US')}
                       </td>
-                      <td className="px-3 py-4">
-                        <div className="flex items-center flex-wrap gap-2">
+                      <td className="px-3 py-4 align-middle">
+                        <div className="flex flex-col divide-y divide-gray-200 border border-gray-200 rounded-lg overflow-hidden w-fit">
                           <button
                             onClick={() => navigate(`/seller/edit-listing/${listing._id}`)}
-                            className="text-blue-600 hover:underline text-sm font-medium"
+                            className="px-3 py-1.5 text-blue-600 hover:bg-blue-50 text-sm font-medium text-left"
                           >
                             Edit
                           </button>
                           {listing.status === 'DRAFT' && (
                             <button
                               onClick={() => handleSubmitForApproval(listing._id)}
-                              className="text-green-600 hover:underline text-sm font-medium"
+                              className="px-3 py-1.5 text-green-600 hover:bg-green-50 text-sm font-medium text-left"
                             >
                               Submit
                             </button>
                           )}
+                          {listing.status === 'PUBLISHED' && (
+                            <button
+                              onClick={() => handleBoostListing(listing._id)}
+                              className="px-3 py-1.5 text-amber-600 hover:bg-amber-50 text-sm font-medium text-left"
+                              title="Boost this listing to the top"
+                            >
+                              🚀 Boost
+                            </button>
+                          )}
                           <button
                             onClick={() => handleDeleteListing(listing._id)}
-                            className="text-red-600 hover:underline text-sm font-medium"
+                            className="px-3 py-1.5 text-red-600 hover:bg-red-50 text-sm font-medium text-left"
                           >
                             Delete
                           </button>
@@ -465,6 +500,40 @@ export const SellerInventory: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {/* Delete Confirm Modal */}
+      {confirmModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-red-600 text-lg">🗑️</span>
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900">Delete Product</h3>
+                <p className="text-sm text-gray-500">This action cannot be undone.</p>
+              </div>
+            </div>
+            <p className="text-gray-700 text-sm mb-6">
+              Are you sure you want to delete this product?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setConfirmModal({ open: false, listingId: null })}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </SellerPageLayout>
   );
 };

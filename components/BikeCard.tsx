@@ -70,6 +70,16 @@ export const BikeCard: React.FC<BikeCardProps> = ({ bike, inWishlist, onWishlist
               Verified
             </span>
            )}
+           {(bike as any).planBadge === 'PREMIUM' && (
+             <span className="bg-amber-500/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 flex items-center gap-1 uppercase tracking-wider">
+               👑 Premium
+             </span>
+           )}
+           {(bike as any).planBadge === 'PRO' && (
+             <span className="bg-blue-500/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 flex items-center gap-1 uppercase tracking-wider">
+               ⭐ Pro
+             </span>
+           )}
            {bike.inspectionStatus === InspectionStatus.PASSED && bike.conditionScore > 0 && (
              <span className="bg-accent/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 uppercase tracking-wider">
                Passed {bike.conditionScore}/10
