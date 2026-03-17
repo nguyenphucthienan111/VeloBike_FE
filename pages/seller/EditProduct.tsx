@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Toast } from '../../components/Toast';
 import { useToast } from '../../hooks/useToast';
+import { useCatalog, CatalogBrand, CatalogCategory } from '../../hooks/useCatalog';
 
 export const EditProduct: React.FC = () => {
   const navigate = useNavigate();
@@ -9,7 +10,7 @@ export const EditProduct: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{[key: string]: number}>({});
-  const { toast, showToast, hideToast } = useToast();
+  const { toasts, addToast, removeToast } = useToast();
   const { brands, categories, getTypeForCategory, fetch: fetchCatalog, loading: catalogLoading } = useCatalog();
   
   const [formData, setFormData] = useState({
@@ -44,7 +45,7 @@ export const EditProduct: React.FC = () => {
       setLoading(true);
       const token = localStorage.getItem('accessToken');
       if (!token) {
-        showToast('Please login', 'error');
+        addToast('error', 'Please login');
         navigate('/login');
         return;
       }
@@ -82,16 +83,16 @@ export const EditProduct: React.FC = () => {
             setVideoPreviews(listing.media.videoUrl);
           }
         } else {
-          showToast('Product not found', 'error');
+          addToast('error', 'Product not found');
           navigate('/seller/inventory');
         }
       } else {
-        showToast('Unable to load product information', 'error');
+        addToast('error', 'Unable to load product information');
         navigate('/seller/inventory');
       }
     } catch (error) {
       console.error('Error fetching listing:', error);
-      showToast('Error loading data', 'error');
+      addToast('error', 'Error loading data');
     } finally {
       setLoading(false);
     }
@@ -159,12 +160,12 @@ export const EditProduct: React.FC = () => {
     e.preventDefault();
     
     if (!formData.title || !formData.description || !formData.brand || !formData.model || !formData.amount || !formData.size) {
-      showToast('Please fill in all required fields', 'warning');
+      addToast('warning', 'Please fill in all required fields');
       return;
     }
 
     if (imagePreviews.length === 0) {
-      showToast('Please upload at least one image', 'warning');
+      addToast('warning', 'Please upload at least one image');
       return;
     }
 
@@ -176,7 +177,7 @@ export const EditProduct: React.FC = () => {
       const allThumbnails = imagePreviews.filter((url) => url && url.trim());
 
       if (allThumbnails.length === 0) {
-        showToast('Cần có ít nhất 1 ảnh', 'error');
+        addToast('error', 'Need at least 1 image');
         setSaving(false);
         return;
       }
@@ -223,22 +224,22 @@ export const EditProduct: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          showToast('Product updated successfully!', 'success');
+          addToast('success', 'Product updated successfully!');
           setTimeout(() => {
             navigate('/seller/inventory');
           }, 1500);
         } else {
-          showToast(data.message || 'Unable to update listing', 'error');
+          addToast('error', data.message || 'Unable to update listing');
         }
       } else {
         const error = await response.json();
         const errorMessage = error.message || error.error || 'Error updating listing';
-        showToast(errorMessage, 'error');
+        addToast('error', errorMessage);
         console.error('API Error:', error);
       }
     } catch (error: any) {
       console.error('Error updating product:', error);
-      showToast('Error updating product', 'error');
+      addToast('error', 'Error updating product');
     } finally {
       setSaving(false);
     }
@@ -355,13 +356,13 @@ export const EditProduct: React.FC = () => {
                   className="mt-1 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <div className="ml-3">
-                  <span className="text-sm font-medium text-gray-900">Yêu cầu kiểm định (Inspection Required)</span>
+                  <span className="text-sm font-medium text-gray-900">Require Inspection (Inspection Required)</span>
                   <p className="text-xs text-gray-600 mt-1">
-                    Nếu bật, buyer sẽ phải trả thêm 500,000 VNĐ phí kiểm định. 
-                    Xe sẽ được inspector kiểm tra trước khi giao hàng, tăng độ tin cậy.
+                    If enabled, the buyer will pay an additional 500,000 VND inspection fee. 
+                    The bike will be inspected by an inspector before delivery, increasing trust.
                   </p>
                   <p className="text-xs text-blue-700 mt-1 font-medium">
-                    ✓ Khuyến nghị bật để tăng uy tín và bảo vệ cả buyer lẫn seller
+                    ✓ Recommended to enable to increase credibility and protect both buyer and seller
                   </p>
                 </div>
               </label>
@@ -531,13 +532,7 @@ export const EditProduct: React.FC = () => {
         </div>
 
       {/* Toast Notification */}
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.isVisible}
-        onClose={hideToast}
-        duration={3000}
-      />
+      <Toast toasts={toasts} onRemove={removeToast} />
     </div>
   );
 };

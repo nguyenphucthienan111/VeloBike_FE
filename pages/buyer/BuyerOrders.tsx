@@ -77,10 +77,10 @@ export const BuyerOrders: React.FC = () => {
         localStorage.setItem('pendingOrderId', orderId);
         window.location.href = data.paymentLink;
       } else {
-        throw new Error('Phản hồi không hợp lệ từ hệ thống thanh toán');
+        throw new Error('Invalid response from payment system');
       }
     } catch (err: any) {
-      showToast(err.message || 'Lỗi khi tạo thanh toán', 'error');
+      showToast(err.message || 'Error creating payment', 'error');
     }
   };
 
@@ -228,7 +228,7 @@ export const BuyerOrders: React.FC = () => {
       // If order is already paid, just refresh list
       if (order.status !== 'CREATED') {
           fetchOrders();
-          if (!silent) showToast('Đơn hàng đã được thanh toán!', 'success');
+          if (!silent) showToast('Order has already been paid!', 'success');
           setCheckingPayment(null);
           return;
       }
@@ -270,7 +270,7 @@ export const BuyerOrders: React.FC = () => {
          });
          
          if (webhookRes.ok) {
-             if (!silent) showToast('Đã cập nhật trạng thái thanh toán thành công!', 'success');
+             if (!silent) showToast('Payment status updated successfully!', 'success');
              fetchOrders(); 
          } else {
              if (!silent) showToast('Payment succeeded but order was not updated. Please try again.', 'warning');
@@ -280,7 +280,7 @@ export const BuyerOrders: React.FC = () => {
       }
 
     } catch (err: any) {
-      if (!silent) showToast(err.message || 'Lỗi khi kiểm tra thanh toán', 'error');
+      if (!silent) showToast(err.message || 'Error checking payment', 'error');
     } finally {
         setCheckingPayment(null);
     }
@@ -534,7 +534,7 @@ export const BuyerOrders: React.FC = () => {
                               className="inline-flex items-center gap-1 text-xs font-bold text-white bg-yellow-500 hover:bg-yellow-600 px-3 py-1.5 rounded transition-colors shadow-sm"
                             >
                               <MessageCircle size={14} />
-                              Đánh giá
+                              Review
                             </button>
                           )}
                           <div className="flex flex-wrap gap-2 items-center">
@@ -557,7 +557,7 @@ export const BuyerOrders: React.FC = () => {
                                 className="inline-flex items-center gap-1 text-xs font-semibold text-gray-700 hover:text-black"
                               >
                                 <MessageCircle size={14} />
-                                Nhắn tin
+                                Message
                               </button>
                             ) : null}
                           </div>
@@ -577,7 +577,7 @@ export const BuyerOrders: React.FC = () => {
           orderId={selectedOrderForAction}
           onClose={() => setShowDisputeModal(false)}
           onSuccess={() => {
-            showToast('Đã gửi khiếu nại thành công', 'success');
+            showToast('Dispute submitted successfully', 'success');
             fetchOrders();
           }}
         />
@@ -597,7 +597,7 @@ export const BuyerOrders: React.FC = () => {
           orderId={selectedOrderForAction}
           onClose={() => setShowReviewModal(false)}
           onSuccess={() => {
-            showToast('Đã gửi đánh giá thành công', 'success');
+            showToast('Review submitted successfully', 'success');
           }}
         />
       )}

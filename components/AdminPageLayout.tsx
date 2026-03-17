@@ -38,7 +38,7 @@ interface AdminLoadingStateProps {
   message?: string;
 }
 
-export const AdminLoadingState: React.FC<AdminLoadingStateProps> = ({ message = 'Đang tải...' }) => (
+export const AdminLoadingState: React.FC<AdminLoadingStateProps> = ({ message = 'Loading...' }) => (
   <div className="flex flex-col items-center justify-center py-20 text-slate-500">
     <Loader2 className="h-10 w-10 animate-spin mb-3" />
     <p className="text-sm">{message}</p>

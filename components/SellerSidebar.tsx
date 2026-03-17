@@ -21,6 +21,7 @@ export const SellerSidebar: React.FC<SellerSidebarProps> = ({ stats }) => {
     { path: '/seller/messages', label: 'Messages' },
     { path: '/seller/reviews', label: 'Reviews' },
     { path: '/seller/wallet', label: 'Wallet' },
+    { path: '/seller/subscription', label: 'Subscription' },
   ];
 
   return (
@@ -38,7 +39,7 @@ export const SellerSidebar: React.FC<SellerSidebarProps> = ({ stats }) => {
         to="/marketplace"
         className="flex items-center justify-center gap-2 w-full px-4 py-3 mb-4 rounded-lg border-2 border-gray-300 text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-400 transition-colors text-sm"
       >
-        🛒 Mua hàng / Marketplace
+        🛒 Marketplace
       </Link>
 
       {/* Navigation */}

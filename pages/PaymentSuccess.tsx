@@ -11,7 +11,7 @@ export const PaymentSuccess: React.FC = () => {
   const [orderDetails, setOrderDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isPolling, setIsPolling] = useState(true);
-  const { toast, showToast, hideToast } = useToast();
+  const { toasts, addToast, removeToast } = useToast();
   const pollCount = useRef(0);
   const maxPolls = 20; // 20 * 2s = 40s timeout
 
@@ -42,7 +42,7 @@ export const PaymentSuccess: React.FC = () => {
         if (order.status === 'ESCROW_LOCKED' || order.status === 'IN_INSPECTION' || order.status === 'INSPECTION_PASSED') {
           setIsPolling(false);
           setLoading(false);
-          showToast('Thanh toán đơn hàng thành công!', 'success');
+          addToast('success', 'Order payment successful!');
           localStorage.removeItem('pendingOrderId');
           localStorage.removeItem('pendingListingId');
           window.dispatchEvent(new Event('ordersAndNotificationsRefresh'));
@@ -70,7 +70,7 @@ export const PaymentSuccess: React.FC = () => {
                       setOrderDetails(updated);
                       setIsPolling(false);
                       setLoading(false);
-                      showToast('Thanh toán đơn hàng thành công!', 'success');
+                      addToast('success', 'Order payment successful!');
                       localStorage.removeItem('pendingOrderId');
                       localStorage.removeItem('pendingListingId');
                       window.dispatchEvent(new Event('ordersAndNotificationsRefresh'));
@@ -117,7 +117,7 @@ export const PaymentSuccess: React.FC = () => {
         if (pollCount.current >= maxPolls) {
             setIsPolling(false);
             setLoading(false);
-            showToast('Thanh toán có thể đã thành công nhưng hệ thống chưa cập nhật kịp. Vui lòng kiểm tra lại sau.', 'warning');
+            addToast('warning', 'Payment may have succeeded but the system has not updated yet. Please check again later.');
             return;
         }
 
@@ -145,14 +145,14 @@ export const PaymentSuccess: React.FC = () => {
           <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <Loader2 className="w-8 h-8 text-accent animate-spin" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Đang xử lý thanh toán...</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Processing payment...</h2>
           <p className="text-gray-600 mb-6">
-            Vui lòng không tắt trình duyệt. Hệ thống đang xác nhận giao dịch của bạn.
+            Please do not close the browser. The system is confirming your transaction.
           </p>
           <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
              <div className="bg-accent h-2.5 rounded-full animate-pulse" style={{ width: '100%' }}></div>
           </div>
-          <p className="text-xs text-gray-400">Đang đồng bộ dữ liệu ({pollCount.current}/{maxPolls})</p>
+          <p className="text-xs text-gray-400">Syncing data ({pollCount.current}/{maxPolls})</p>
         </div>
       </div>
     );
@@ -164,12 +164,7 @@ export const PaymentSuccess: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.isVisible}
-        onClose={hideToast}
-      />
+      <Toast toasts={toasts} onRemove={removeToast} />
       <div className="max-w-2xl mx-auto">
         {/* Status Icon */}
         <div className="text-center mb-8">
@@ -181,12 +176,12 @@ export const PaymentSuccess: React.FC = () => {
             )}
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {isSuccess ? 'Thanh toán thành công!' : 'Đang chờ cập nhật...'}
+            {isSuccess ? 'Payment successful!' : 'Waiting for update...'}
           </h1>
           <p className="text-gray-600">
             {isSuccess 
-                ? 'Đơn hàng của bạn đã được xác nhận và đang được xử lý' 
-                : 'Chúng tôi đã ghi nhận giao dịch nhưng hệ thống cần thêm thời gian để cập nhật trạng thái.'}
+                ? 'Your order has been confirmed and is being processed' 
+                : 'We have recorded the transaction but the system needs more time to update the status.'}
           </p>
         </div>
 
@@ -195,26 +190,26 @@ export const PaymentSuccess: React.FC = () => {
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4 flex items-center">
               <Package className="w-5 h-5 mr-2 text-accent" />
-              Thông tin đơn hàng
+              Order Information
             </h2>
             
             <div className="space-y-3 border-t pt-4">
               <div className="flex justify-between">
-                <span className="text-gray-600">Mã đơn hàng:</span>
+                <span className="text-gray-600">Order ID:</span>
                 <span className="font-semibold">#{orderDetails._id.slice(-8).toUpperCase()}</span>
               </div>
               
               <div className="flex justify-between">
-                <span className="text-gray-600">Trạng thái:</span>
+                <span className="text-gray-600">Status:</span>
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                     isSuccess ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                 }`}>
-                  {isSuccess ? 'Đã thanh toán' : 'Chờ cập nhật'}
+                  {isSuccess ? 'Paid' : 'Pending update'}
                 </span>
               </div>
 
               <div className="flex justify-between">
-                <span className="text-gray-600">Giá sản phẩm:</span>
+                <span className="text-gray-600">Product price:</span>
                 <span className="font-semibold">
                   {orderDetails.financials.itemPrice.toLocaleString('vi-VN')} ₫
                 </span>
@@ -222,7 +217,7 @@ export const PaymentSuccess: React.FC = () => {
 
               {orderDetails.financials.inspectionFee > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Phí kiểm định:</span>
+                  <span className="text-gray-600">Inspection fee:</span>
                   <span className="font-semibold">
                     {orderDetails.financials.inspectionFee.toLocaleString('vi-VN')} ₫
                   </span>
@@ -230,14 +225,14 @@ export const PaymentSuccess: React.FC = () => {
               )}
 
               <div className="flex justify-between">
-                <span className="text-gray-600">Phí vận chuyển:</span>
+                <span className="text-gray-600">Shipping fee:</span>
                 <span className="font-semibold">
                   {orderDetails.financials.shippingFee.toLocaleString('vi-VN')} ₫
                 </span>
               </div>
 
               <div className="flex justify-between pt-3 border-t">
-                <span className="text-lg font-semibold">Tổng cộng:</span>
+                <span className="text-lg font-semibold">Total:</span>
                 <span className="text-lg font-bold text-accent">
                   {orderDetails.financials.totalAmount.toLocaleString('vi-VN')} ₫
                 </span>
@@ -248,32 +243,32 @@ export const PaymentSuccess: React.FC = () => {
 
         {/* Next Steps */}
         <div className="bg-blue-50 rounded-lg p-6 mb-6">
-          <h3 className="font-semibold text-blue-900 mb-3">Bước tiếp theo:</h3>
+          <h3 className="font-semibold text-blue-900 mb-3">Next steps:</h3>
           <ul className="space-y-2 text-blue-800">
             {orderDetails?.inspectionRequired ? (
               <>
                 <li className="flex items-start">
                   <span className="mr-2">1.</span>
-                  <span>Đơn hàng sẽ được chuyển đến inspector để kiểm định</span>
+                  <span>The order will be sent to an inspector for inspection</span>
                 </li>
                 <li className="flex items-start">
                   <span className="mr-2">2.</span>
-                  <span>Sau khi kiểm định pass, seller sẽ giao hàng</span>
+                  <span>After the inspection passes, the seller will ship the item</span>
                 </li>
                 <li className="flex items-start">
                   <span className="mr-2">3.</span>
-                  <span>Bạn sẽ nhận được thông báo qua email khi có cập nhật</span>
+                  <span>You will receive an email notification when there are updates</span>
                 </li>
               </>
             ) : (
               <>
                 <li className="flex items-start">
                   <span className="mr-2">1.</span>
-                  <span>Seller sẽ chuẩn bị và giao hàng cho bạn</span>
+                  <span>The seller will prepare and ship the item to you</span>
                 </li>
                 <li className="flex items-start">
                   <span className="mr-2">2.</span>
-                  <span>Bạn sẽ nhận được thông báo qua email khi có cập nhật</span>
+                  <span>You will receive an email notification when there are updates</span>
                 </li>
               </>
             )}
@@ -286,14 +281,14 @@ export const PaymentSuccess: React.FC = () => {
             onClick={() => navigate('/buyer/orders')}
             className="flex-1 bg-accent text-white py-3 px-6 rounded-lg font-semibold hover:bg-accent/90 transition flex items-center justify-center"
           >
-            Xem đơn hàng của tôi
+            View my orders
             <ArrowRight className="w-5 h-5 ml-2" />
           </button>
           <button
             onClick={() => navigate('/marketplace')}
             className="flex-1 bg-white text-gray-700 py-3 px-6 rounded-lg font-semibold border border-gray-300 hover:bg-gray-50 transition"
           >
-            Tiếp tục mua sắm
+            Continue shopping
           </button>
         </div>
       </div>

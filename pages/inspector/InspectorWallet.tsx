@@ -207,17 +207,17 @@ export const InspectorWallet: React.FC = () => {
 
       // Validation
       if (!bankAccountForm.accountName?.trim()) {
-        setBankAccountError('Vui lòng nhập tên chủ tài khoản');
+        setBankAccountError('Please enter the account holder name');
         return;
       }
 
       if (!bankAccountForm.accountNumber?.trim()) {
-        setBankAccountError('Vui lòng nhập số tài khoản');
+        setBankAccountError('Please enter the account number');
         return;
       }
 
       if (!bankAccountForm.bankName?.trim()) {
-        setBankAccountError('Vui lòng nhập tên ngân hàng');
+        setBankAccountError('Please enter the bank name');
         return;
       }
 
@@ -239,7 +239,7 @@ export const InspectorWallet: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setBankAccountSuccess('Đã lưu tài khoản ngân hàng thành công!');
+        setBankAccountSuccess('Bank account saved successfully!');
         setSavedBankAccount({
           accountName: bankAccountForm.accountName.trim(),
           accountNumber: bankAccountForm.accountNumber.trim(),
@@ -253,11 +253,11 @@ export const InspectorWallet: React.FC = () => {
         }, 1500);
       } else {
         const data = await response.json();
-        setBankAccountError(data.message || 'Không thể lưu tài khoản ngân hàng');
+        setBankAccountError(data.message || 'Unable to save bank account');
       }
     } catch (error) {
       console.error('Error saving bank account:', error);
-      setBankAccountError('Lỗi khi lưu tài khoản ngân hàng');
+      setBankAccountError('Error saving bank account');
     } finally {
       setBankAccountLoading(false);
     }
@@ -270,17 +270,17 @@ export const InspectorWallet: React.FC = () => {
 
       // Validation
       if (!amount || isNaN(amount)) {
-        setWithdrawError('Vui lòng nhập số tiền hợp lệ');
+        setWithdrawError('Please enter a valid amount');
         return;
       }
 
       if (amount < 50000) {
-        setWithdrawError('Số tiền tối thiểu là 50,000 VND');
+        setWithdrawError('Minimum amount is 50,000 VND');
         return;
       }
 
       if (!balance || amount > balance.balance) {
-        setWithdrawError('Số dư không đủ');
+        setWithdrawError('Insufficient balance');
         return;
       }
 
@@ -293,15 +293,15 @@ export const InspectorWallet: React.FC = () => {
       } else {
         // Validate withdrawal form bank account
         if (!withdrawBankAccount.accountName?.trim()) {
-          setWithdrawError('Vui lòng nhập tên chủ tài khoản');
+          setWithdrawError('Please enter the account holder name');
           return;
         }
         if (!withdrawBankAccount.accountNumber?.trim()) {
-          setWithdrawError('Vui lòng nhập số tài khoản');
+          setWithdrawError('Please enter the account number');
           return;
         }
         if (!withdrawBankAccount.bankName?.trim()) {
-          setWithdrawError('Vui lòng nhập tên ngân hàng');
+          setWithdrawError('Please enter the bank name');
           return;
         }
         bankAccountData = withdrawBankAccount;
@@ -365,18 +365,18 @@ export const InspectorWallet: React.FC = () => {
         await fetchWalletData();
       } else {
         const data = await response.json();
-        setWithdrawError(data.message || 'Yêu cầu rút tiền thất bại');
+        setWithdrawError(data.message || 'Withdrawal request failed');
       }
     } catch (error) {
       console.error('Error withdrawing:', error);
-      setWithdrawError('Lỗi xử lý yêu cầu');
+      setWithdrawError('Error processing request');
     } finally {
       setWithdrawLoading(false);
     }
   };
 
   const handleCancelWithdrawal = async (id: string) => {
-    if (!confirm('Bạn có chắc muốn hủy yêu cầu rút tiền này?')) return;
+    if (!confirm('Are you sure you want to cancel this withdrawal request?')) return;
     setCancelWithdrawId(id);
     try {
       const token = localStorage.getItem('accessToken');
@@ -388,10 +388,10 @@ export const InspectorWallet: React.FC = () => {
         await fetchWalletData();
       } else {
         const data = await res.json();
-        alert(data.message || 'Hủy yêu cầu thất bại');
+        alert(data.message || 'Failed to cancel request');
       }
     } catch (e) {
-      alert('Lỗi khi hủy yêu cầu');
+      alert('Error cancelling request');
     } finally {
       setCancelWithdrawId(null);
     }
@@ -421,7 +421,7 @@ export const InspectorWallet: React.FC = () => {
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin h-12 w-12 border-4 border-gray-900 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-gray-600">Đang tải ví...</p>
+            <p className="text-gray-600">Loading wallet...</p>
           </div>
         </div>
       </div>
@@ -439,8 +439,8 @@ export const InspectorWallet: React.FC = () => {
             {/* Header */}
             <div className="flex justify-between items-start mb-8">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Ví Của Tôi</h1>
-                <p className="text-sm text-gray-600 mt-1">Quản lý thu nhập kiểm định và rút tiền</p>
+                <h1 className="text-3xl font-bold text-gray-900">My Wallet</h1>
+                <p className="text-sm text-gray-600 mt-1">Manage inspection earnings and withdrawals</p>
               </div>
             </div>
 
@@ -448,19 +448,19 @@ export const InspectorWallet: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               {/* Available Balance */}
               <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-                <p className="text-gray-600 text-xs font-semibold">SỐ DƯ KHẢ DỤNG</p>
+                <p className="text-gray-600 text-xs font-semibold">AVAILABLE BALANCE</p>
                 <p className="text-2xl font-bold text-gray-900 mt-2">{formatCurrency(balance?.balance || 0)}</p>
               </div>
 
               {/* Total Earnings */}
               <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-                <p className="text-gray-600 text-xs font-semibold">TỔNG THU NHẬP</p>
+                <p className="text-gray-600 text-xs font-semibold">TOTAL EARNINGS</p>
                 <p className="text-2xl font-bold text-gray-900 mt-2">{formatCurrency(balance?.totalEarnings || 0)}</p>
               </div>
 
               {/* Total Withdrawn */}
               <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-                <p className="text-gray-600 text-xs font-semibold">TỔNG ĐÃ RÚT</p>
+                <p className="text-gray-600 text-xs font-semibold">TOTAL WITHDRAWN</p>
                 <p className="text-2xl font-bold text-gray-900 mt-2">{formatCurrency(balance?.totalWithdrawn || 0)}</p>
               </div>
             </div>
@@ -469,14 +469,14 @@ export const InspectorWallet: React.FC = () => {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
               <div className="flex justify-between items-center mb-6">
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">Tài Khoản Ngân Hàng</h2>
-                  <p className="text-sm text-gray-600 mt-1">Thông tin tài khoản để nhận thanh toán</p>
+                  <h2 className="text-lg font-bold text-gray-900">Bank Account</h2>
+                  <p className="text-sm text-gray-600 mt-1">Account information for receiving payments</p>
                 </div>
                 <button
                   onClick={handleOpenBankAccountModal}
                   className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
                 >
-                  {savedBankAccount ? 'Cập nhật' : 'Thêm tài khoản'}
+                  {savedBankAccount ? 'Update' : 'Add account'}
                 </button>
               </div>
 
@@ -484,15 +484,15 @@ export const InspectorWallet: React.FC = () => {
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <p className="text-xs text-gray-600 mb-1">Tên Chủ Tài Khoản</p>
+                      <p className="text-xs text-gray-600 mb-1">Account Holder Name</p>
                       <p className="text-sm font-semibold text-gray-900">{savedBankAccount.accountName}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-600 mb-1">Số Tài Khoản</p>
+                      <p className="text-xs text-gray-600 mb-1">Account Number</p>
                       <p className="text-sm font-semibold text-gray-900">{savedBankAccount.accountNumber}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-600 mb-1">Ngân Hàng</p>
+                      <p className="text-xs text-gray-600 mb-1">Bank Name</p>
                       <p className="text-sm font-semibold text-gray-900">{savedBankAccount.bankName}</p>
                     </div>
                   </div>
@@ -500,7 +500,7 @@ export const InspectorWallet: React.FC = () => {
               ) : (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <p className="text-sm text-yellow-800">
-                    ⚠️ Bạn chưa có tài khoản ngân hàng. Vui lòng thêm tài khoản để nhận thanh toán.
+                    ⚠️ You have no bank account yet. Please add an account to receive payments.
                   </p>
                 </div>
               )}
@@ -509,41 +509,41 @@ export const InspectorWallet: React.FC = () => {
             {/* Withdraw Section */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-lg font-bold text-gray-900">Rút Tiền</h2>
+                <h2 className="text-lg font-bold text-gray-900">Withdraw</h2>
                 <button
                   onClick={() => setShowWithdrawModal(true)}
                   className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
                 >
-                  Rút Tiền
+                  Withdraw
                 </button>
               </div>
 
               {/* Withdrawal Info */}
               <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                <h3 className="font-semibold text-gray-900 mb-3">Thông Tin Rút Tiền</h3>
+                <h3 className="font-semibold text-gray-900 mb-3">Withdrawal Information</h3>
                 <ul className="text-xs space-y-2 text-gray-600">
-                  <li>• Số tiền tối thiểu: 50,000 VND</li>
-                  <li>• Miễn phí nếu rút từ 1,000,000 VND trở lên</li>
-                  <li>• Phí 10,000 VND nếu rút dưới 1,000,000 VND</li>
-                  <li>• Thời gian xử lý: 1-3 ngày làm việc</li>
+                  <li>• Minimum amount: 50,000 VND</li>
+                  <li>• Free if withdrawing 1,000,000 VND or more</li>
+                  <li>• Fee of 10,000 VND if withdrawing less than 1,000,000 VND</li>
+                  <li>• Processing time: 1-3 business days</li>
                 </ul>
               </div>
             </div>
 
             {/* Withdrawal History */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-              <h2 className="text-lg font-bold text-gray-900 mb-6">Lịch Sử Rút Tiền</h2>
+              <h2 className="text-lg font-bold text-gray-900 mb-6">Withdrawal History</h2>
               {withdrawals.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">NGÀY YÊU CẦU</th>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">SỐ TIỀN</th>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">PHÍ</th>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">TÀI KHOẢN</th>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">TRẠNG THÁI</th>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">THAO TÁC</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">REQUEST DATE</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">AMOUNT</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">FEE</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">ACCOUNT</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">STATUS</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">ACTIONS</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -568,7 +568,7 @@ export const InspectorWallet: React.FC = () => {
                                 disabled={cancelWithdrawId === withdrawal.id}
                                 className="text-red-600 text-sm font-medium hover:underline disabled:opacity-50"
                               >
-                                {cancelWithdrawId === withdrawal.id ? 'Đang hủy...' : 'Hủy yêu cầu'}
+                                {cancelWithdrawId === withdrawal.id ? 'Cancelling...' : 'Cancel request'}
                               </button>
                             )}
                           </td>
@@ -578,23 +578,23 @@ export const InspectorWallet: React.FC = () => {
                   </table>
                 </div>
               ) : (
-                <p className="text-gray-500 text-sm text-center py-8">Chưa có lịch sử rút tiền</p>
+                <p className="text-gray-500 text-sm text-center py-8">No withdrawal history yet</p>
               )}
             </div>
 
             {/* Transaction History */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-6">Lịch Sử Giao Dịch</h2>
+              <h2 className="text-lg font-bold text-gray-900 mb-6">Transaction History</h2>
               {transactions.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">NGÀY</th>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">LOẠI</th>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">SỐ TIỀN</th>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">MÔ TẢ</th>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">TRẠNG THÁI</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">DATE</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">TYPE</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">AMOUNT</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">DESCRIPTION</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">STATUS</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -617,7 +617,7 @@ export const InspectorWallet: React.FC = () => {
                   </table>
                 </div>
               ) : (
-                <p className="text-gray-500 text-sm text-center py-8">Chưa có giao dịch nào</p>
+                <p className="text-gray-500 text-sm text-center py-8">No transactions yet</p>
               )}
             </div>
           </div>
@@ -627,22 +627,22 @@ export const InspectorWallet: React.FC = () => {
         {showWithdrawModal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Rút Tiền</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Withdraw</h2>
 
               {/* Amount Input */}
               <div className="mb-4">
-                <label className="block text-sm font-semibold text-gray-900 mb-2">Số Tiền (VND)</label>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">Amount (VND)</label>
                 <input
                   type="number"
                   value={withdrawAmount}
                   onChange={(e) => setWithdrawAmount(e.target.value)}
-                  placeholder="Nhập số tiền (tối thiểu 50,000)"
+                  placeholder="Enter amount (minimum 50,000)"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
                 />
                 {withdrawAmount && (
                   <div className="mt-2 text-sm text-gray-600">
-                    <p>Số tiền thực nhận: {formatCurrency(parseInt(withdrawAmount) - calculateFee(parseInt(withdrawAmount)))}</p>
-                    <p>Phí: {formatCurrency(calculateFee(parseInt(withdrawAmount)))}</p>
+                    <p>Net amount: {formatCurrency(parseInt(withdrawAmount) - calculateFee(parseInt(withdrawAmount)))}</p>
+                    <p>Fee: {formatCurrency(calculateFee(parseInt(withdrawAmount)))}</p>
                   </div>
                 )}
               </div>
@@ -650,13 +650,13 @@ export const InspectorWallet: React.FC = () => {
               {/* Bank Account Input */}
               <div className="mb-6">
                 <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-semibold text-gray-900">Tài Khoản Ngân Hàng *</label>
+                  <label className="block text-sm font-semibold text-gray-900">Bank Account *</label>
                   {savedBankAccount && (
                     <button
                       onClick={handleOpenBankAccountModal}
                       className="text-xs text-gray-600 hover:text-gray-900 underline"
                     >
-                      Sửa tài khoản
+                      Edit account
                     </button>
                   )}
                 </div>
@@ -671,7 +671,7 @@ export const InspectorWallet: React.FC = () => {
                   <>
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-xs text-gray-600 mb-1">Tên Chủ Tài Khoản *</label>
+                        <label className="block text-xs text-gray-600 mb-1">Account Holder Name *</label>
                         <input
                           type="text"
                           value={withdrawBankAccount.accountName}
@@ -681,7 +681,7 @@ export const InspectorWallet: React.FC = () => {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-600 mb-1">Số Tài Khoản *</label>
+                        <label className="block text-xs text-gray-600 mb-1">Account Number *</label>
                         <input
                           type="text"
                           value={withdrawBankAccount.accountNumber}
@@ -691,7 +691,7 @@ export const InspectorWallet: React.FC = () => {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-600 mb-1">Tên Ngân Hàng *</label>
+                        <label className="block text-xs text-gray-600 mb-1">Bank Name *</label>
                         <input
                           type="text"
                           value={withdrawBankAccount.bankName}
@@ -702,7 +702,7 @@ export const InspectorWallet: React.FC = () => {
                       </div>
                     </div>
                     <p className="text-xs text-gray-600 mt-2">
-                      💡 Tài khoản này sẽ tự động được lưu sau khi rút tiền thành công
+                      💡 This account will be automatically saved after a successful withdrawal
                     </p>
                   </>
                 )}
@@ -718,7 +718,7 @@ export const InspectorWallet: React.FC = () => {
               {/* Info */}
               <div className="mb-6 p-3 bg-gray-50 rounded-lg">
                 <p className="text-xs text-gray-600">
-                  Số dư hiện tại: <span className="font-bold text-gray-900">{formatCurrency(balance?.balance || 0)}</span>
+                  Current balance: <span className="font-bold text-gray-900">{formatCurrency(balance?.balance || 0)}</span>
                 </p>
               </div>
 
@@ -736,14 +736,14 @@ export const InspectorWallet: React.FC = () => {
                   }}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
                 >
-                  Hủy
+                  Cancel
                 </button>
                 <button
                   onClick={handleWithdraw}
                   disabled={withdrawLoading}
                   className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-600 transition-colors font-medium"
                 >
-                  {withdrawLoading ? 'Đang xử lý...' : 'Rút Tiền'}
+                  {withdrawLoading ? 'Processing...' : 'Withdraw'}
                 </button>
               </div>
             </div>
@@ -755,12 +755,12 @@ export const InspectorWallet: React.FC = () => {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                {savedBankAccount ? 'Cập Nhật Tài Khoản' : 'Thêm Tài Khoản'}
+                {savedBankAccount ? 'Update Account' : 'Add Account'}
               </h2>
 
               {/* Account Name Input */}
               <div className="mb-4">
-                <label className="block text-sm font-semibold text-gray-900 mb-2">Tên Chủ Tài Khoản *</label>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">Account Holder Name *</label>
                 <input
                   type="text"
                   value={bankAccountForm.accountName}
@@ -772,7 +772,7 @@ export const InspectorWallet: React.FC = () => {
 
               {/* Account Number Input */}
               <div className="mb-4">
-                <label className="block text-sm font-semibold text-gray-900 mb-2">Số Tài Khoản *</label>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">Account Number *</label>
                 <input
                   type="text"
                   value={bankAccountForm.accountNumber}
@@ -784,7 +784,7 @@ export const InspectorWallet: React.FC = () => {
 
               {/* Bank Name Input */}
               <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-900 mb-2">Tên Ngân Hàng *</label>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">Bank Name *</label>
                 <input
                   type="text"
                   value={bankAccountForm.bankName}
@@ -811,7 +811,7 @@ export const InspectorWallet: React.FC = () => {
               {/* Info */}
               <div className="mb-6 p-3 bg-gray-50 rounded-lg">
                 <p className="text-xs text-gray-600">
-                  Tài khoản này sẽ được sử dụng để nhận thanh toán từ các đơn hàng hoàn thành.
+                  This account will be used to receive payments from completed orders.
                 </p>
               </div>
 
@@ -825,14 +825,14 @@ export const InspectorWallet: React.FC = () => {
                   }}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
                 >
-                  Hủy
+                  Cancel
                 </button>
                 <button
                   onClick={handleSaveBankAccount}
                   disabled={bankAccountLoading}
                   className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-600 transition-colors font-medium"
                 >
-                  {bankAccountLoading ? 'Đang lưu...' : 'Lưu'}
+                  {bankAccountLoading ? 'Saving...' : 'Save'}
                 </button>
               </div>
             </div>

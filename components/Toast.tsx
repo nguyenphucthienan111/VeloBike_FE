@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
-import { CheckCircle, XCircle, Info, X } from 'lucide-react';
+import { CheckCircle, XCircle, Info, AlertTriangle, X } from 'lucide-react';
 
 export interface ToastMessage {
   id: string;
-  type: 'success' | 'error' | 'info';
+  type: 'success' | 'error' | 'info' | 'warning';
   message: string;
 }
 
@@ -16,12 +16,14 @@ const icons = {
   success: <CheckCircle size={18} className="text-green-500 flex-shrink-0" />,
   error: <XCircle size={18} className="text-red-500 flex-shrink-0" />,
   info: <Info size={18} className="text-blue-500 flex-shrink-0" />,
+  warning: <AlertTriangle size={18} className="text-amber-500 flex-shrink-0" />,
 };
 
 const styles = {
   success: 'border-green-200 bg-green-50',
   error: 'border-red-200 bg-red-50',
   info: 'border-blue-200 bg-blue-50',
+  warning: 'border-amber-200 bg-amber-50',
 };
 
 const ToastItem: React.FC<{ toast: ToastMessage; onRemove: (id: string) => void }> = ({ toast, onRemove }) => {

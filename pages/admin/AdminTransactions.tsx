@@ -26,13 +26,13 @@ interface Transaction {
 }
 
 const TYPE_LABELS: Record<string, string> = {
-  DEPOSIT: 'Nạp tiền',
-  WITHDRAW: 'Rút tiền',
-  PAYMENT_HOLD: 'Tạm giữ',
-  PAYMENT_RELEASE: 'Giải phóng',
-  REFUND: 'Hoàn tiền',
-  PLATFORM_FEE: 'Phí nền tảng',
-  INSPECTION_FEE: 'Phí kiểm định',
+  DEPOSIT: 'Deposit',
+  WITHDRAW: 'Withdraw',
+  PAYMENT_HOLD: 'Payment Hold',
+  PAYMENT_RELEASE: 'Payment Release',
+  REFUND: 'Refund',
+  PLATFORM_FEE: 'Platform Fee',
+  INSPECTION_FEE: 'Inspection Fee',
 };
 
 const STATUS_STYLES: Record<string, string> = {
@@ -96,7 +96,7 @@ export const AdminTransactions: React.FC = () => {
 
   return (
     <AdminPageLayout>
-      <AdminPageHeader title="Giao dịch" subtitle="Xem và lọc toàn bộ giao dịch trên nền tảng" />
+      <AdminPageHeader title="Transactions" subtitle="View and filter all platform transactions" />
 
       {error && <AdminErrorBanner message={error} />}
 
@@ -121,7 +121,7 @@ export const AdminTransactions: React.FC = () => {
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{s._id}</p>
-                      <p className="mt-1 text-xl font-bold text-slate-900">{s.count} giao dịch</p>
+                      <p className="mt-1 text-xl font-bold text-slate-900">{s.count} transactions</p>
                       <p className="mt-0.5 text-sm font-medium text-slate-600">{formatCurrency(s.totalAmount || 0)}</p>
                     </div>
                     <Icon className={`h-8 w-8 shrink-0 opacity-80 ${style.icon}`} />
@@ -137,7 +137,7 @@ export const AdminTransactions: React.FC = () => {
           <div className="flex flex-wrap items-center gap-3">
             <Filter className="h-4 w-4 text-slate-400 shrink-0" />
             <label className="flex items-center gap-2">
-              <span className="text-sm text-slate-600">Loại:</span>
+              <p className="text-sm text-slate-600">Type:</p>
               <select
                 value={typeFilter}
                 onChange={(e) => {
@@ -146,7 +146,7 @@ export const AdminTransactions: React.FC = () => {
                 }}
                 className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 bg-white focus:ring-2 focus:ring-slate-300 focus:border-slate-400 outline-none min-w-[160px]"
               >
-                <option value="">Tất cả</option>
+                <option value="">All</option>
                 {Object.entries(TYPE_LABELS).map(([k, v]) => (
                   <option key={k} value={k}>
                     {v}
@@ -155,7 +155,7 @@ export const AdminTransactions: React.FC = () => {
               </select>
             </label>
             <label className="flex items-center gap-2">
-              <span className="text-sm text-slate-600">Trạng thái:</span>
+              <span className="text-sm text-slate-600">Status:</span>
               <select
                 value={statusFilter}
                 onChange={(e) => {
@@ -164,7 +164,7 @@ export const AdminTransactions: React.FC = () => {
                 }}
                 className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 bg-white focus:ring-2 focus:ring-slate-300 focus:border-slate-400 outline-none min-w-[140px]"
               >
-                <option value="">Tất cả</option>
+                <option value="">All</option>
                 <option value="PENDING">PENDING</option>
                 <option value="COMPLETED">COMPLETED</option>
                 <option value="FAILED">FAILED</option>
@@ -178,24 +178,24 @@ export const AdminTransactions: React.FC = () => {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 text-slate-500">
               <Loader2 className="h-10 w-10 animate-spin mb-3" />
-              <p className="text-sm">Đang tải giao dịch...</p>
+              <p className="text-sm">Loading transactions...</p>
             </div>
           ) : list.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-slate-500">
               <Wallet className="h-12 w-12 mb-3 opacity-40" />
-              <p className="text-sm font-medium">Không có giao dịch</p>
-              <p className="text-xs mt-1">Thử đổi bộ lọc hoặc quay lại sau</p>
+              <p className="text-sm font-medium">No transactions</p>
+              <p className="text-xs mt-1">Try changing the filter or check back later</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
-                    <th className="text-left px-5 py-3.5 font-semibold text-slate-700">Người dùng</th>
-                    <th className="text-left px-5 py-3.5 font-semibold text-slate-700">Loại</th>
-                    <th className="text-right px-5 py-3.5 font-semibold text-slate-700">Số tiền</th>
-                    <th className="text-left px-5 py-3.5 font-semibold text-slate-700">Trạng thái</th>
-                    <th className="text-left px-5 py-3.5 font-semibold text-slate-700">Ngày</th>
+                    <th className="text-left px-5 py-3.5 font-semibold text-slate-700">User</th>
+                    <th className="text-left px-5 py-3.5 font-semibold text-slate-700">Type</th>
+                    <th className="text-right px-5 py-3.5 font-semibold text-slate-700">Amount</th>
+                    <th className="text-left px-5 py-3.5 font-semibold text-slate-700">Status</th>
+                    <th className="text-left px-5 py-3.5 font-semibold text-slate-700">Date</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -229,17 +229,17 @@ export const AdminTransactions: React.FC = () => {
               className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 disabled:pointer-events-none"
             >
               <ChevronLeft className="h-4 w-4" />
-              Trước
+              Previous
             </button>
             <span className="px-4 py-2 text-sm text-slate-600">
-              Trang {pagination.page} / {pagination.pages}
+              Page {pagination.page} / {pagination.pages}
             </span>
             <button
               disabled={pagination.page >= pagination.pages}
               onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
               className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 disabled:pointer-events-none"
             >
-              Sau
+              Next
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>

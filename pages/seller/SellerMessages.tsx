@@ -330,7 +330,7 @@ export const SellerMessages: React.FC = () => {
                       </span>
                     </div>
                     <p className={`text-sm truncate ${selectedConversation?.id === conversation.id ? 'text-gray-700 font-medium' : 'text-gray-500'}`}>
-                      {conversation.lastMessage || 'Bắt đầu cuộc trò chuyện'}
+                      {conversation.lastMessage || 'Start a conversation'}
                     </p>
                   </div>
                 </button>
@@ -340,7 +340,7 @@ export const SellerMessages: React.FC = () => {
                 <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-3">
                   <Search size={24} />
                 </div>
-                <p className="text-sm">Không tìm thấy cuộc trò chuyện</p>
+                <p className="text-sm">No conversations found</p>
               </div>
             )}
           </div>

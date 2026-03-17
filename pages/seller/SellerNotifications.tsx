@@ -15,54 +15,54 @@ export const SellerNotifications: React.FC = () => {
     {
       id: '1',
       type: 'order',
-      title: 'Đơn Hàng Mới',
-      message: 'Nguyễn Văn A vừa mua Trek X-Caliber với giá 15.5M',
-      timestamp: '5 phút trước',
+      title: 'New Order',
+      message: 'Nguyen Van A just purchased Trek X-Caliber for 15.5M',
+      timestamp: '5 minutes ago',
       read: false,
       icon: '🛒',
     },
     {
       id: '2',
       type: 'message',
-      title: 'Tin Nhắn Mới',
-      message: 'Trần Thị B gửi cho bạn một tin nhắn: "Sản phẩm còn hàng không?"',
-      timestamp: '10 phút trước',
+      title: 'New Message',
+      message: 'Tran Thi B sent you a message: "Is the product still available?"',
+      timestamp: '10 minutes ago',
       read: false,
       icon: '💬',
     },
     {
       id: '3',
       type: 'review',
-      title: 'Đánh Giá Mới',
-      message: 'Phạm Văn C đánh giá 5 sao cho Specialized Rockhopper',
-      timestamp: '1 giờ trước',
+      title: 'New Review',
+      message: 'Pham Van C gave 5 stars to Specialized Rockhopper',
+      timestamp: '1 hour ago',
       read: true,
       icon: '⭐',
     },
     {
       id: '4',
       type: 'system',
-      title: 'Thông Báo Hệ Thống',
-      message: 'Gói Premium của bạn sẽ hết hạn trong 5 ngày',
-      timestamp: '2 giờ trước',
+      title: 'System Notification',
+      message: 'Your Premium plan will expire in 5 days',
+      timestamp: '2 hours ago',
       read: true,
       icon: '⚙️',
     },
     {
       id: '5',
       type: 'payment',
-      title: 'Thanh Toán',
-      message: 'Đơn hàng #ORD001 đã được thanh toán. Số tiền: 15.5M',
-      timestamp: '3 giờ trước',
+      title: 'Payment',
+      message: 'Order #ORD001 has been paid. Amount: 15.5M',
+      timestamp: '3 hours ago',
       read: true,
       icon: '💰',
     },
     {
       id: '6',
       type: 'inspection',
-      title: 'Kiểm Định',
-      message: 'Sản phẩm #LST001 đã hoàn thành kiểm định',
-      timestamp: '5 giờ trước',
+      title: 'Inspection',
+      message: 'Product #LST001 has completed inspection',
+      timestamp: '5 hours ago',
       read: true,
       icon: '✓',
     },
@@ -94,7 +94,7 @@ export const SellerNotifications: React.FC = () => {
   };
 
   const handleDeleteAll = () => {
-    if (confirm('Bạn chắc chắn muốn xóa tất cả thông báo?')) {
+    if (confirm('Are you sure you want to delete all notifications?')) {
       setNotifications([]);
     }
   };
@@ -118,14 +118,14 @@ export const SellerNotifications: React.FC = () => {
 
   const getTypeLabel = (type: string) => {
     const labels: { [key: string]: string } = {
-      order: 'Đơn Hàng',
-      message: 'Tin Nhắn',
-      review: 'Đánh Giá',
-      payment: 'Thanh Toán',
-      inspection: 'Kiểm Định',
-      system: 'Hệ Thống',
+      order: 'Order',
+      message: 'Message',
+      review: 'Review',
+      payment: 'Payment',
+      inspection: 'Inspection',
+      system: 'System',
     };
-    return labels[type] || 'Thông Báo';
+    return labels[type] || 'Notification';
   };
 
   return (
@@ -136,10 +136,10 @@ export const SellerNotifications: React.FC = () => {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                🔔 Thông Báo
+                🔔 Notifications
               </h1>
               <p className="text-gray-600 mt-1">
-                {unreadCount > 0 ? `${unreadCount} thông báo chưa đọc` : 'Tất cả thông báo đã đọc'}
+                {unreadCount > 0 ? `${unreadCount} unread notifications` : 'All notifications read'}
               </p>
             </div>
             {unreadCount > 0 && (
@@ -147,7 +147,7 @@ export const SellerNotifications: React.FC = () => {
                 onClick={handleMarkAllAsRead}
                 className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
               >
-                ✓ Đánh Dấu Tất Cả Đã Đọc
+                ✓ Mark All as Read
               </button>
             )}
           </div>
@@ -166,12 +166,12 @@ export const SellerNotifications: React.FC = () => {
                 onChange={(e) => setFilterType(e.target.value)}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
               >
-                <option value="all">Tất cả loại</option>
-                <option value="order">Đơn Hàng</option>
-                <option value="message">Tin Nhắn</option>
-                <option value="review">Đánh Giá</option>
-                <option value="payment">Thanh Toán</option>
-                <option value="inspection">Kiểm Định</option>
+                <option value="all">All types</option>
+                <option value="order">Order</option>
+                <option value="message">Message</option>
+                <option value="review">Review</option>
+                <option value="payment">Payment</option>
+                <option value="inspection">Inspection</option>
               </select>
             </div>
 
@@ -182,7 +182,7 @@ export const SellerNotifications: React.FC = () => {
                 onChange={(e) => setShowRead(e.target.checked)}
                 className="w-4 h-4 rounded border-gray-300 focus:ring-2 focus:ring-accent"
               />
-              <span className="text-sm text-gray-700">Hiển thị đã đọc</span>
+              <span className="text-sm text-gray-700">Show read</span>
             </label>
 
             {notifications.length > 0 && (
@@ -190,7 +190,7 @@ export const SellerNotifications: React.FC = () => {
                 onClick={handleDeleteAll}
                 className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium"
               >
-                🗑️ Xóa Tất Cả
+                🗑️ Delete All
               </button>
             )}
           </div>
@@ -231,7 +231,7 @@ export const SellerNotifications: React.FC = () => {
                       <button
                         onClick={() => handleMarkAsRead(notification.id)}
                         className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                        title="Đánh dấu đã đọc"
+                        title="Mark as read"
                       >
                         ✓
                       </button>
@@ -239,7 +239,7 @@ export const SellerNotifications: React.FC = () => {
                     <button
                       onClick={() => handleDelete(notification.id)}
                       className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                      title="Xóa"
+                      title="Delete"
                     >
                       🗑️
                     </button>
@@ -250,7 +250,7 @@ export const SellerNotifications: React.FC = () => {
           ) : (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">🔔</div>
-              <p className="text-gray-500 text-lg">Không có thông báo</p>
+              <p className="text-gray-500 text-lg">No notifications</p>
             </div>
           )}
         </div>
@@ -259,12 +259,12 @@ export const SellerNotifications: React.FC = () => {
         {notifications.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mt-8">
             {[
-              { label: 'Tổng', count: notifications.length, color: 'bg-gray-100' },
-              { label: 'Chưa Đọc', count: unreadCount, color: 'bg-blue-100' },
-              { label: 'Đơn Hàng', count: notifications.filter(n => n.type === 'order').length, color: 'bg-blue-100' },
-              { label: 'Tin Nhắn', count: notifications.filter(n => n.type === 'message').length, color: 'bg-green-100' },
-              { label: 'Đánh Giá', count: notifications.filter(n => n.type === 'review').length, color: 'bg-yellow-100' },
-              { label: 'Thanh Toán', count: notifications.filter(n => n.type === 'payment').length, color: 'bg-purple-100' },
+              { label: 'Total', count: notifications.length, color: 'bg-gray-100' },
+              { label: 'Unread', count: unreadCount, color: 'bg-blue-100' },
+              { label: 'Orders', count: notifications.filter(n => n.type === 'order').length, color: 'bg-blue-100' },
+              { label: 'Messages', count: notifications.filter(n => n.type === 'message').length, color: 'bg-green-100' },
+              { label: 'Reviews', count: notifications.filter(n => n.type === 'review').length, color: 'bg-yellow-100' },
+              { label: 'Payments', count: notifications.filter(n => n.type === 'payment').length, color: 'bg-purple-100' },
             ].map((stat, idx) => (
               <div key={idx} className={`${stat.color} rounded-lg p-4 text-center`}>
                 <p className="text-gray-600 text-sm mb-1">{stat.label}</p>

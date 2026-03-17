@@ -58,17 +58,17 @@ export const AdminAnalytics: React.FC = () => {
   return (
     <AdminPageLayout>
       <div className="flex justify-between items-center mb-8">
-        <AdminPageHeader title="Phân tích" subtitle="Thống kê theo thời gian" />
+        <AdminPageHeader title="Analytics" subtitle="Statistics over time" />
         <div className="flex-1 max-w-[200px] ml-4">
           <select
             value={period}
             onChange={(e) => setPeriod(e.target.value)}
             className="w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-800 focus:ring-2 focus:ring-slate-300 outline-none"
           >
-            <option value="day">24 giờ qua</option>
-            <option value="week">7 ngày qua</option>
-            <option value="month">30 ngày qua</option>
-            <option value="year">1 năm qua</option>
+            <option value="day">Last 24 hours</option>
+            <option value="week">Last 7 days</option>
+            <option value="month">Last 30 days</option>
+            <option value="year">Last 1 year</option>
           </select>
         </div>
       </div>

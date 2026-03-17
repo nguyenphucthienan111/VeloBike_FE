@@ -186,9 +186,9 @@ export const Home: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {trendingLoading ? (
-                    <div className="col-span-full py-12 text-center text-gray-500">Đang tải...</div>
+                    <div className="col-span-full py-12 text-center text-gray-500">Loading...</div>
                 ) : trendingBikeCards.length === 0 ? (
-                    <div className="col-span-full py-12 text-center text-gray-500">Chưa có xe trending trong 7 ngày qua. Xem thêm tại Marketplace.</div>
+                    <div className="col-span-full py-12 text-center text-gray-500">No trending bikes in the last 7 days. View more at Marketplace.</div>
                 ) : (
                     trendingBikeCards.map(bike => (
                         <BikeCard key={bike.id} bike={bike} />

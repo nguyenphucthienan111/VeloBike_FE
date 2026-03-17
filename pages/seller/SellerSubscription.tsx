@@ -221,9 +221,9 @@ export const SellerSubscription: React.FC = () => {
                     }`}
                   >
                     {isCurrent
-                      ? 'Đang sử dụng'
+                      ? 'Current plan'
                       : isDowngrade
-                      ? 'Không thể hạ cấp'
+                      ? 'Cannot downgrade'
                       : processing
                       ? 'Processing...'
                       : plan.price === 0

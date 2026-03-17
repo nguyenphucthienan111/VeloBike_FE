@@ -15,10 +15,10 @@ export const DisputeModal: React.FC<DisputeModalProps> = ({ orderId, onClose, on
   const [error, setError] = useState('');
 
   const reasons = [
-    { value: 'ITEM_NOT_AS_DESCRIBED', label: 'Sản phẩm không giống mô tả' },
-    { value: 'ITEM_DAMAGED', label: 'Sản phẩm bị hư hỏng' },
-    { value: 'NOT_RECEIVED', label: 'Chưa nhận được hàng' },
-    { value: 'OTHER', label: 'Lý do khác' },
+    { value: 'ITEM_NOT_AS_DESCRIBED', label: 'Product not as described' },
+    { value: 'ITEM_DAMAGED', label: 'Product is damaged' },
+    { value: 'NOT_RECEIVED', label: 'Item not received' },
+    { value: 'OTHER', label: 'Other reason' },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,10 +47,10 @@ export const DisputeModal: React.FC<DisputeModalProps> = ({ orderId, onClose, on
         onSuccess();
         onClose();
       } else {
-        setError(data.message || 'Không thể tạo khiếu nại');
+        setError(data.message || 'Unable to create dispute');
       }
     } catch (err: any) {
-      setError(err.message || 'Lỗi kết nối');
+      setError(err.message || 'Connection error');
     } finally {
       setLoading(false);
     }
@@ -60,7 +60,7 @@ export const DisputeModal: React.FC<DisputeModalProps> = ({ orderId, onClose, on
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-md">
         <div className="flex justify-between items-center p-4 border-b">
-          <h3 className="text-lg font-bold text-gray-900">Tạo Khiếu Nại</h3>
+          <h3 className="text-lg font-bold text-gray-900">Create Dispute</h3>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <X size={20} />
           </button>
@@ -75,7 +75,7 @@ export const DisputeModal: React.FC<DisputeModalProps> = ({ orderId, onClose, on
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Lý do khiếu nại
+              Dispute reason
             </label>
             <select
               value={reason}
@@ -92,14 +92,14 @@ export const DisputeModal: React.FC<DisputeModalProps> = ({ orderId, onClose, on
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mô tả chi tiết
+              Detailed description
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               required
               rows={4}
-              placeholder="Vui lòng mô tả chi tiết vấn đề bạn gặp phải..."
+              placeholder="Please describe the issue you encountered in detail..."
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
             />
           </div>
@@ -110,14 +110,14 @@ export const DisputeModal: React.FC<DisputeModalProps> = ({ orderId, onClose, on
               onClick={onClose}
               className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md font-medium"
             >
-              Hủy
+              Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
               className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 font-medium disabled:opacity-50"
             >
-              {loading ? 'Đang gửi...' : 'Gửi Khiếu Nại'}
+              {loading ? 'Submitting...' : 'Submit Dispute'}
             </button>
           </div>
         </form>

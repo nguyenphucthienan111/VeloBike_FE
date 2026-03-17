@@ -106,14 +106,14 @@ export const SellerOrders: React.FC = () => {
 
       const data = await response.json();
       if (response.ok) {
-        alert(`Tạo vận đơn thành công với ${providers.find(p => p.id === selectedProvider)?.name}!`);
+        alert(`Shipment created successfully with ${providers.find(p => p.id === selectedProvider)?.name}!`);
         setShowShipmentModal(false);
         fetchOrders();
       } else {
-        alert(data.message || 'Không thể tạo vận đơn');
+        alert(data.message || 'Unable to create shipment');
       }
     } catch (error: any) {
-      alert('Lỗi: ' + error.message);
+      alert('Error: ' + error.message);
     } finally {
       setUpdatingStatus(false);
     }
@@ -276,10 +276,10 @@ export const SellerOrders: React.FC = () => {
                               onClick={() => handleCreateShipment(order._id)}
                               disabled={updatingStatus}
                               className="inline-flex items-center gap-1 text-orange-600 hover:text-orange-800 font-medium disabled:opacity-50"
-                              title="Tạo vận đơn"
+                              title="Create shipment"
                             >
                               <Truck size={16} />
-                              Gửi hàng
+                              Ship
                             </button>
                           )}
                           {order.status === 'SHIPPING' && (
@@ -287,10 +287,10 @@ export const SellerOrders: React.FC = () => {
                               onClick={() => handleUpdateStatus(order._id, 'DELIVERED')}
                               disabled={updatingStatus}
                               className="inline-flex items-center gap-1 text-green-600 hover:text-green-800 font-medium disabled:opacity-50"
-                              title="Xác nhận đã giao hàng"
+                              title="Confirm delivery"
                             >
                               <CheckCircle size={16} />
-                              Đã giao
+                              Delivered
                             </button>
                           )}
                           {order.buyerId?._id && (
@@ -300,7 +300,7 @@ export const SellerOrders: React.FC = () => {
                               className="inline-flex items-center gap-1 text-gray-700 hover:text-black font-medium"
                             >
                               <MessageCircle size={16} />
-                              Nhắn tin
+                              Message
                             </button>
                           )}
                         </div>

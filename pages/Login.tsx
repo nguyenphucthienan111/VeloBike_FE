@@ -24,7 +24,6 @@ export const Login: React.FC = () => {
     email: '',
     password: '',
   });
-  const [showPassword, setShowPassword] = useState(false);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

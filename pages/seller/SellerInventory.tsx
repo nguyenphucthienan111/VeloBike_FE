@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SellerHeaderUserMenu } from '../../components/SellerHeaderUserMenu';
+import { SellerPageLayout, SellerPageHeader } from '../../components/SellerPageLayout';
 import { API_BASE_URL } from '../../constants';
 
 const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
@@ -339,10 +340,10 @@ export const SellerInventory: React.FC = () => {
 
           {/* Listings table */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-            <table className="w-full">
+            <table className="w-full table-fixed">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="px-6 py-4 text-left">
+                  <th className="w-10 px-3 py-4 text-left">
                     <input
                       type="checkbox"
                       checked={selectedListings.length === filteredListings.length && filteredListings.length > 0}
@@ -350,20 +351,20 @@ export const SellerInventory: React.FC = () => {
                       className="w-4 h-4 rounded border-gray-300"
                     />
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Product</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Type</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Price</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Views</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Status</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Created</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Actions</th>
+                  <th className="px-4 py-4 text-left text-sm font-semibold text-gray-600">Product</th>
+                  <th className="w-20 px-3 py-4 text-left text-sm font-semibold text-gray-600">Type</th>
+                  <th className="w-28 px-3 py-4 text-left text-sm font-semibold text-gray-600">Price</th>
+                  <th className="w-16 px-3 py-4 text-left text-sm font-semibold text-gray-600">Views</th>
+                  <th className="w-36 px-3 py-4 text-left text-sm font-semibold text-gray-600">Status</th>
+                  <th className="w-24 px-3 py-4 text-left text-sm font-semibold text-gray-600">Created</th>
+                  <th className="w-28 px-3 py-4 text-left text-sm font-semibold text-gray-600">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredListings.length > 0 ? (
                   filteredListings.map((listing) => (
                     <tr key={listing._id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-4">
                         <input
                           type="checkbox"
                           checked={selectedListings.includes(listing._id)}
@@ -371,7 +372,7 @@ export const SellerInventory: React.FC = () => {
                           className="w-4 h-4 rounded border-gray-300"
                         />
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
                           {/* Product Image */}
                           <div className="flex-shrink-0">
@@ -401,24 +402,24 @@ export const SellerInventory: React.FC = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-4">
                         <span className="text-gray-700">{listing.type}</span>
                       </td>
-                      <td className="px-6 py-4 font-medium text-gray-900">
+                      <td className="px-3 py-4 font-medium text-gray-900">
                         {formatCurrency(listing.pricing?.amount || listing.amount || 0)}
                       </td>
-                      <td className="px-6 py-4 text-gray-600">
+                      <td className="px-3 py-4 text-gray-600">
                         <span className="text-gray-400">#</span> {listing.views}
                       </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(listing.status)}`}>
+                      <td className="px-3 py-4">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(listing.status)}`}>
                           {listing.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-gray-600">
+                      <td className="px-3 py-4 text-gray-600 text-sm">
                         {new Date(listing.createdAt).toLocaleDateString('en-US')}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-4">
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => navigate(`/seller/edit-listing/${listing._id}`)}
@@ -463,6 +464,7 @@ export const SellerInventory: React.FC = () => {
             {listings.filter((l) => l.status === 'PUBLISHED').length}
           </p>
         </div>
-    </div>
+      </div>
+    </SellerPageLayout>
   );
 };

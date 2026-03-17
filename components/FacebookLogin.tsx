@@ -195,7 +195,7 @@ export const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError
       {loading ? (
         <>
           <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-          Đang đăng nhập...
+          Signing in...
         </>
       ) : (
         <>

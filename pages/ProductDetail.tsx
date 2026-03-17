@@ -102,7 +102,7 @@ export const ProductDetail: React.FC = () => {
   const toggleWishlist = async () => {
     const token = localStorage.getItem('accessToken');
     if (!token) {
-      addToast('warning', 'Vui lòng đăng nhập để lưu wishlist');
+    addToast('warning', 'Please sign in to save to wishlist');
       return;
     }
     if (!listing) return;
@@ -114,7 +114,7 @@ export const ProductDetail: React.FC = () => {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         setIsWishlisted(false);
-        addToast('info', 'Đã xóa khỏi wishlist');
+        addToast('info', 'Removed from wishlist');
       } else {
         await fetch(`${API_BASE_URL}/wishlist`, {
           method: 'POST',
@@ -122,10 +122,10 @@ export const ProductDetail: React.FC = () => {
           body: JSON.stringify({ listingId: listing._id })
         });
         setIsWishlisted(true);
-        addToast('success', 'Đã thêm vào wishlist');
+        addToast('success', 'Added to wishlist');
       }
     } catch {
-      addToast('error', 'Có lỗi xảy ra');
+      addToast('error', 'An error occurred');
     } finally {
       setWishlistLoading(false);
     }
@@ -298,18 +298,18 @@ export const ProductDetail: React.FC = () => {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return 'Hôm nay';
-    if (diffDays === 1) return 'Hôm qua';
-    if (diffDays < 7) return `${diffDays} ngày trước`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} tuần trước`;
-    if (diffDays < 365) return `${Math.floor(diffDays / 30)} tháng trước`;
-    return `${Math.floor(diffDays / 365)} năm trước`;
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+    return `${Math.floor(diffDays / 365)} years ago`;
   };
 
   const handleBuyNow = () => {
     const token = localStorage.getItem('accessToken');
     if (!token) {
-      addToast('warning', 'Vui lòng đăng nhập để mua hàng');
+      addToast('warning', 'Please sign in to purchase');
       navigate('/login', { state: { from: `/checkout/${listing._id}` } });
       return;
     }
@@ -448,11 +448,11 @@ export const ProductDetail: React.FC = () => {
                        <div className="bg-accent h-2 rounded-full" style={{ width: `${bike.conditionScore * 10}%` }}></div>
                      </div>
                      <p className="text-sm text-gray-600">
-                       Xe đã qua kiểm định 50 điểm của VeloBike Inspector.
+                       The bike has passed VeloBike Inspector's 50-point inspection.
                      </p>
                    </div>
                    <div className="bg-gray-50 p-6 rounded text-sm text-gray-600">
-                     <p className="italic">&quot;Kết quả kiểm định đã được lưu trên hệ thống.&quot;</p>
+                     <p className="italic">&quot;Inspection results have been saved on the system.&quot;</p>
                      <div className="mt-4 flex items-center gap-2">
                        <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
                        <div>
@@ -465,7 +465,7 @@ export const ProductDetail: React.FC = () => {
                ) : (
                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                    <p className="text-sm text-blue-800">
-                     Xe chưa có báo cáo kiểm định. Bạn có thể yêu cầu kiểm định khi đặt mua — inspector sẽ kiểm tra xe trước khi giao hàng.
+                     This bike has no inspection report yet. You can request an inspection when placing an order — an inspector will check the bike before delivery.
                    </p>
                  </div>
                )}
@@ -619,11 +619,11 @@ export const ProductDetail: React.FC = () => {
                     <span className="text-xs font-bold bg-black text-white px-2 py-1">SIZE {bike.size}</span>
                     <span className="text-xs text-gray-500 border border-gray-200 px-2 py-1 rounded">Condition: {formatCondition(bike.condition)}</span>
                     {listing.status === 'SOLD' ? (
-                      <span className="text-xs font-bold bg-gray-500 text-white px-2 py-1 rounded">ĐÃ BÁN</span>
+                      <span className="text-xs font-bold bg-gray-500 text-white px-2 py-1 rounded">SOLD</span>
                     ) : (listing.status === 'RESERVED' || listing.status === 'IN_INSPECTION') ? (
-                      <span className="text-xs font-bold bg-amber-500 text-white px-2 py-1 rounded">ĐÃ CÓ NGƯỜI ĐẶT</span>
+                      <span className="text-xs font-bold bg-amber-500 text-white px-2 py-1 rounded">RESERVED</span>
                     ) : listing.status === 'PUBLISHED' ? (
-                      <span className="text-xs font-bold bg-green-600 text-white px-2 py-1 rounded">CÒN HÀNG</span>
+                      <span className="text-xs font-bold bg-green-600 text-white px-2 py-1 rounded">IN STOCK</span>
                     ) : null}
                 </div>
 
@@ -638,7 +638,7 @@ export const ProductDetail: React.FC = () => {
                     </div>
                   )}
                   {formatListedAt(listing.createdAt) && (
-                    <span>Đăng {formatListedAt(listing.createdAt)}</span>
+                    <span>Listed {formatListedAt(listing.createdAt)}</span>
                   )}
                 </div>
 
@@ -651,11 +651,11 @@ export const ProductDetail: React.FC = () => {
                           ? 'bg-gray-100 border-gray-300 text-gray-600' 
                           : 'bg-amber-50 border-amber-200 text-amber-800'
                       }`}>
-                        {listing.status === 'SOLD' ? 'SẢN PHẨM ĐÃ BÁN' : 'SẢN PHẨM ĐÃ CÓ NGƯỜI ĐẶT'}
+                        {listing.status === 'SOLD' ? 'PRODUCT SOLD' : 'PRODUCT RESERVED'}
                         <p className="text-xs font-normal mt-1 opacity-80">
                           {listing.status === 'SOLD' 
-                            ? 'Sản phẩm này không còn khả dụng.' 
-                            : 'Vui lòng chọn sản phẩm khác hoặc quay lại sau.'}
+                            ? 'This product is no longer available.' 
+                            : 'Please choose another product or check back later.'}
                         </p>
                       </div>
                     )}
@@ -663,10 +663,10 @@ export const ProductDetail: React.FC = () => {
                     {!canPurchase && listing?.status === 'PUBLISHED' && (
                       <div className="bg-gray-100 border border-gray-200 rounded-lg p-4 mb-3">
                         <p className="text-sm text-gray-700 font-medium">
-                          Tài khoản Admin/Inspector không thể mua hàng.
+                          Admin/Inspector accounts cannot make purchases.
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          Đăng nhập bằng tài khoản Buyer hoặc Seller để đặt mua.
+                          Sign in with a Buyer or Seller account to place an order.
                         </p>
                       </div>
                     )}
@@ -688,7 +688,7 @@ export const ProductDetail: React.FC = () => {
                                 ? 'border-red-400 bg-red-50 text-red-500 hover:bg-red-100'
                                 : 'border-gray-300 text-gray-400 hover:border-red-400 hover:text-red-400 hover:bg-red-50'
                             }`}
-                            title={isWishlisted ? 'Xóa khỏi wishlist' : 'Thêm vào wishlist'}
+                            title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
                           >
                             <Heart size={22} fill={isWishlisted ? 'currentColor' : 'none'} />
                           </button>
@@ -701,17 +701,17 @@ export const ProductDetail: React.FC = () => {
                             className="w-full flex items-center justify-center gap-2 py-3 border border-gray-300 rounded-sm hover:bg-gray-50 text-gray-700 font-semibold transition-colors"
                           >
                             <MessageCircle size={18} />
-                            Nhắn tin với người bán
+                            Message seller
                           </button>
                         )}
                       </div>
                     )}
                     
                     {listing?.status === 'SOLD' && (
-                      <div className="bg-gray-200 rounded-lg py-4 text-center font-bold text-gray-600">ĐÃ BÁN</div>
+                      <div className="bg-gray-200 rounded-lg py-4 text-center font-bold text-gray-600">SOLD</div>
                     )}
                     {listing?.status === 'RESERVED' && (
-                      <div className="bg-amber-100 rounded-lg py-4 text-center font-bold text-amber-800">ĐÃ CÓ NGƯỜI ĐẶT</div>
+                      <div className="bg-amber-100 rounded-lg py-4 text-center font-bold text-amber-800">RESERVED</div>
                     )}
                     
                     <div className="mt-2 text-xs text-gray-500 text-center flex flex-col items-center gap-2">
@@ -722,7 +722,7 @@ export const ProductDetail: React.FC = () => {
                             onClick={() => setShowReportModal(true)}
                             className="text-gray-400 hover:text-red-500 flex items-center gap-1 transition-colors"
                         >
-                            <Flag size={12} /> Báo cáo tin đăng
+                            <Flag size={12} /> Report listing
                         </button>
                     </div>
                 </div>
@@ -805,7 +805,7 @@ export const ProductDetail: React.FC = () => {
         <ReportModal 
             listingId={listing._id}
             onClose={() => setShowReportModal(false)}
-            onSuccess={() => addToast('success', 'Đã gửi báo cáo thành công. Admin sẽ xem xét sớm.')}
+            onSuccess={() => addToast('success', 'Report submitted successfully. Admin will review it shortly.')}
         />
       )}
     </div>

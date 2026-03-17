@@ -10,6 +10,7 @@ export const AddProduct: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{[key: string]: number}>({});
   const { toasts, addToast, removeToast } = useToast();
+  const { brands, categories, getTypeForCategory, fetch: fetchCatalog, loading: catalogLoading } = useCatalog();
   const [userLocation, setUserLocation] = useState({ address: 'Ho Chi Minh City', coordinates: [106.6297, 10.8231] });
   
   const [formData, setFormData] = useState({
@@ -52,7 +53,7 @@ export const AddProduct: React.FC = () => {
         const user = data.data;
 
         if (user.role === 'SELLER' && user.kycStatus !== 'VERIFIED' && user.kycStatus !== 'APPROVED') {
-          addToast('error', 'Tài khoản chưa được xác thực KYC. Vui lòng hoàn tất xác thực.');
+          addToast('error', 'Account not yet KYC verified. Please complete verification.');
           navigate('/seller/kyc');
           return;
         }
@@ -60,7 +61,7 @@ export const AddProduct: React.FC = () => {
         const missingPhone = !user.phone?.trim();
         const missingAddress = !user.address?.street?.trim() || !user.address?.city?.trim();
         if (missingPhone || missingAddress) {
-          addToast('warning', 'Vui lòng cập nhật số điện thoại và địa chỉ đầy đủ trước khi đăng sản phẩm.');
+          addToast('warning', 'Please update your phone number and full address before listing a product.');
           navigate('/seller/profile');
           return;
         }
@@ -146,7 +147,7 @@ export const AddProduct: React.FC = () => {
 
     if ((formData.type === 'ROAD' || formData.type === 'TRIATHLON') &&
         (!formData.frameMaterial || !formData.groupset || !formData.brakeType)) {
-      addToast('warning', 'Road/Triathlon bike cần điền Frame Material, Groupset và Brake Type');
+      addToast('warning', 'Road/Triathlon bike requires Frame Material, Groupset and Brake Type');
       return;
     }
 
@@ -163,7 +164,7 @@ export const AddProduct: React.FC = () => {
       const thumbnails = imagePreviews.filter((url) => url && url.startsWith('data:'));
 
       if (thumbnails.length === 0) {
-        addToast('error', 'Vui lòng chọn ảnh sản phẩm');
+        addToast('error', 'Please select a product image');
         setLoading(false);
         return;
       }
@@ -226,7 +227,7 @@ export const AddProduct: React.FC = () => {
             navigate('/seller/inventory');
           }, 1500);
         } else {
-          addToast('error', data.message || 'Không thể tạo listing');
+          addToast('error', data.message || 'Unable to create listing');
         }
       } else {
         let errorMessage = 'Error creating listing';
@@ -355,13 +356,13 @@ export const AddProduct: React.FC = () => {
                   className="mt-1 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <div className="ml-3">
-                  <span className="text-sm font-medium text-gray-900 cursor-pointer">Yêu cầu kiểm định (Inspection Required)</span>
+                  <span className="text-sm font-medium text-gray-900 cursor-pointer">Require Inspection (Inspection Required)</span>
                   <p className="text-xs text-gray-600 mt-1">
-                    Nếu bật, buyer sẽ phải trả thêm 500,000 VNĐ phí kiểm định. 
-                    Xe sẽ được inspector kiểm tra trước khi giao hàng, tăng độ tin cậy.
+                    If enabled, the buyer will pay an additional 500,000 VND inspection fee. 
+                    The bike will be inspected by an inspector before delivery, increasing trust.
                   </p>
                   <p className="text-xs text-blue-700 mt-1 font-medium">
-                    ✓ Khuyến nghị bật để tăng uy tín và bảo vệ cả buyer lẫn seller
+                    ✓ Recommended to enable to increase credibility and protect both buyer and seller
                   </p>
                 </div>
               </label>
@@ -435,7 +436,7 @@ export const AddProduct: React.FC = () => {
             {/* Specs - hiện theo bike type */}
             {(formData.type === 'ROAD' || formData.type === 'TRIATHLON') && (
               <div className="border border-blue-100 bg-blue-50 rounded-lg p-5 space-y-4">
-                <p className="text-sm font-semibold text-blue-800">Thông số kỹ thuật (bắt buộc cho Road/Triathlon)</p>
+                <p className="text-sm font-semibold text-blue-800">Technical specifications (required for Road/Triathlon)</p>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Frame Material *</label>
@@ -451,7 +452,7 @@ export const AddProduct: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Brake Type *</label>
                     <select name="brakeType" value={formData.brakeType} onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required>
-                      <option value="">Chọn loại phanh</option>
+                      <option value="">Select brake type</option>
                       <option value="Disc">Disc</option>
                       <option value="Rim">Rim</option>
                     </select>
@@ -472,7 +473,7 @@ export const AddProduct: React.FC = () => {
 
             {formData.type === 'MTB' && (
               <div className="border border-green-100 bg-green-50 rounded-lg p-5 space-y-4">
-                <p className="text-sm font-semibold text-green-800">Thông số kỹ thuật MTB</p>
+                <p className="text-sm font-semibold text-green-800">MTB Technical Specifications</p>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Frame Material</label>
@@ -483,7 +484,7 @@ export const AddProduct: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Suspension Type</label>
                     <select name="suspensionType" value={formData.suspensionType} onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-                      <option value="">Chọn loại</option>
+                      <option value="">Select type</option>
                       <option value="Hardtail">Hardtail</option>
                       <option value="Full-Suspension">Full-Suspension</option>
                     </select>
@@ -504,7 +505,7 @@ export const AddProduct: React.FC = () => {
 
             {formData.type === 'E_BIKE' && (
               <div className="border border-purple-100 bg-purple-50 rounded-lg p-5 space-y-4">
-                <p className="text-sm font-semibold text-purple-800">Thông số E-Bike</p>
+                <p className="text-sm font-semibold text-purple-800">E-Bike Specifications</p>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Motor</label>

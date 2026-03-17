@@ -23,6 +23,7 @@ const FALLBACK_CATEGORIES = [
 
 export const Marketplace: React.FC = () => {
   const { listings, loading, error, facets, fetch: fetchListings, fetchFacets } = useListings();
+  const { brands, categories, getTypeForCategory, fetch: fetchCatalog } = useCatalog();
   const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
   const [wishlistToggling, setWishlistToggling] = useState<string | null>(null);
   const [canWishlist, setCanWishlist] = useState(() => typeof window !== 'undefined' && !!localStorage.getItem('accessToken'));

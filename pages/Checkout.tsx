@@ -108,7 +108,7 @@ export const Checkout: React.FC = () => {
 
         if (!listingRes.ok) {
           const err = await listingRes.json().catch(() => ({}));
-          setError(err.message || 'Không tìm thấy sản phẩm');
+          setError(err.message || 'Product not found');
           setLoading(false);
           return;
         }
@@ -116,7 +116,7 @@ export const Checkout: React.FC = () => {
         if (listingData.success && listingData.data) {
           setListing(listingData.data);
         } else {
-          setError('Không tìm thấy sản phẩm');
+          setError('Product not found');
         }
 
         // Check for existing active order (CREATED or ESCROW_LOCKED etc)
@@ -149,7 +149,7 @@ export const Checkout: React.FC = () => {
         }
 
       } catch (err: any) {
-        setError(err.message || 'Lỗi tải thông tin');
+        setError(err.message || 'Error loading information');
       } finally {
         setLoading(false);
       }
@@ -163,7 +163,7 @@ export const Checkout: React.FC = () => {
     const userStr = localStorage.getItem('user');
     
     if (!token || !userStr) {
-      addToast('warning', 'Vui lòng đăng nhập');
+      addToast('warning', 'Please sign in');
       navigate('/login');
       return;
     }
@@ -171,26 +171,26 @@ export const Checkout: React.FC = () => {
 
     const user = JSON.parse(userStr);
     if (user.role === 'ADMIN' || user.role === 'INSPECTOR') {
-      addToast('error', 'Tài khoản Admin/Inspector không thể mua hàng');
+      addToast('error', 'Admin/Inspector accounts cannot make purchases');
       return;
     }
     if (listing.status !== 'PUBLISHED') {
-      addToast('error', 'Sản phẩm không khả dụng');
+      addToast('error', 'Product is not available');
       return;
     }
     if (listing.sellerId?._id === user.id) {
-      addToast('error', 'Bạn không thể mua sản phẩm của chính mình');
+      addToast('error', 'You cannot purchase your own product');
       return;
     }
 
     const { fullName, phone, street, district, city } = shippingAddress;
     if (!fullName?.trim() || !phone?.trim() || !street?.trim() || !district?.trim() || !city?.trim()) {
-      addToast('warning', 'Vui lòng nhập đủ địa chỉ giao hàng (Tên, SĐT, Đường, Quận/Huyện, TP)');
+      addToast('warning', 'Please enter a complete shipping address (Name, Phone, Street, District, City)');
       return;
     }
 
     setOrderLoading(true);
-    addToast('info', 'Đang xử lý...');
+    addToast('info', 'Processing...');
 
     try {
       let orderId = existingOrderId;
@@ -216,20 +216,20 @@ export const Checkout: React.FC = () => {
           }
           if (orderData.message?.includes('đã có người đặt mua') || orderData.message?.includes('already')) {
             setHasActiveOrder(true);
-            addToast('info', 'Đơn hàng đã tồn tại. Đang tải lại...');
+            addToast('info', 'Order already exists. Reloading...');
             setTimeout(() => window.location.reload(), 1500);
             return;
           }
-          throw new Error(orderData.message || 'Không thể tạo đơn hàng');
+          throw new Error(orderData.message || 'Unable to create order');
         }
         if (!orderData.success || !orderData.data) {
-          throw new Error(orderData.message || 'Không thể tạo đơn hàng');
+          throw new Error(orderData.message || 'Unable to create order');
         }
 
         orderId = orderData.data._id;
         const actualInspectionFee = orderData.data.financials?.inspectionFee || 0;
         if (inspectionRequired && actualInspectionFee === 0) {
-          addToast('success', '🎉 Miễn phí kiểm định!');
+          addToast('success', '🎉 Free inspection!');
         }
       }
 
@@ -258,10 +258,10 @@ export const Checkout: React.FC = () => {
         const err = await addrRes.json().catch(() => ({}));
         console.error('Address update failed:', err);
         if (addrRes.status === 401) handleSessionExpired();
-        throw new Error(err.message || 'Cập nhật địa chỉ thất bại');
+        throw new Error(err.message || 'Address update failed');
       }
 
-      addToast('success', 'Đang chuyển đến thanh toán...');
+      addToast('success', 'Redirecting to payment...');
       console.log('Creating payment link...');
 
       const paymentRes = await fetch(`${API_BASE_URL}/payment/create-link`, {
@@ -275,10 +275,10 @@ export const Checkout: React.FC = () => {
       if (!paymentRes.ok) {
         if (paymentRes.status === 401) handleSessionExpired();
         if (paymentData.message?.includes('signature') || paymentData.message?.includes('PayOS')) {
-          addToast('error', 'Lỗi cấu hình thanh toán. Liên hệ quản trị viên.');
+          addToast('error', 'Payment configuration error. Please contact the administrator.');
           return;
         }
-        throw new Error(paymentData.message || 'Không tạo được link thanh toán');
+        throw new Error(paymentData.message || 'Unable to create payment link');
       }
       
       const link = paymentData.paymentLink || paymentData.checkoutUrl;
@@ -286,12 +286,12 @@ export const Checkout: React.FC = () => {
         console.log('Redirecting to:', link);
         window.location.href = link;
       } else {
-        throw new Error(paymentData.message || 'Không tạo được link thanh toán');
+        throw new Error(paymentData.message || 'Unable to create payment link');
       }
 
     } catch (err: any) {
       console.error('Checkout error:', err);
-      showToast(err.message || 'Có lỗi xảy ra', 'error');
+      addToast('error', err.message || 'An error occurred');
     } finally {
       setOrderLoading(false);
     }
@@ -317,9 +317,9 @@ export const Checkout: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold mb-2">Không tìm thấy sản phẩm</h2>
-          <p className="text-gray-500 mb-4">{error || 'Sản phẩm không tồn tại hoặc đã bị xóa.'}</p>
-          <Link to="/marketplace" className="text-accent hover:underline">Quay lại Marketplace</Link>
+          <h2 className="text-xl font-bold mb-2">Product not found</h2>
+          <p className="text-gray-500 mb-4">{error || 'Product does not exist or has been removed.'}</p>
+          <Link to="/marketplace" className="text-accent hover:underline">Back to Marketplace</Link>
         </div>
       </div>
     );
@@ -330,9 +330,9 @@ export const Checkout: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center">
           <AlertCircle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold mb-2">Sản phẩm không khả dụng</h2>
-          <p className="text-gray-500 mb-4">Sản phẩm này không còn có thể mua.</p>
-          <Link to={`/bike/${listing._id}`} className="text-accent hover:underline">Xem chi tiết sản phẩm</Link>
+          <h2 className="text-xl font-bold mb-2">Product not available</h2>
+          <p className="text-gray-500 mb-4">This product can no longer be purchased.</p>
+          <Link to={`/bike/${listing._id}`} className="text-accent hover:underline">View product details</Link>
         </div>
       </div>
     );
@@ -344,11 +344,11 @@ export const Checkout: React.FC = () => {
     <div className="bg-gray-50 min-h-screen pb-20">
       <div className="max-w-2xl mx-auto px-4 py-6">
         <Link to={`/bike/${listingId}`} className="inline-block text-sm text-gray-500 hover:text-black mb-6">
-          ← Quay lại sản phẩm
+          ← Back to product
         </Link>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Thanh toán</h1>
-        <p className="text-sm text-gray-500 mb-8">Xác nhận đơn hàng và địa chỉ giao hàng</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Checkout</h1>
+        <p className="text-sm text-gray-500 mb-8">Confirm your order and shipping address</p>
 
         {/* Product summary - redesigned */}
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden mb-8">
@@ -357,7 +357,7 @@ export const Checkout: React.FC = () => {
               <img src={imageUrl} alt={listing.title} className="w-full h-full object-cover" />
             </div>
             <div className="flex-1 p-5 flex flex-col justify-center min-w-0">
-              <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Sản phẩm</p>
+              <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Product</p>
               {(listing.generalInfo?.brand || listing.generalInfo?.model) && (
                 <p className="text-sm text-gray-500 mb-0.5">
                   {listing.generalInfo.brand} {listing.generalInfo.model}
@@ -376,8 +376,8 @@ export const Checkout: React.FC = () => {
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
               <div>
-                <p className="text-sm text-blue-900 font-bold">Đây là sản phẩm của bạn</p>
-                <p className="text-xs text-blue-700 mt-1">Bạn đang xem trang thanh toán cho sản phẩm do chính bạn đăng bán. Bạn không thể tự mua sản phẩm của mình.</p>
+                <p className="text-sm text-blue-900 font-bold">This is your own product</p>
+                <p className="text-xs text-blue-700 mt-1">You are viewing the checkout page for a product you listed. You cannot purchase your own product.</p>
               </div>
             </div>
           </div>
@@ -385,59 +385,59 @@ export const Checkout: React.FC = () => {
 
         {hasActiveOrder && !isOwner && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
-            <p className="text-sm text-amber-900 font-medium">Sản phẩm này đã có người đặt mua</p>
-            <p className="text-xs text-amber-700 mt-1">Vui lòng chọn sản phẩm khác</p>
+            <p className="text-sm text-amber-900 font-medium">This product has already been reserved by someone</p>
+            <p className="text-xs text-amber-700 mt-1">Please choose another product</p>
           </div>
         )}
 
         {/* Inspection */}
         <div className="bg-white rounded-xl border border-gray-100 p-5 mb-6">
-          <h3 className="font-semibold text-gray-900 mb-3">Dịch vụ kiểm định</h3>
+          <h3 className="font-semibold text-gray-900 mb-3">Inspection service</h3>
 
           {listing.inspectionRequired ? (
             <>
               {listing.sellerHasFreeInspection ? (
-                <p className="text-sm text-green-700 mb-4">Seller tài trợ phí kiểm định — miễn phí cho bạn.</p>
+                <p className="text-sm text-green-700 mb-4">Seller sponsors the inspection fee — free for you.</p>
               ) : (
-                <p className="text-sm text-gray-600 mb-4">Phí kiểm định: 1,000 VND</p>
+                <p className="text-sm text-gray-600 mb-4">Inspection fee: 1,000 VND</p>
               )}
               <div className="space-y-3">
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="radio" name="inspection" checked={requestInspection} onChange={() => setRequestInspection(true)} className="mt-0.5" />
-                  <span className="text-sm text-gray-700">Có, thuê inspector kiểm định{!listing.sellerHasFreeInspection && ' (+1,000 VND)'}</span>
+                  <span className="text-sm text-gray-700">Yes, hire an inspector{!listing.sellerHasFreeInspection && ' (+1,000 VND)'}</span>
                 </label>
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="radio" name="inspection" checked={!requestInspection} onChange={() => setRequestInspection(false)} className="mt-0.5" />
-                  <span className="text-sm text-gray-700">Không, bỏ qua kiểm định{!listing.sellerHasFreeInspection && ' (tiết kiệm 1,000 VND)'}</span>
+                  <span className="text-sm text-gray-700">No, skip inspection{!listing.sellerHasFreeInspection && ' (save 1,000 VND)'}</span>
                 </label>
               </div>
             </>
           ) : (
-            <p className="text-sm text-gray-600">Seller không yêu cầu kiểm định. Xe sẽ giao trực tiếp.</p>
+            <p className="text-sm text-gray-600">Seller does not require inspection. Bike will be shipped directly.</p>
           )}
         </div>
 
         {/* Shipping address */}
         <div className="bg-white rounded-xl border border-gray-100 p-5 mb-6">
-          <h3 className="font-semibold text-gray-900 mb-4">Địa chỉ giao hàng</h3>
+          <h3 className="font-semibold text-gray-900 mb-4">Shipping address</h3>
           <div className="space-y-3">
             <input
               type="text"
-              placeholder="Họ tên người nhận *"
+              placeholder="Recipient full name *"
               value={shippingAddress.fullName}
               onChange={(e) => setShippingAddress(p => ({ ...p, fullName: e.target.value }))}
               className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none text-gray-900"
             />
             <input
               type="tel"
-              placeholder="Số điện thoại *"
+              placeholder="Phone number *"
               value={shippingAddress.phone}
               onChange={(e) => setShippingAddress(p => ({ ...p, phone: e.target.value }))}
               className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none text-gray-900"
             />
             <input
               type="text"
-              placeholder="Địa chỉ chi tiết (Số nhà, đường) *"
+              placeholder="Detailed address (House number, street) *"
               value={shippingAddress.street}
               onChange={(e) => setShippingAddress(p => ({ ...p, street: e.target.value }))}
               className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none text-gray-900"
@@ -445,14 +445,14 @@ export const Checkout: React.FC = () => {
             <div className="grid grid-cols-2 gap-3">
               <input
                 type="text"
-                placeholder="Quận/Huyện *"
+                placeholder="District *"
                 value={shippingAddress.district}
                 onChange={(e) => setShippingAddress(p => ({ ...p, district: e.target.value }))}
                 className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none text-gray-900"
               />
               <input
                 type="text"
-                placeholder="Thành phố *"
+                placeholder="City *"
                 value={shippingAddress.city}
                 onChange={(e) => setShippingAddress(p => ({ ...p, city: e.target.value }))}
                 className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none text-gray-900"
@@ -461,14 +461,14 @@ export const Checkout: React.FC = () => {
             <div className="grid grid-cols-2 gap-3">
               <input
                 type="text"
-                placeholder="Tỉnh (tùy chọn)"
+                placeholder="Province (optional)"
                 value={shippingAddress.province}
                 onChange={(e) => setShippingAddress(p => ({ ...p, province: e.target.value }))}
                 className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none text-gray-900"
               />
               <input
                 type="text"
-                placeholder="Mã bưu điện"
+                placeholder="Zip Code"
                 value={shippingAddress.zipCode}
                 onChange={(e) => setShippingAddress(p => ({ ...p, zipCode: e.target.value }))}
                 className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none text-gray-900"
@@ -481,19 +481,19 @@ export const Checkout: React.FC = () => {
         <div className="bg-gray-50 rounded-xl border border-gray-100 p-5 mb-6">
           <div className="space-y-2 text-sm">
             <div className="flex justify-between text-gray-600">
-              <span>Giá xe</span>
+              <span>Bike price</span>
               <span>{formatPrice(listing.pricing.amount)}</span>
             </div>
             <div className="flex justify-between text-gray-600">
-              <span>Phí kiểm định</span>
+              <span>Inspection fee</span>
               <span>{inspectionFee === 0 ? '0 ₫' : '1.000 ₫'}</span>
             </div>
             <div className="flex justify-between text-gray-600">
-              <span>Phí vận chuyển</span>
+              <span>Shipping fee</span>
               <span>1.000 ₫</span>
             </div>
             <div className="flex justify-between font-bold text-base pt-4 mt-2 border-t border-gray-200">
-              <span className="text-gray-900">Tổng thanh toán</span>
+              <span className="text-gray-900">Total payment</span>
               <span className="text-accent">{formatPrice(totalAmount)}</span>
             </div>
           </div>
@@ -504,7 +504,7 @@ export const Checkout: React.FC = () => {
           disabled={orderLoading || (hasActiveOrder && !existingOrderId) || isOwner}
           className="w-full bg-accent hover:bg-red-600 text-white py-4 font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-xl"
         >
-          {orderLoading ? 'ĐANG XỬ LÝ...' : (isOwner ? 'SẢN PHẨM CỦA BẠN' : (existingOrderId ? 'TIẾP TỤC THANH TOÁN' : (hasActiveOrder ? 'ĐÃ CÓ NGƯỜI ĐẶT' : 'THANH TOÁN')))}
+          {orderLoading ? 'PROCESSING...' : (isOwner ? 'YOUR OWN PRODUCT' : (existingOrderId ? 'CONTINUE TO PAYMENT' : (hasActiveOrder ? 'ALREADY RESERVED' : 'CHECKOUT')))}
         </button>
       </div>
       <Toast toasts={toasts} onRemove={removeToast} />

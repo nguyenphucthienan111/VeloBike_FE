@@ -192,7 +192,8 @@ export const SellerDashboard: React.FC = () => {
   }
 
   return (
-    <div className="p-8">
+    <SellerPageLayout>
+      <div className="p-8">
           {/* Header */}
           <div className="flex justify-between items-start mb-8">
             <div>
@@ -389,7 +390,7 @@ export const SellerDashboard: React.FC = () => {
                       <div className="flex justify-between text-xs text-gray-600 mb-1">
                         <span>Listings this month</span>
                         <span className="font-semibold">
-                          {usedNum} / {isUnlimited ? '∞' : limitNum}
+                          {usedNum} / {isUnlimited ? '\u221E' : limitNum}
                         </span>
                       </div>
                       {!isUnlimited && limitNum > 0 && (
@@ -451,6 +452,7 @@ export const SellerDashboard: React.FC = () => {
                     <p className="text-xs text-gray-500 group-hover:text-purple-500">View reports</p>
                   </button>
                 </div>
+          </div>
           </div>
         </div>
       </div>

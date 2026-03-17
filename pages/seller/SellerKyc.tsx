@@ -88,7 +88,7 @@ export const SellerKyc: React.FC = () => {
     setError(null);
     setSuccess(null);
     if (!idCardFront || !selfie) {
-      setError('Vui lòng chọn đủ ảnh CCCD mặt trước và ảnh selfie.');
+      setError('Please select both the front ID card photo and selfie photo.');
       return;
     }
     const token = localStorage.getItem('accessToken');
@@ -108,7 +108,7 @@ export const SellerKyc: React.FC = () => {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.message || 'Gửi eKYC thất bại.');
+        setError(data?.message || 'KYC submission failed.');
         // Notification đã được lưu DB bởi BE, refresh bell count
         setTimeout(() => window.dispatchEvent(new Event('ordersAndNotificationsRefresh')), 1000);
         return;
@@ -148,23 +148,23 @@ export const SellerKyc: React.FC = () => {
               window.dispatchEvent(new Event('authStatusChanged'));
             }
 
-            setSuccess('KYC đã được duyệt tự động! Đang chuyển hướng...');
+            setSuccess('KYC approved automatically! Redirecting...');
             setTimeout(() => navigate('/seller/dashboard'), 1500);
           } else {
             setKycStatus('PENDING');
-            setSuccess('Hồ sơ KYC đã được gửi thành công và đang chờ Admin duyệt. Vui lòng quay lại sau.');
+            setSuccess('KYC profile submitted successfully and is awaiting Admin approval. Please check back later.');
             setTimeout(() => window.dispatchEvent(new Event('ordersAndNotificationsRefresh')), 1000);
           }
         }
       } catch (err) {
         console.error('Error refreshing user status:', err);
-        setSuccess('Hồ sơ đã gửi. Vui lòng tải lại trang để cập nhật trạng thái.');
+        setSuccess('Profile submitted. Please reload the page to update status.');
       }
       
       setIdCardFront(null);
       setSelfie(null);
     } catch (err: unknown) {
-      setError(isConnectionError(err) ? CONNECTION_ERROR_MESSAGE : (err as Error).message || 'Gửi eKYC thất bại.');
+      setError(isConnectionError(err) ? CONNECTION_ERROR_MESSAGE : (err as Error).message || 'KYC submission failed.');
     } finally {
       setSubmitLoading(false);
     }
@@ -173,7 +173,7 @@ export const SellerKyc: React.FC = () => {
   if (loading) {
     return (
       <div className="max-w-xl mx-auto px-4 py-12 text-center text-gray-500">
-        Đang tải...
+        Loading...
       </div>
     );
   }
@@ -184,20 +184,20 @@ export const SellerKyc: React.FC = () => {
         <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex items-center gap-3">
           <Store className="w-8 h-8 text-gray-600" />
           <div>
-            <h1 className="text-lg font-semibold text-gray-900">Đăng ký cửa hàng</h1>
-            <p className="text-sm text-gray-500">Xác thực danh tính (KYC) để mở cửa hàng trên VeloBike</p>
+            <h1 className="text-lg font-semibold text-gray-900">Register Store</h1>
+            <p className="text-sm text-gray-500">Identity verification (KYC) to open a store on VeloBike</p>
           </div>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {kycStatus === 'PENDING' && (
             <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-              Hồ sơ KYC của bạn đang chờ Admin duyệt. Bạn vẫn có thể cập nhật lại thông tin bên dưới nếu cần.
+              Your KYC profile is awaiting Admin approval. You can still update the information below if needed.
             </div>
           )}
           {kycStatus === 'REJECTED' && (
             <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800 space-y-1">
-              <p className="font-medium">Hệ thống không xác thực được giấy tờ của bạn.</p>
-              <p>Vui lòng chụp lại ảnh CCCD và selfie rõ nét, đủ ánh sáng. Đảm bảo khuôn mặt trên CCCD khớp với ảnh selfie. Bạn có thể gửi lại bất cứ lúc nào.</p>
+              <p className="font-medium">The system could not verify your documents.</p>
+              <p>Please retake the ID card and selfie photos clearly with good lighting. Make sure the face on the ID card matches the selfie. You can resubmit at any time.</p>
             </div>
           )}
           {error && (
@@ -208,7 +208,7 @@ export const SellerKyc: React.FC = () => {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ảnh CCCD mặt trước</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Front ID card photo</label>
             <input
               type="file"
               accept="image/*"
@@ -232,14 +232,14 @@ export const SellerKyc: React.FC = () => {
               <div className="mt-2">
                 <img
                   src={frontPreview}
-                  alt="Ảnh CCCD mặt trước xem trước"
+                  alt="Front ID card preview"
                   className="h-32 rounded border border-gray-200 object-contain bg-gray-50"
                 />
               </div>
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ảnh selfie khuôn mặt</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Selfie face photo</label>
             <input
               type="file"
               accept="image/*"
@@ -263,7 +263,7 @@ export const SellerKyc: React.FC = () => {
               <div className="mt-2">
                 <img
                   src={selfiePreview}
-                  alt="Ảnh selfie xem trước"
+                  alt="Selfie preview"
                   className="h-32 rounded border border-gray-200 object-contain bg-gray-50"
                 />
               </div>
@@ -275,7 +275,7 @@ export const SellerKyc: React.FC = () => {
               disabled={submitLoading}
               className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 text-sm font-medium"
             >
-              {submitLoading ? 'Đang gửi...' : 'Gửi xác thực'}
+              {submitLoading ? 'Submitting...' : 'Submit verification'}
               <Upload size={16} />
             </button>
             <button
@@ -283,7 +283,7 @@ export const SellerKyc: React.FC = () => {
               onClick={() => navigate(-1)}
               className="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm"
             >
-              Quay lại
+              Back
             </button>
           </div>
         </form>

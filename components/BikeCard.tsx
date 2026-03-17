@@ -37,7 +37,7 @@ export const BikeCard: React.FC<BikeCardProps> = ({ bike, inWishlist, onWishlist
             <div className={`px-6 py-3 font-bold text-base uppercase tracking-widest transform -rotate-12 shadow-2xl border-4 border-white/20 rounded-lg ${
               bike.status === 'SOLD' ? 'bg-gray-600 text-white' : 'bg-amber-600 text-white'
             }`}>
-              {bike.status === 'SOLD' ? 'Đã bán' : 'Đã có người đặt'}
+              {bike.status === 'SOLD' ? 'Sold' : 'Reserved'}
             </div>
           </div>
         )}
@@ -52,7 +52,7 @@ export const BikeCard: React.FC<BikeCardProps> = ({ bike, inWishlist, onWishlist
               onWishlistToggle(bike.id);
             }}
             className="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/90 backdrop-blur shadow-sm hover:bg-white transition-colors"
-            title={inWishlist ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
+            title={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
             aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
           >
             <Heart
