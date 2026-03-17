@@ -245,9 +245,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 <>
                   <Link to="/" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname === '/' ? 'text-black' : 'text-gray-500'}`}>HOME</Link>
                   <Link to="/marketplace" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname === '/marketplace' ? 'text-black' : 'text-gray-500'}`}>MARKETPLACE</Link>
-                  {(userRole === 'BUYER' || userRole === 'SELLER') && (
-                    <Link to="/buyer/dashboard" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname === '/buyer/dashboard' ? 'text-black' : 'text-gray-500'}`}>DASHBOARD</Link>
-                  )}
                   <Link to="/inspection" className="text-xs font-medium text-gray-500 hover:text-accent transition-colors">INSPECTION SERVICE</Link>
                 </>
               )}
@@ -284,9 +281,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                           </span>
                         )}
                       </Link>
-                      <Link to="/messages" className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:border-accent hover:text-accent rounded-full px-3 py-2 text-sm font-medium transition-colors" title="Tin nhắn">
+                      <Link to="/messages" className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:border-accent hover:text-accent rounded-full px-3 py-2 text-sm font-medium transition-colors" title="Messages">
                         <MessageCircle size={18} />
-                        <span>Tin nhắn</span>
+                        <span>Messages</span>
                       </Link>
                       <Link to="/seller/kyc" className="flex items-center bg-black text-white hover:bg-gray-800 rounded-full px-4 py-2 text-sm font-medium transition-colors">
                         Post listing
@@ -296,9 +293,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                   {/* SELLER khi về trang mua hàng: giữ đầy đủ tính năng buyer (wishlist, đơn hàng, thông báo) + nút seller */}
                   {userRole === 'SELLER' && (
                     <>
-                      <Link to="/messages" className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:border-accent hover:text-accent rounded-full px-3 py-2 text-sm font-medium transition-colors" title="Tin nhắn (chung)">
+                      <Link to="/messages" className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:border-accent hover:text-accent rounded-full px-3 py-2 text-sm font-medium transition-colors" title="Messages (shared inbox)">
                         <MessageCircle size={18} />
-                        <span>Tin nhắn</span>
+                        <span>Messages</span>
                       </Link>
                       <Link to="/buyer/wishlist" className="text-accent hover:text-accent/80 transition-colors relative p-1 rounded-full hover:bg-gray-100" title="Danh sách yêu thích">
                         <Heart size={20} />
@@ -355,33 +352,41 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                             </div>
                           </div>
                         </Link>
-                        {/* Seller: hiện cho cả BUYER và SELLER. BUYER phải xác thực eKYC trước khi dùng */}
+                        {/* Seller section: visible for both BUYER and SELLER. BUYER must complete eKYC before selling */}
                         {(userRole === 'BUYER' || userRole === 'SELLER') && (
                           <div className="py-2 border-t border-gray-100">
                             <p className="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Seller</p>
-                            <Link to={userRole === 'SELLER' ? '/seller/dashboard' : '/seller/kyc'} onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
+                            <Link
+                              to={userRole === 'SELLER' ? '/seller/dashboard' : '/seller/kyc'}
+                              onClick={() => setProfileOpen(false)}
+                              className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50"
+                            >
                               <Store size={18} className="text-gray-500 flex-shrink-0" />
-                              <span className="flex-1">Cửa hàng / chuyên trang</span>
+                              <span className="flex-1">Store / seller hub</span>
                               <ChevronRight size={16} className="text-gray-400" />
                             </Link>
-                            <Link to={userRole === 'SELLER' ? '/seller/dashboard' : '/seller/kyc'} onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
+                            <Link
+                              to={userRole === 'SELLER' ? '/seller/inventory' : '/seller/kyc'}
+                              onClick={() => setProfileOpen(false)}
+                              className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50"
+                            >
                               <LayoutDashboard size={18} className="text-gray-500 flex-shrink-0" />
-                              <span className="flex-1">Quản lý tin</span>
+                              <span className="flex-1">Manage listings</span>
                               <ChevronRight size={16} className="text-gray-400" />
                             </Link>
                           </div>
                         )}
-                        {/* Khác */}
+                        {/* Other */}
                         <div className="py-2 border-t border-gray-100">
-                          <p className="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Khác</p>
+                          <p className="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Other</p>
                           <Link to={profileUrl} onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
                             <Settings size={18} className="text-gray-500 flex-shrink-0" />
-                            <span className="flex-1">Cài đặt tài khoản</span>
+                            <span className="flex-1">Account settings</span>
                             <ChevronRight size={16} className="text-gray-400" />
                           </Link>
                           <button type="button" onClick={handleLogout} className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 w-full">
                             <LogOut size={18} className="flex-shrink-0" />
-                            <span className="flex-1 text-left">Đăng xuất</span>
+                            <span className="flex-1 text-left">Sign out</span>
                             <ChevronRight size={16} className="text-gray-400" />
                           </button>
                         </div>

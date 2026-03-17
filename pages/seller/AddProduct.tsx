@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Toast, useToast } from '../../components/Toast';
 import { API_BASE_URL } from '../../constants';
+import { useCatalog, CatalogBrand, CatalogCategory } from '../../hooks/useCatalog';
 
 export const AddProduct: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<{[key: string]: number}>({});
+  const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
   const { toast, showToast, hideToast } = useToast();
+  const { brands, categories, getTypeForCategory, fetch: fetchCatalog, loading: catalogLoading } = useCatalog();
   
   const [formData, setFormData] = useState({
     title: '',
@@ -39,7 +41,8 @@ export const AddProduct: React.FC = () => {
         }
       } catch {}
     }
-  }, [navigate]);
+    fetchCatalog();
+  }, [navigate, fetchCatalog]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -247,22 +250,36 @@ export const AddProduct: React.FC = () => {
               <p className="text-xs text-gray-500 mt-1">At least 10 characters</p>
             </div>
 
-            {/* Category & Price */}
+            {/* Category (from admin) & Price */}
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Bike Type *</label>
                 <select
-                  name="type"
-                  value={formData.type}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  value={
+                    categories.find(
+                      (c: CatalogCategory) =>
+                        getTypeForCategory(c.slug, c.name) === formData.type
+                    )?.slug || ''
+                  }
+                  onChange={(e) => {
+                    const slug = e.target.value;
+                    const cat = categories.find((c: CatalogCategory) => c.slug === slug);
+                    const mapped = cat ? getTypeForCategory(cat.slug, cat.name) : formData.type;
+                    if (!mapped) return;
+                    setFormData((prev) => ({ ...prev, type: mapped }));
+                  }}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
                   required
                 >
-                  <option value="ROAD">Road Bike</option>
-                  <option value="MTB">Mountain Bike</option>
-                  <option value="GRAVEL">Gravel Bike</option>
-                  <option value="TRIATHLON">Triathlon</option>
-                  <option value="E_BIKE">E-Bike</option>
+                  <option value="">{catalogLoading ? 'Loading categories...' : 'Select category'}</option>
+                  {categories
+                    .filter((c: CatalogCategory) => c.isActive)
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((cat) => (
+                      <option key={cat._id} value={cat.slug}>
+                        {cat.name}
+                      </option>
+                    ))}
                 </select>
               </div>
               <div>
@@ -306,15 +323,25 @@ export const AddProduct: React.FC = () => {
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Brand *</label>
-                <input
-                  type="text"
+                <select
                   name="brand"
-                  placeholder="Ví dụ: Trek, Specialized, Giant"
                   value={formData.brand}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
                   required
-                />
+                >
+                  <option value="">
+                    {catalogLoading ? 'Loading brands...' : 'Select a brand'}
+                  </option>
+                  {brands
+                    .filter((b: CatalogBrand) => b.isActive)
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((brand) => (
+                      <option key={brand._id} value={brand.name}>
+                        {brand.name}
+                      </option>
+                    ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Model *</label>

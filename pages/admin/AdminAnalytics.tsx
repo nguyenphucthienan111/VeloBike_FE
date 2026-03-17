@@ -26,7 +26,7 @@ export const AdminAnalytics: React.FC = () => {
       setError('');
       const token = localStorage.getItem('accessToken');
       if (!token) {
-        setError('Chưa đăng nhập');
+        setError('Not logged in');
         return;
       }
 
@@ -77,34 +77,34 @@ export const AdminAnalytics: React.FC = () => {
         <div className="mb-6 flex items-center justify-between gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
           <span>{error}</span>
           <button onClick={() => fetchAnalytics()} className="px-3 py-1.5 text-sm font-medium border border-red-300 rounded-lg hover:bg-red-100">
-            Thử lại
+            Retry
           </button>
         </div>
       )}
 
       {loading ? (
-        <AdminLoadingState message="Đang tải phân tích..." />
+        <AdminLoadingState message="Loading analytics..." />
       ) : analytics ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đơn hàng</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Orders</p>
             <p className="mt-1 text-2xl font-bold text-slate-900">{analytics.orders}</p>
-            <p className="text-xs text-slate-500 mt-1">Trong kỳ</p>
+            <p className="text-xs text-slate-500 mt-1">In period</p>
           </div>
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Doanh thu</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Revenue</p>
             <p className="mt-1 text-2xl font-bold text-slate-900">{formatCurrency(analytics.revenue)}</p>
-            <p className="text-xs text-slate-500 mt-1">Phí nền tảng</p>
+            <p className="text-xs text-slate-500 mt-1">Platform fees</p>
           </div>
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Seller mới</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">New sellers</p>
             <p className="mt-1 text-2xl font-bold text-slate-900">{analytics.newSellers}</p>
-            <p className="text-xs text-slate-500 mt-1">Đăng ký trong kỳ</p>
+            <p className="text-xs text-slate-500 mt-1">Registered in period</p>
           </div>
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đánh giá</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Reviews</p>
             <p className="mt-1 text-2xl font-bold text-slate-900">{analytics.reviews}</p>
-            <p className="text-xs text-slate-500 mt-1">Trong kỳ</p>
+            <p className="text-xs text-slate-500 mt-1">In period</p>
           </div>
         </div>
       ) : null}

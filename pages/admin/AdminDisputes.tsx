@@ -163,7 +163,7 @@ export const AdminDisputes: React.FC = () => {
 
   return (
     <AdminPageLayout>
-      <AdminPageHeader title="Quản lý tranh chấp" subtitle="Xem và xử lý tranh chấp đơn hàng" />
+      <AdminPageHeader title="Dispute management" subtitle="View and handle order disputes" />
       {error && <AdminErrorBanner message={error} />}
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-6">
@@ -190,7 +190,7 @@ export const AdminDisputes: React.FC = () => {
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-6">
         {loading ? (
-          <AdminLoadingState message="Đang tải tranh chấp..." />
+          <AdminLoadingState message="Loading disputes..." />
         ) : (
               <>
                 <div className="overflow-x-auto">

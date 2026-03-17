@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SellerHeaderUserMenu } from '../../components/SellerHeaderUserMenu';
+import { SellerPageLayout, SellerPageHeader } from '../../components/SellerPageLayout';
 import { API_BASE_URL } from '../../constants';
 
 interface DashboardStats {
@@ -139,118 +140,52 @@ export const SellerDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="animate-spin h-12 w-12 border-4 border-accent border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
+      <SellerPageLayout>
+        <div className="flex items-center justify-center py-16">
+          <div className="text-center">
+            <div className="animate-spin h-12 w-12 border-4 border-accent border-t-transparent rounded-full mx-auto mb-4" />
+            <p className="text-gray-600">Loading dashboard...</p>
+          </div>
         </div>
-      </div>
+      </SellerPageLayout>
     );
   }
 
   return (
-    <div className="p-8">
-          {/* Header */}
-          <div className="flex justify-between items-start mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-              <p className="text-sm text-gray-600 mt-1">Welcome back, {user?.fullName || 'Seller'}!</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm">
-                <span>🔍</span>
-                <input type="text" placeholder="Search..." className="outline-none text-sm w-40" />
-              </div>
-              
-              {/* Notifications */}
-              <div className="relative">
-                <button 
-                  onClick={() => setShowNotifications(!showNotifications)}
-                  className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-gray-50 relative"
-                >
-                  🔔
-                  {notifications.filter(n => !n.read).length > 0 && (
-                    <span className="absolute top-0 right-0 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                      {notifications.filter(n => !n.read).length}
-                    </span>
-                  )}
-                </button>
-                
-                {/* Notifications Dropdown */}
-                {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-y-auto">
-                    <div className="p-4 border-b border-gray-200">
-                      <h3 className="font-bold text-gray-900">Notifications</h3>
-                    </div>
-                    {notifications.length > 0 ? (
-                      <div className="divide-y divide-gray-100">
-                        {notifications.map((notif) => (
-                          <div key={notif.id} className={`p-4 hover:bg-gray-50 transition-colors ${!notif.read ? 'bg-blue-50' : ''}`}>
-                            <p className="font-semibold text-gray-900 text-sm">{notif.title}</p>
-                            <p className="text-gray-600 text-sm mt-1">{notif.message}</p>
-                            <p className="text-xs text-gray-500 mt-2">{new Date(notif.createdAt).toLocaleString()}</p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="p-8 text-center text-gray-500">No notifications</div>
-                    )}
-                  </div>
-                )}
-              </div>
+    <SellerPageLayout>
+      <SellerPageHeader
+        title="Seller Dashboard"
+        subtitle={`Welcome back, ${user?.fullName || 'Seller'}!`}
+        rightSection={<SellerHeaderUserMenu user={user} />}
+      />
 
-              {/* Message Button */}
-              <button 
-                onClick={() => navigate('/seller/messages')}
-                className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-gray-50 text-gray-700"
-                title="Tin nhắn"
-              >
-                💬
-              </button>
-              
-              <SellerHeaderUserMenu user={user} />
-            </div>
-          </div>
-
-          {/* Stats Cards - From API */}
-          <div className="grid grid-cols-4 gap-4 mb-8">
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-              <div className="flex justify-between items-start">
-                <span className="text-green-600 text-sm font-semibold">+8.2%</span>
-              </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
               <p className="text-gray-600 text-xs font-semibold mt-4">TOTAL REVENUE</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">{formatCurrency(stats?.totalRevenue || 0)}</p>
-            </div>
+        </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-              <div className="flex justify-between items-start">
-                <span className="text-green-600 text-sm font-semibold">+5.1%</span>
-              </div>
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
               <p className="text-gray-600 text-xs font-semibold mt-4">TOTAL SALES</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">{stats?.totalSales || 0}</p>
-            </div>
+        </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-              <div className="flex justify-between items-start">
-                <span className="text-green-600 text-sm font-semibold">+3.2%</span>
-              </div>
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
               <p className="text-gray-600 text-xs font-semibold mt-4">TOTAL VIEWS</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">{(stats?.totalViews || 0).toLocaleString()}</p>
-            </div>
+        </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-              <div className="flex justify-between items-start">
-                <span className="text-green-600 text-sm font-semibold">+1.5%</span>
-              </div>
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
               <p className="text-gray-600 text-xs font-semibold mt-4">CONVERSION RATE</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">{(stats?.conversionRate || 0).toFixed(1)}%</p>
-            </div>
-          </div>
+        </div>
+      </div>
 
-          {/* Content Grid */}
-          <div className="grid grid-cols-3 gap-6">
-            {/* Recent Transactions */}
-            <div className="col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      {/* Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recent Transactions */}
+        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-lg font-bold text-gray-900">Recent Transactions</h2>
                 <button className="text-purple-600 text-sm font-semibold hover:underline">VIEW ALL</button>
@@ -292,12 +227,12 @@ export const SellerDashboard: React.FC = () => {
                   </tbody>
                 </table>
               </div>
-            </div>
+        </div>
 
-            {/* Right Sidebar */}
-            <div className="space-y-6">
-              {/* Top Listings */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        {/* Right Sidebar */}
+        <div className="space-y-6">
+          {/* Top Listings */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Top Products</h3>
                 <div className="space-y-3">
                   {topListings.length > 0 ? (
@@ -315,10 +250,10 @@ export const SellerDashboard: React.FC = () => {
                     <p className="text-sm text-gray-500">No data yet</p>
                   )}
                 </div>
-              </div>
+          </div>
 
-              {/* Quick Actions */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          {/* Quick Actions */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
                 <div className="space-y-2">
                   <button 
@@ -343,9 +278,9 @@ export const SellerDashboard: React.FC = () => {
                     <p className="text-xs text-gray-500 group-hover:text-purple-500">View reports</p>
                   </button>
                 </div>
-              </div>
-            </div>
           </div>
-    </div>
+        </div>
+      </div>
+    </SellerPageLayout>
   );
 };

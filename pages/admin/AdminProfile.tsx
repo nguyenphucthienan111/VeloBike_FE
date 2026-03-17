@@ -136,6 +136,8 @@ export const AdminProfile: React.FC = () => {
           city: formData.address.city || '',
           province: formData.address.province || '',
         },
+        // Lưu avatar dạng data URL vào BE (User.avatar)
+        avatar: avatarPreview || profile?.avatar || '',
       };
 
       const response = await fetch(`${API_BASE_URL}/users/me`, {
@@ -174,14 +176,14 @@ export const AdminProfile: React.FC = () => {
   if (loading) {
     return (
       <AdminPageLayout>
-        <AdminLoadingState message="Đang tải hồ sơ..." />
+        <AdminLoadingState message="Loading profile..." />
       </AdminPageLayout>
     );
   }
 
   return (
     <AdminPageLayout>
-      <AdminPageHeader title="Hồ sơ của tôi" subtitle="Thông tin tài khoản admin" />
+      <AdminPageHeader title="My profile" subtitle="Admin account information" />
       {/* Messages */}
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">

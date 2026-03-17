@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MessageCircle, CreditCard, XCircle, RefreshCw, AlertTriangle, CheckCircle, Truck } from 'lucide-react';
+import { MessageCircle, CreditCard, XCircle, RefreshCw, AlertTriangle, CheckCircle, Truck, ShoppingBag } from 'lucide-react';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
 import { Toast, useToast } from '../../components/Toast';
 import { DisputeModal } from '../../components/DisputeModal';
@@ -51,7 +51,7 @@ export const BuyerOrders: React.FC = () => {
 
   const handlePayment = async (orderId: string) => {
     try {
-      showToast('Đang tạo link thanh toán...', 'info');
+      showToast('Creating payment link...', 'info');
       const token = localStorage.getItem('accessToken');
       if (!token) return;
 
@@ -67,7 +67,7 @@ export const BuyerOrders: React.FC = () => {
       const data = await res.json();
       
       if (!res.ok) {
-        throw new Error(data.message || 'Không thể tạo link thanh toán');
+        throw new Error(data.message || 'Unable to create payment link');
       }
 
       if (data.success && data.paymentLink) {
@@ -82,10 +82,10 @@ export const BuyerOrders: React.FC = () => {
   };
 
   const handleCancelOrder = async (orderId: string) => {
-    if (!window.confirm('Bạn có chắc chắn muốn huỷ đơn hàng này không?')) return;
+    if (!window.confirm('Are you sure you want to cancel this order?')) return;
 
     try {
-      showToast('Đang huỷ đơn hàng...', 'info');
+      showToast('Cancelling order...', 'info');
       const token = localStorage.getItem('accessToken');
       if (!token) return;
 
@@ -101,17 +101,17 @@ export const BuyerOrders: React.FC = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || 'Không thể huỷ đơn hàng');
+        throw new Error(data.message || 'Unable to cancel order');
       }
 
-      showToast('Đã huỷ đơn hàng thành công', 'success');
+      showToast('Order cancelled successfully', 'success');
       
       // Update local state
       setOrders(prev => prev.map(o => 
         o._id === orderId ? { ...o, status: 'CANCELLED' } : o
       ));
     } catch (err: any) {
-      showToast(err.message || 'Lỗi khi huỷ đơn hàng', 'error');
+      showToast(err.message || 'Error while cancelling order', 'error');
     }
   };
 
@@ -142,14 +142,14 @@ export const BuyerOrders: React.FC = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || 'Không thể xác nhận đã nhận hàng');
+        throw new Error(data.message || 'Unable to confirm receipt');
       }
 
-      showToast('Đã xác nhận nhận hàng thành công!', 'success');
+      showToast('Order marked as received!', 'success');
       setShowConfirmReceivedModal(false);
       fetchOrders();
     } catch (err: any) {
-      showToast(err.message || 'Lỗi khi xác nhận', 'error');
+      showToast(err.message || 'Error while confirming receipt', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -209,7 +209,7 @@ export const BuyerOrders: React.FC = () => {
   const handleCheckPayment = async (orderId: string, silent = false) => {
     try {
       if (!silent) setCheckingPayment(orderId);
-      if (!silent) showToast('Đang kiểm tra trạng thái thanh toán...', 'info');
+      if (!silent) showToast('Checking payment status...', 'info');
       const token = localStorage.getItem('accessToken');
       if (!token) return;
 
@@ -218,7 +218,7 @@ export const BuyerOrders: React.FC = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       const orderData = await orderRes.json();
-      if (!orderRes.ok) throw new Error(orderData.message || 'Không thể lấy thông tin đơn hàng');
+      if (!orderRes.ok) throw new Error(orderData.message || 'Unable to fetch order details');
 
       const order = orderData.data;
       
@@ -235,7 +235,7 @@ export const BuyerOrders: React.FC = () => {
       const orderCode = timelineNote ? timelineNote.split('orderCode: ')[1] : null;
 
       if (!orderCode) {
-        if (!silent) showToast('Không tìm thấy mã thanh toán. Vui lòng thử lại sau.', 'error');
+        if (!silent) showToast('Payment code not found. Please try again later.', 'error');
         setCheckingPayment(null);
         return;
       }
@@ -247,7 +247,7 @@ export const BuyerOrders: React.FC = () => {
       const infoData = await infoRes.json();
 
       if (!infoRes.ok) {
-         throw new Error(infoData.message || 'Không thể kiểm tra trạng thái thanh toán');
+         throw new Error(infoData.message || 'Unable to check payment status');
       }
 
       if (infoData.data?.status === 'PAID') {
@@ -270,10 +270,10 @@ export const BuyerOrders: React.FC = () => {
              if (!silent) showToast('Đã cập nhật trạng thái thanh toán thành công!', 'success');
              fetchOrders(); 
          } else {
-             if (!silent) showToast('Thanh toán thành công nhưng chưa cập nhật được đơn hàng. Vui lòng thử lại.', 'warning');
+             if (!silent) showToast('Payment succeeded but order was not updated. Please try again.', 'warning');
          }
       } else {
-          if (!silent) showToast('Chưa ghi nhận thanh toán cho đơn hàng này.', 'info');
+          if (!silent) showToast('No payment was recorded for this order yet.', 'info');
       }
 
     } catch (err: any) {
@@ -344,193 +344,205 @@ export const BuyerOrders: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold text-gray-900">My Orders</h1>
-          <p className="mt-2 text-gray-600 text-sm">
-            View order history, status and payments.
-          </p>
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      {/* Header - unified with BuyerNotifications */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+            <ShoppingBag size={22} className="text-accent" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">My Orders</h1>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Track your purchases, payments, and delivery status.
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          isVisible={toast.isVisible}
-          onClose={hideToast}
-        />
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={hideToast}
+      />
+
+      {/* Content card */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden mt-4">
         {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="bg-red-50 text-red-700 px-6 py-4 text-sm border-b border-red-100">
+            {error}
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow p-6">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <div className="h-10 w-10 border-4 border-gray-300 border-t-gray-900 rounded-full animate-spin mb-4" />
-              <p className="text-gray-500 text-sm">Loading orders...</p>
-            </div>
-          ) : orders.length === 0 ? (
-            <div className="py-12 text-center">
-              <p className="text-gray-600 mb-3">You have no orders yet.</p>
-              <Link
-                to="/marketplace"
-                className="inline-flex items-center px-4 py-2 bg-black text-white text-sm font-semibold rounded-lg hover:bg-gray-900 transition-colors"
-              >
-                Start shopping
-              </Link>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="border-b">
-                  <tr>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Order ID</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Product</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Price</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Date</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.map((order) => {
-                    const listing = order.listingId;
-                    const statusInfo = formatStatus(order.status);
-                    const amount =
-                      order.financials?.totalAmount ||
-                      order.financials?.itemPrice ||
-                      listing?.pricing?.amount;
-                    
-                    const shippingInfo = order.status === 'SHIPPING' ? getShippingInfo(order.timeline || []) : null;
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+            <div className="h-8 w-8 border-2 border-accent border-t-transparent rounded-full animate-spin mb-3" />
+            <p className="text-sm">Loading orders...</p>
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="px-6 py-12 text-center text-gray-500">
+            <p className="text-sm font-medium mb-2">You have no orders yet.</p>
+            <p className="text-xs mb-4">
+              When you purchase a bike, it will appear here with full status tracking.
+            </p>
+            <Link
+              to="/marketplace"
+              className="inline-flex items-center px-4 py-2 bg-black text-white text-xs font-semibold rounded-full hover:bg-gray-900 transition-colors"
+            >
+              Start shopping
+            </Link>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="border-b bg-gray-50">
+                <tr>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Order</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Product</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Price</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Date</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((order) => {
+                  const listing = order.listingId;
+                  const statusInfo = formatStatus(order.status);
+                  const amount =
+                    order.financials?.totalAmount ||
+                    order.financials?.itemPrice ||
+                    listing?.pricing?.amount;
 
-                    return (
-                      <tr key={order._id} className="border-b hover:bg-gray-50">
-                        <td className="py-3 px-4 text-gray-900 font-mono text-xs">
-                          #{order._id.slice(-6).toUpperCase()}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-3">
-                            {listing?.media?.thumbnails?.[0] && (
-                              <img
-                                src={listing.media.thumbnails[0]}
-                                alt={listing.title}
-                                className="w-12 h-12 rounded object-cover border border-gray-200"
-                              />
-                            )}
-                            <div>
-                              <div className="font-semibold text-gray-900 text-sm">
-                                {listing?.title || 'Listing removed'}
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {listing?.generalInfo?.brand} {listing?.generalInfo?.model}
-                              </div>
+                  const shippingInfo =
+                    order.status === 'SHIPPING' ? getShippingInfo(order.timeline || []) : null;
+
+                  return (
+                    <tr key={order._id} className="border-b last:border-0 hover:bg-gray-50">
+                      <td className="py-3 px-4 text-gray-900 font-mono text-xs">
+                        #{order._id.slice(-6).toUpperCase()}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          {listing?.media?.thumbnails?.[0] && (
+                            <img
+                              src={listing.media.thumbnails[0]}
+                              alt={listing.title}
+                              className="w-12 h-12 rounded object-cover border border-gray-200"
+                            />
+                          )}
+                          <div>
+                            <div className="font-semibold text-gray-900 text-sm">
+                              {listing?.title || 'Listing removed'}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {listing?.generalInfo?.brand} {listing?.generalInfo?.model}
                             </div>
                           </div>
-                        </td>
-                        <td className="py-3 px-4 text-gray-900">
-                          {formatCurrency(amount, listing?.pricing?.currency)}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex flex-col gap-1">
-                            <span
-                              className={`inline-flex px-2 py-1 rounded text-xs font-medium w-fit ${statusInfo.className}`}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-gray-900">
+                        {formatCurrency(amount, listing?.pricing?.currency)}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex flex-col gap-1">
+                          <span
+                            className={`inline-flex px-2 py-1 rounded text-xs font-medium w-fit ${statusInfo.className}`}
+                          >
+                            {statusInfo.label}
+                          </span>
+                          {shippingInfo && (
+                            <div className="flex items-start gap-1 text-xs text-gray-600 bg-blue-50 p-1.5 rounded border border-blue-100 max-w-[220px]">
+                              <Truck size={12} className="mt-0.5 flex-shrink-0 text-blue-600" />
+                              <span className="break-words">{shippingInfo}</span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-gray-600">
+                        {new Date(order.createdAt).toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex flex-col gap-2 min-w-[160px]">
+                          {order.status === 'CREATED' && (
+                            <div className="flex flex-col gap-1">
+                              {checkingPayment === order._id ? (
+                                <div className="flex items-center justify-center gap-2 bg-gray-100 text-gray-600 px-3 py-1.5 rounded text-xs font-semibold">
+                                  <RefreshCw size={14} className="animate-spin" />
+                                  Checking...
+                                </div>
+                              ) : (
+                                <div className="flex gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => handlePayment(order._id)}
+                                    className="inline-flex items-center gap-1 text-xs font-bold text-white bg-accent hover:bg-red-600 px-3 py-1.5 rounded transition-colors shadow-sm"
+                                  >
+                                    <CreditCard size={14} />
+                                    Pay
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCheckPayment(order._id)}
+                                    className="inline-flex items-center gap-1 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded transition-colors shadow-sm"
+                                    title="Check payment status if you have already paid"
+                                  >
+                                    <RefreshCw size={14} />
+                                  </button>
+                                </div>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleCancelOrder(order._id)}
+                                className="inline-flex items-center gap-1 text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded transition-colors shadow-sm w-full justify-center"
+                              >
+                                <XCircle size={14} />
+                                Cancel order
+                              </button>
+                            </div>
+                          )}
+                          {order.status === 'SHIPPING' && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedOrderForAction(order._id);
+                                setShowConfirmReceivedModal(true);
+                              }}
+                              className="inline-flex items-center gap-1 text-xs font-bold text-white bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded transition-colors shadow-sm"
+                              title="Confirm that you have received the bike"
                             >
-                              {statusInfo.label}
-                            </span>
-                            {shippingInfo && (
-                              <div className="flex items-start gap-1 text-xs text-gray-600 bg-blue-50 p-1.5 rounded border border-blue-100 max-w-[200px]">
-                                <Truck size={12} className="mt-0.5 flex-shrink-0 text-blue-600" />
-                                <span className="break-words">{shippingInfo}</span>
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-gray-600">
-                          {new Date(order.createdAt).toLocaleString()}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-3">
-                            {order.status === 'CREATED' && (
-                              <div className="flex flex-col gap-1">
-                                {checkingPayment === order._id ? (
-                                    <div className="flex items-center justify-center gap-2 bg-gray-100 text-gray-600 px-3 py-1.5 rounded text-xs font-semibold">
-                                        <RefreshCw size={14} className="animate-spin" />
-                                        Đang kiểm tra...
-                                    </div>
-                                ) : (
-                                    <div className="flex gap-1">
-                                    <button
-                                        type="button"
-                                        onClick={() => handlePayment(order._id)}
-                                        className="inline-flex items-center gap-1 text-xs font-bold text-white bg-accent hover:bg-red-600 px-3 py-1.5 rounded transition-colors shadow-sm"
-                                    >
-                                        <CreditCard size={14} />
-                                        Thanh toán
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleCheckPayment(order._id)}
-                                        className="inline-flex items-center gap-1 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded transition-colors shadow-sm"
-                                        title="Kiểm tra trạng thái thanh toán nếu bạn đã thanh toán"
-                                    >
-                                        <RefreshCw size={14} />
-                                    </button>
-                                    </div>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => handleCancelOrder(order._id)}
-                                  className="inline-flex items-center gap-1 text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded transition-colors shadow-sm w-full justify-center"
-                                >
-                                  <XCircle size={14} />
-                                  Huỷ đơn
-                                </button>
-                              </div>
-                            )}
-                            {order.status === 'SHIPPING' && (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setSelectedOrderForAction(order._id);
-                                        setShowConfirmReceivedModal(true);
-                                    }}
-                                    className="inline-flex items-center gap-1 text-xs font-bold text-white bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded transition-colors shadow-sm"
-                                    title="Xác nhận đã nhận được hàng"
-                                >
-                                    <CheckCircle size={14} />
-                                    Đã nhận hàng
-                                </button>
-                            )}
-                            {(order.status === 'SHIPPING' || order.status === 'DELIVERED') && (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setSelectedOrderForAction(order._id);
-                                        setShowDisputeModal(true);
-                                    }}
-                                    className="inline-flex items-center gap-1 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 px-3 py-1.5 rounded transition-colors shadow-sm"
-                                >
-                                    <AlertTriangle size={14} />
-                                    Khiếu nại
-                                </button>
-                            )}
-                            {(order.status === 'COMPLETED' || order.status === 'DELIVERED') && (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setSelectedOrderForAction(order._id);
-                                        setShowReviewModal(true);
-                                    }}
-                                    className="inline-flex items-center gap-1 text-xs font-bold text-white bg-yellow-500 hover:bg-yellow-600 px-3 py-1.5 rounded transition-colors shadow-sm"
-                                >
-                                    <MessageCircle size={14} />
-                                    Đánh giá
-                                </button>
-                            )}
+                              <CheckCircle size={14} />
+                              Mark as received
+                            </button>
+                          )}
+                          {(order.status === 'SHIPPING' || order.status === 'DELIVERED') && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedOrderForAction(order._id);
+                                setShowDisputeModal(true);
+                              }}
+                              className="inline-flex items-center gap-1 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 px-3 py-1.5 rounded transition-colors shadow-sm"
+                            >
+                              <AlertTriangle size={14} />
+                              Open dispute
+                            </button>
+                          )}
+                          {(order.status === 'COMPLETED' || order.status === 'DELIVERED') && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedOrderForAction(order._id);
+                                setShowReviewModal(true);
+                              }}
+                              className="inline-flex items-center gap-1 text-xs font-bold text-white bg-yellow-500 hover:bg-yellow-600 px-3 py-1.5 rounded transition-colors shadow-sm"
+                            >
+                              <MessageCircle size={14} />
+                              Đánh giá
+                            </button>
+                          )}
+                          <div className="flex flex-wrap gap-2 items-center">
                             {listing?._id && (
                               <Link
                                 to={`/bike/${listing._id}`}
@@ -542,7 +554,11 @@ export const BuyerOrders: React.FC = () => {
                             {order.sellerId?._id ? (
                               <button
                                 type="button"
-                                onClick={() => navigate(`/messages?contact=${order.sellerId!._id}&orderId=${order._id}`)}
+                                onClick={() =>
+                                  navigate(
+                                    `/messages?contact=${order.sellerId!._id}&orderId=${order._id}`
+                                  )
+                                }
                                 className="inline-flex items-center gap-1 text-xs font-semibold text-gray-700 hover:text-black"
                               >
                                 <MessageCircle size={14} />
@@ -550,15 +566,15 @@ export const BuyerOrders: React.FC = () => {
                               </button>
                             ) : null}
                           </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {showDisputeModal && selectedOrderForAction && (

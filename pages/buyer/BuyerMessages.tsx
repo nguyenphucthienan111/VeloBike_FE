@@ -143,20 +143,20 @@ export const BuyerMessages: React.FC = () => {
     return (
       <div className="max-w-4xl mx-auto px-4 py-12 text-center">
         <div className="animate-spin h-10 w-10 border-2 border-accent border-t-transparent rounded-full mx-auto mb-4" />
-        <p className="text-gray-500">Đang tải tin nhắn...</p>
+        <p className="text-gray-500">Loading messages...</p>
       </div>
     );
   }
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">Tin nhắn (mua hàng)</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-4">Messages (buyer)</h1>
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col" style={{ minHeight: '480px' }}>
         <div className="flex flex-1 min-h-0">
-          {/* Danh sách hội thoại */}
+          {/* Conversation list */}
           <div className="w-64 sm:w-72 border-r border-gray-200 flex flex-col flex-shrink-0">
             <div className="p-4 border-b border-gray-100">
-              <p className="text-sm font-semibold text-gray-700">Cuộc trò chuyện</p>
+              <p className="text-sm font-semibold text-gray-700">Conversations</p>
             </div>
             <div className="flex-1 overflow-y-auto">
               {conversations.length > 0 ? (
@@ -179,22 +179,22 @@ export const BuyerMessages: React.FC = () => {
               ) : (
                 <div className="p-6 text-center text-gray-500">
                   <MessageCircle className="w-10 h-10 mx-auto mb-2 text-gray-300" />
-                  <p className="text-sm">Chưa có cuộc trò chuyện</p>
-                  <p className="text-xs mt-1">Liên hệ người bán từ trang chi tiết xe.</p>
+                  <p className="text-sm">No conversations yet</p>
+                  <p className="text-xs mt-1">Contact the seller from the bike detail page.</p>
                 </div>
               )}
             </div>
           </div>
-          {/* Khung chat */}
+          {/* Chat window */}
           {selectedConversation ? (
             <div className="flex-1 flex flex-col min-w-0">
               <div className="p-4 border-b border-gray-200 bg-gray-50/50">
                 <p className="font-semibold text-gray-900">{selectedConversation.userName}</p>
-                <p className="text-xs text-gray-500">Người bán</p>
+                <p className="text-xs text-gray-500">Seller</p>
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {loadingMessages ? (
-                  <p className="text-sm text-gray-500 text-center py-4">Đang tải...</p>
+                  <p className="text-sm text-gray-500 text-center py-4">Loading...</p>
                 ) : messages.length > 0 ? (
                   messages.map((msg) => (
                     <div
@@ -216,7 +216,9 @@ export const BuyerMessages: React.FC = () => {
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-gray-500 text-center py-6">Chưa có tin nhắn. Hãy gửi lời chào.</p>
+                  <p className="text-sm text-gray-500 text-center py-6">
+                    No messages yet. Say hi to the seller.
+                  </p>
                 )}
               </div>
               <div className="p-4 border-t border-gray-200 bg-white">
@@ -231,7 +233,7 @@ export const BuyerMessages: React.FC = () => {
                         handleSendMessage();
                       }
                     }}
-                    placeholder="Nhập tin nhắn..."
+                    placeholder="Type a message..."
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-gray-900"
                   />
                   <button
@@ -240,14 +242,16 @@ export const BuyerMessages: React.FC = () => {
                     disabled={!messageInput.trim() || sendingMessage}
                     className="px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 disabled:opacity-50"
                   >
-                    Gửi
+                    Send
                   </button>
                 </div>
               </div>
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center text-gray-500 p-6">
-              <p className="text-sm">Chọn một cuộc trò chuyện hoặc liên hệ người bán từ trang xe.</p>
+              <p className="text-sm">
+                Select a conversation or contact the seller from a bike page.
+              </p>
             </div>
           )}
         </div>

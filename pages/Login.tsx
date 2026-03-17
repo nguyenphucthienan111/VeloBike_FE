@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { FormInput } from '../components/FormInput';
 import { Alert } from '../components/Alert';
 import { GoogleLogin } from '../components/GoogleLogin';
@@ -22,6 +23,7 @@ export const Login: React.FC = () => {
     email: '',
     password: '',
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -112,16 +114,26 @@ export const Login: React.FC = () => {
                   Forgot?
                 </Link>
               </div>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                placeholder="••••••••"
-                className={`w-full border px-4 py-3 text-sm rounded-lg focus:outline-none transition-colors ${
-                  errors.password ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-black'
-                }`}
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  placeholder="••••••••"
+                  className={`w-full border px-4 py-3 pr-11 text-sm rounded-lg focus:outline-none transition-colors ${
+                    errors.password ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-black'
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-gray-800"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
               {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
             </div>
 

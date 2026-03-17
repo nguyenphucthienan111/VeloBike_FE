@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SellerHeaderUserMenu } from '../../components/SellerHeaderUserMenu';
+import { SellerPageLayout, SellerPageHeader } from '../../components/SellerPageLayout';
 import { API_BASE_URL } from '../../constants';
 import { handleSessionExpired } from '../../utils/auth';
 
@@ -417,31 +418,27 @@ export const SellerWallet: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="animate-spin h-12 w-12 border-4 border-accent border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading wallet...</p>
+      <SellerPageLayout>
+        <div className="flex items-center justify-center py-16">
+          <div className="text-center">
+            <div className="animate-spin h-12 w-12 border-4 border-accent border-t-transparent rounded-full mx-auto mb-4" />
+            <p className="text-gray-600">Loading wallet...</p>
+          </div>
         </div>
-      </div>
+      </SellerPageLayout>
     );
   }
 
   return (
-    <div>
-    <div className="p-8">
-          {/* Header */}
-          <div className="flex justify-between items-start mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Wallet</h1>
-              <p className="text-sm text-gray-600 mt-1">Manage your earnings and withdrawals</p>
-            </div>
-
-            {/* Profile Section */}
-            <SellerHeaderUserMenu user={user} />
-          </div>
-
-          {/* Balance Cards */}
-          <div className="grid grid-cols-3 gap-4 mb-8">
+    <SellerPageLayout>
+      <SellerPageHeader
+        title="Seller wallet"
+        subtitle="Manage your earnings, withdrawals, and bank account."
+        rightSection={<SellerHeaderUserMenu user={user} />}
+      />
+      <div className="space-y-8">
+        {/* Balance Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             {/* Available Balance */}
             <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
               <p className="text-gray-600 text-xs font-semibold">AVAILABLE BALANCE</p>
@@ -459,10 +456,10 @@ export const SellerWallet: React.FC = () => {
               <p className="text-gray-600 text-xs font-semibold">TOTAL WITHDRAWN</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">{formatCurrency(balance?.totalWithdrawn || 0)}</p>
             </div>
-          </div>
+        </div>
 
-          {/* Bank Account Section */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+        {/* Bank account section */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Bank Account</h2>
@@ -500,10 +497,10 @@ export const SellerWallet: React.FC = () => {
                 </p>
               </div>
             )}
-          </div>
+        </div>
 
-          {/* Withdraw Section */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+        {/* Withdraw section */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-bold text-gray-900">Withdraw</h2>
               <button
@@ -524,10 +521,10 @@ export const SellerWallet: React.FC = () => {
                 <li>• Processing time: 1-3 business days</li>
               </ul>
             </div>
-          </div>
+        </div>
 
-          {/* Withdrawal History */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+        {/* Withdrawal history */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
             <h2 className="text-lg font-bold text-gray-900 mb-6">Withdrawal History</h2>
             {withdrawals.length > 0 ? (
               <div className="overflow-x-auto">
@@ -539,7 +536,7 @@ export const SellerWallet: React.FC = () => {
                       <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">FEE</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">BANK ACCOUNT</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">STATUS</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">THAO TÁC</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">ACTION</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -564,7 +561,7 @@ export const SellerWallet: React.FC = () => {
                               disabled={cancelWithdrawId === withdrawal.id}
                               className="text-red-600 text-sm font-medium hover:underline disabled:opacity-50"
                             >
-                              {cancelWithdrawId === withdrawal.id ? 'Đang hủy...' : 'Hủy yêu cầu'}
+                              {cancelWithdrawId === withdrawal.id ? 'Cancelling...' : 'Cancel request'}
                             </button>
                           )}
                         </td>
@@ -576,11 +573,11 @@ export const SellerWallet: React.FC = () => {
             ) : (
               <p className="text-gray-500 text-sm text-center py-8">No withdrawal history</p>
             )}
-          </div>
+        </div>
 
-          {/* Transaction History */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-6">Lịch sử giao dịch (ví bán hàng)</h2>
+        {/* Transaction history */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-6">Transaction history</h2>
             {transactions.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -617,14 +614,13 @@ export const SellerWallet: React.FC = () => {
             )}
           </div>
         </div>
-
-      {/* Withdraw Modal */}
+      {/* Withdraw modal */}
       {showWithdrawModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Withdraw</h2>
 
-            {/* Amount Input */}
+            {/* Amount input */}
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-900 mb-2">Amount (VND)</label>
               <input
@@ -642,7 +638,7 @@ export const SellerWallet: React.FC = () => {
               )}
             </div>
 
-            {/* Bank Account Input */}
+            {/* Bank account input */}
             <div className="mb-6">
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-sm font-semibold text-gray-900">Bank Account *</label>
@@ -703,7 +699,7 @@ export const SellerWallet: React.FC = () => {
               )}
             </div>
 
-            {/* Error Message */}
+            {/* Error message */}
             {withdrawError && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-sm text-red-700">{withdrawError}</p>
@@ -731,7 +727,7 @@ export const SellerWallet: React.FC = () => {
                 }}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
               >
-                Hủy
+                Cancel
               </button>
               <button
                 onClick={handleWithdraw}
@@ -745,7 +741,7 @@ export const SellerWallet: React.FC = () => {
         </div>
       )}
 
-      {/* Bank Account Modal */}
+      {/* Bank account modal */}
       {showBankAccountModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
@@ -753,7 +749,7 @@ export const SellerWallet: React.FC = () => {
               {savedBankAccount ? 'Update Bank Account' : 'Add Bank Account'}
             </h2>
 
-            {/* Account Name Input */}
+            {/* Account name input */}
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-900 mb-2">Account Holder Name *</label>
               <input
@@ -765,7 +761,7 @@ export const SellerWallet: React.FC = () => {
               />
             </div>
 
-            {/* Account Number Input */}
+            {/* Account number input */}
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-900 mb-2">Account Number *</label>
               <input
@@ -777,7 +773,7 @@ export const SellerWallet: React.FC = () => {
               />
             </div>
 
-            {/* Bank Name Input */}
+            {/* Bank name input */}
             <div className="mb-6">
               <label className="block text-sm font-semibold text-gray-900 mb-2">Bank Name *</label>
               <input
@@ -789,14 +785,14 @@ export const SellerWallet: React.FC = () => {
               />
             </div>
 
-            {/* Error Message */}
+            {/* Error message */}
             {bankAccountError && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-sm text-red-700">{bankAccountError}</p>
               </div>
             )}
 
-            {/* Success Message */}
+            {/* Success message */}
             {bankAccountSuccess && (
               <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-sm text-green-700">{bankAccountSuccess}</p>
@@ -820,7 +816,7 @@ export const SellerWallet: React.FC = () => {
                 }}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
               >
-                Hủy
+                Cancel
               </button>
               <button
                 onClick={handleSaveBankAccount}
@@ -833,6 +829,6 @@ export const SellerWallet: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </SellerPageLayout>
   );
 };

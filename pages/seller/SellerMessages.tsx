@@ -278,7 +278,7 @@ export const SellerMessages: React.FC = () => {
         <div className="w-80 border-r border-gray-200 flex flex-col bg-white">
           <div className="p-4 border-b border-gray-100">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Tin nhắn</h2>
+              <h2 className="text-xl font-bold text-gray-900">Messages</h2>
               <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-600">
                 {conversations.length}
               </div>
@@ -287,7 +287,7 @@ export const SellerMessages: React.FC = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input 
                 type="text" 
-                placeholder="Tìm kiếm..." 
+                placeholder="Search..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 focus:bg-white transition-colors"
@@ -395,7 +395,7 @@ export const SellerMessages: React.FC = () => {
                 <>
                   <div className="flex justify-center mb-4 mt-2">
                     <span className="text-xs font-medium text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
-                      {new Date(messages[0].createdAt).toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' })}
+                      {new Date(messages[0].createdAt).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
                     </span>
                   </div>
                   
@@ -466,7 +466,7 @@ export const SellerMessages: React.FC = () => {
                           </div>
                           {showTimestamp && (
                             <p className={`text-[10px] text-gray-400 mt-1 px-1 ${isMe ? 'text-right' : 'text-left'}`}>
-                              {new Date(message.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                              {new Date(message.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
                             </p>
                           )}
                         </div>
@@ -480,7 +480,7 @@ export const SellerMessages: React.FC = () => {
                   <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                     <Send size={32} className="ml-1" />
                   </div>
-                  <p>Chưa có tin nhắn nào. Hãy bắt đầu trò chuyện!</p>
+                  <p>No messages yet. Start a conversation!</p>
                 </div>
               )}
             </div>
@@ -507,7 +507,7 @@ export const SellerMessages: React.FC = () => {
                       handleSendMessage();
                     }
                   }}
-                  placeholder="Nhập tin nhắn..."
+                  placeholder="Type a message..."
                   className="flex-1 bg-transparent border-none focus:ring-0 resize-none py-3 px-2 max-h-32 text-sm text-gray-800 placeholder-gray-400"
                   rows={1}
                   style={{ minHeight: '44px' }}
@@ -537,8 +537,8 @@ export const SellerMessages: React.FC = () => {
             <div className="w-24 h-24 bg-white rounded-full shadow-sm flex items-center justify-center mb-6">
               <MoreVertical size={40} className="opacity-20" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-600 mb-2">Chào mừng đến với Seller Messages</h3>
-            <p className="max-w-xs text-center text-sm">Chọn một cuộc hội thoại từ danh sách bên trái để bắt đầu nhắn tin với khách hàng.</p>
+            <h3 className="text-lg font-semibold text-gray-600 mb-2">Welcome to Seller Messages</h3>
+            <p className="max-w-xs text-center text-sm">Select a conversation from the list on the left to start messaging customers.</p>
           </div>
         )}
       </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { SellerHeaderUserMenu } from '../../components/SellerHeaderUserMenu';
+import { SellerPageLayout, SellerPageHeader } from '../../components/SellerPageLayout';
 
 interface PerformanceData {
   date: string;
@@ -150,26 +151,25 @@ export const SellerAnalytics: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="animate-spin h-12 w-12 border-4 border-accent border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading analytics...</p>
+      <SellerPageLayout>
+        <div className="flex-1 flex items-center justify-center py-16">
+          <div className="text-center">
+            <div className="animate-spin h-12 w-12 border-4 border-accent border-t-transparent rounded-full mx-auto mb-4" />
+            <p className="text-gray-600">Loading analytics...</p>
+          </div>
         </div>
-      </div>
+      </SellerPageLayout>
     );
   }
 
   return (
-    <div className="p-8">
-          {/* Header */}
-          <div className="flex justify-between items-start mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Sales Analytics</h1>
-              <p className="text-sm text-gray-600 mt-1">Track your sales performance and metrics</p>
-            </div>
-            <div className="flex items-center gap-4">
-              {/* Period Selector */}
-              <div className="flex gap-2 bg-white rounded-lg shadow-sm p-1">
+    <SellerPageLayout>
+      <SellerPageHeader
+        title="Sales analytics"
+        subtitle="Track your sales performance and listing metrics."
+        rightSection={
+          <>
+            <div className="flex gap-2 bg-white rounded-full shadow-sm p-1 border border-slate-200">
                 <button
                   onClick={() => setPeriod('7d')}
                   className={`px-4 py-2 rounded font-medium transition-colors ${
@@ -201,39 +201,38 @@ export const SellerAnalytics: React.FC = () => {
                   90 Days
                 </button>
               </div>
+            <SellerHeaderUserMenu user={user} />
+          </>
+        }
+      />
 
-              {/* Profile Section */}
-              <SellerHeaderUserMenu user={user} />
-            </div>
-          </div>
-
-          {/* Overview Stats - From Dashboard API */}
-          <div className="grid grid-cols-4 gap-4 mb-8">
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+      {/* Overview Stats - From Dashboard API */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
               <p className="text-gray-600 text-xs font-semibold">TOTAL VIEWS</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">{(overview?.totalViews || 0).toLocaleString()}</p>
-            </div>
+        </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
               <p className="text-gray-600 text-xs font-semibold">TOTAL SALES</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">{overview?.totalSales || 0}</p>
-            </div>
+        </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
               <p className="text-gray-600 text-xs font-semibold">TOTAL REVENUE</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">{formatCurrency(overview?.totalRevenue || 0)}</p>
-            </div>
+        </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
               <p className="text-gray-600 text-xs font-semibold">CONVERSION RATE</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">{(overview?.conversionRate || 0).toFixed(2)}%</p>
-            </div>
-          </div>
+        </div>
+      </div>
 
-          {/* Period Performance & Best Products */}
-          <div className="grid grid-cols-2 gap-6 mb-8">
+      {/* Period Performance & Best Products */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* Period Performance */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4">Performance ({period})</h2>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
@@ -254,7 +253,7 @@ export const SellerAnalytics: React.FC = () => {
             </div>
 
             {/* Best Performing Products */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4">Best Performing Products</h2>
               {topListings.length > 0 ? (
                 <div className="space-y-3 max-h-64 overflow-y-auto">
@@ -276,8 +275,8 @@ export const SellerAnalytics: React.FC = () => {
             </div>
           </div>
 
-          {/* Listing Performance Details */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+      {/* Listing Performance Details */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
             <h2 className="text-lg font-bold text-gray-900 mb-4">Listing Performance Details</h2>
             {listingMetrics && listingMetrics.length > 0 ? (
               <div className="overflow-x-auto">
@@ -311,8 +310,8 @@ export const SellerAnalytics: React.FC = () => {
             )}
           </div>
 
-          {/* Daily Performance Timeline */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      {/* Daily Performance Timeline */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-bold text-gray-900">Daily Performance ({period})</h2>
             </div>
@@ -342,7 +341,7 @@ export const SellerAnalytics: React.FC = () => {
                 No data available for this period
               </div>
             )}
-          </div>
-    </div>
+      </div>
+    </SellerPageLayout>
   );
 };

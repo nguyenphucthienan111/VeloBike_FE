@@ -48,7 +48,7 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
+    return new Intl.NumberFormat(undefined, {
       style: 'currency',
       currency: 'VND',
     }).format(amount);
@@ -57,62 +57,62 @@ export const AdminDashboard: React.FC = () => {
   if (loading) {
     return (
       <AdminPageLayout>
-        <AdminLoadingState message="Đang tải dashboard..." />
+        <AdminLoadingState message="Loading dashboard..." />
       </AdminPageLayout>
     );
   }
 
   return (
     <AdminPageLayout>
-      <AdminPageHeader title="Dashboard" subtitle="Tổng quan thống kê và thao tác nhanh" />
+      <AdminPageHeader title="Dashboard" subtitle="High-level overview and quick actions" />
       {error && <AdminErrorBanner message={error} />}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng users</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total users</p>
           <p className="mt-1 text-2xl font-bold text-slate-900">{stats?.totalUsers || 0}</p>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng tin đăng</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total listings</p>
           <p className="mt-1 text-2xl font-bold text-slate-900">{stats?.totalListings || 0}</p>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng đơn hàng</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total orders</p>
           <p className="mt-1 text-2xl font-bold text-slate-900">{stats?.totalOrders || 0}</p>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Doanh thu</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Revenue</p>
           <p className="mt-1 text-2xl font-bold text-slate-900">
             {stats?.totalRevenue ? formatCurrency(stats.totalRevenue) : '0 ₫'}
           </p>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tranh chấp mở</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Open disputes</p>
           <p className="mt-1 text-2xl font-bold text-slate-900">{stats?.openDisputes || 0}</p>
         </div>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-200 bg-slate-50/80">
-          <h2 className="text-lg font-semibold text-slate-900">Thao tác nhanh</h2>
+          <h2 className="text-lg font-semibold text-slate-900">Quick actions</h2>
         </div>
         <div className="p-5">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <a href="#/admin/listings?status=PENDING_APPROVAL" className="p-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
-              <p className="font-semibold text-slate-900">Duyệt tin đăng</p>
-              <p className="text-sm text-slate-500 mt-1">Phê duyệt hoặc từ chối tin</p>
+              <p className="font-semibold text-slate-900">Review listings</p>
+              <p className="text-sm text-slate-500 mt-1">Approve or reject seller listings</p>
             </a>
             <a href="#/admin/users?role=SELLER&status=active" className="p-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
-              <p className="font-semibold text-slate-900">Quản lý seller</p>
-              <p className="text-sm text-slate-500 mt-1">Xem và quản lý tài khoản seller</p>
+              <p className="font-semibold text-slate-900">Manage sellers</p>
+              <p className="text-sm text-slate-500 mt-1">View and manage seller accounts</p>
             </a>
             <a href="#/admin/orders?status=DELIVERED" className="p-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
-              <p className="font-semibold text-slate-900">Giải phóng thanh toán</p>
-              <p className="text-sm text-slate-500 mt-1">Xử lý thanh toán cho seller</p>
+              <p className="font-semibold text-slate-900">Release payments</p>
+              <p className="text-sm text-slate-500 mt-1">Handle payouts to sellers</p>
             </a>
             <a href="#/admin/reports?status=PENDING" className="p-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
-              <p className="font-semibold text-slate-900">Xử lý báo cáo</p>
-              <p className="text-sm text-slate-500 mt-1">Xem và xử lý báo cáo từ users</p>
+              <p className="font-semibold text-slate-900">Handle reports</p>
+              <p className="text-sm text-slate-500 mt-1">Review and resolve user reports</p>
             </a>
           </div>
         </div>

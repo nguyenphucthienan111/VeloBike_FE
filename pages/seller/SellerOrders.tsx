@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MessageCircle, Truck, CheckCircle, AlertTriangle } from 'lucide-react';
 import { API_BASE_URL } from '../../constants';
 import { SellerHeaderUserMenu } from '../../components/SellerHeaderUserMenu';
+import { SellerPageLayout, SellerPageHeader } from '../../components/SellerPageLayout';
 
 interface Order {
   _id: string;
@@ -158,33 +159,24 @@ export const SellerOrders: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="text-center">
+      <SellerPageLayout>
+        <div className="flex items-center justify-center py-16">
           <p className="text-gray-600">Loading orders...</p>
         </div>
-      </div>
+      </SellerPageLayout>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col">
-        <div className="bg-white px-8 py-4 border-b border-gray-200 flex justify-between items-center">
-          <div className="flex items-center text-sm text-gray-600">
-            <span className="cursor-pointer hover:text-gray-900" onClick={() => navigate('/seller/dashboard')}>Dashboard</span>
-            <span className="mx-3">/</span>
-            <span className="font-medium text-gray-900">Orders</span>
-          </div>
-          <SellerHeaderUserMenu user={user} />
-        </div>
+    <SellerPageLayout>
+      <SellerPageHeader
+        title="Orders"
+        subtitle="Track and manage all customer orders."
+        rightSection={<SellerHeaderUserMenu user={user} />}
+      />
 
-        <div className="max-w-7xl mx-auto px-8 py-8">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-900">Orders Management</h1>
-            <p className="text-gray-600 mt-2">Track and manage all customer orders.</p>
-          </div>
-
-        {/* Filters & Search */}
-        <div className="bg-white rounded-lg p-6 border border-gray-200 mb-6">
+        {/* Filters & search */}
+        <div className="bg-white rounded-xl p-6 border border-gray-200 mb-6 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Search */}
             <div>
@@ -214,7 +206,7 @@ export const SellerOrders: React.FC = () => {
           </div>
         </div>
 
-        {/* Orders Table */}
+        {/* Orders table */}
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6">
             {error}
@@ -226,7 +218,7 @@ export const SellerOrders: React.FC = () => {
             <p className="text-gray-600">No orders found</p>
           </div>
         ) : (
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
@@ -247,16 +239,26 @@ export const SellerOrders: React.FC = () => {
                       <td className="px-6 py-4 text-sm text-gray-600">{order.listingId?.title || 'N/A'}</td>
                       <td className="px-6 py-4 text-sm text-gray-900 font-medium">${order.totalAmount}</td>
                       <td className="px-6 py-4 text-sm">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[order.status] || 'bg-gray-100 text-gray-800'}`}>
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            statusColors[order.status] || 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
                           {order.status}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${order.inspectionRequired ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            order.inspectionRequired ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+                          }`}
+                        >
                           {order.inspectionRequired ? 'Required' : 'Not Required'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {new Date(order.createdAt).toLocaleDateString()}
+                      </td>
                       <td className="px-6 py-4 text-sm">
                         <div className="flex items-center gap-3">
                           <button
@@ -268,9 +270,8 @@ export const SellerOrders: React.FC = () => {
                           >
                             View Details
                           </button>
-
-                          {/* Logistics Actions */}
-                          {(order.status === 'INSPECTION_PASSED' || (order.status === 'ESCROW_LOCKED' && !order.inspectionRequired)) && (
+                          {(order.status === 'INSPECTION_PASSED' ||
+                            (order.status === 'ESCROW_LOCKED' && !order.inspectionRequired)) && (
                             <button
                               onClick={() => handleCreateShipment(order._id)}
                               disabled={updatingStatus}
@@ -281,7 +282,6 @@ export const SellerOrders: React.FC = () => {
                               Gửi hàng
                             </button>
                           )}
-
                           {order.status === 'SHIPPING' && (
                             <button
                               onClick={() => handleUpdateStatus(order._id, 'DELIVERED')}
@@ -293,7 +293,6 @@ export const SellerOrders: React.FC = () => {
                               Đã giao
                             </button>
                           )}
-
                           {order.buyerId?._id && (
                             <button
                               type="button"
@@ -313,7 +312,6 @@ export const SellerOrders: React.FC = () => {
             </div>
           </div>
         )}
-      </div>
 
       {/* Shipment Modal */}
       {showShipmentModal && (
@@ -462,7 +460,7 @@ export const SellerOrders: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </SellerPageLayout>
   );
 };
 

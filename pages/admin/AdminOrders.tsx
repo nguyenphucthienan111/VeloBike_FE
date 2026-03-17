@@ -94,7 +94,7 @@ export const AdminOrders: React.FC = () => {
   };
 
   const handleStartInspection = async (orderId: string) => {
-    if (!confirm('Bắt đầu kiểm định thủ công cho đơn này? (Admin only - for debugging)')) return;
+    if (!confirm('Start manual inspection for this order? (Admin only - for debugging)')) return;
     try {
       const token = localStorage.getItem('accessToken');
       const response = await fetch(`${API_BASE_URL}/orders/${orderId}/start-inspection`, {
@@ -133,7 +133,7 @@ export const AdminOrders: React.FC = () => {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
+    return new Intl.NumberFormat(undefined, {
       style: 'currency',
       currency: 'VND',
     }).format(amount);
@@ -152,7 +152,7 @@ export const AdminOrders: React.FC = () => {
 
   return (
     <AdminPageLayout>
-      <AdminPageHeader title="Quản lý đơn hàng" subtitle="Xem, lọc và xử lý đơn hàng" />
+      <AdminPageHeader title="Order management" subtitle="View, filter, and take action on orders" />
       {error && <AdminErrorBanner message={error} />}
 
       <div className="flex flex-wrap gap-4 items-center mb-6">
@@ -167,7 +167,7 @@ export const AdminOrders: React.FC = () => {
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-6">
         <div className="flex gap-4 items-end">
           <div className="flex-1 max-w-xs">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Trạng thái</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
             <select
               value={statusFilter}
               onChange={(e) => {
@@ -176,7 +176,7 @@ export const AdminOrders: React.FC = () => {
               }}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-800 focus:ring-2 focus:ring-slate-300 outline-none"
             >
-              <option value="">Tất cả</option>
+              <option value="">All</option>
               <option value="CREATED">CREATED</option>
               <option value="ESCROW_LOCKED">ESCROW_LOCKED</option>
               <option value="IN_INSPECTION">IN_INSPECTION</option>
@@ -191,7 +191,7 @@ export const AdminOrders: React.FC = () => {
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         {loading ? (
-          <AdminLoadingState message="Đang tải đơn hàng..." />
+          <AdminLoadingState message="Loading orders..." />
         ) : (
               <>
                 <div className="overflow-x-auto">
@@ -199,12 +199,12 @@ export const AdminOrders: React.FC = () => {
                     <thead className="bg-slate-50 border-b border-slate-200">
                       <tr>
                         <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Order ID</th>
-                        <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Tin đăng</th>
-                        <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Mua</th>
-                        <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Bán</th>
-                        <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Số tiền</th>
-                        <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Trạng thái</th>
-                        <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Thao tác</th>
+                        <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Listing</th>
+                        <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Buyer</th>
+                        <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Seller</th>
+                        <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Amount</th>
+                        <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Status</th>
+                        <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -238,7 +238,7 @@ export const AdminOrders: React.FC = () => {
                                 {formatCurrency(order.amount ?? order.financials?.totalAmount ?? 0)}
                               </p>
                               <p className="text-xs text-slate-500">
-                                Phí: {formatCurrency(order.financials?.platformFee ?? 0)}
+                                Platform fee: {formatCurrency(order.financials?.platformFee ?? 0)}
                               </p>
                             </div>
                           </td>
@@ -254,7 +254,7 @@ export const AdminOrders: React.FC = () => {
                                   onClick={() => handleStartInspection(order._id)}
                                   className="px-3 py-1.5 text-xs font-medium text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-left"
                                 >
-                                  Bắt đầu kiểm định
+                                  Start inspection
                                 </button>
                               )}
                               {order.status === 'DELIVERED' && (
@@ -262,7 +262,7 @@ export const AdminOrders: React.FC = () => {
                                   onClick={() => handleReleasePayout(order._id)}
                                   className="px-3 py-1.5 text-xs font-medium text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-50 transition-colors text-left"
                                 >
-                                  Giải phóng thanh toán
+                                  Release payment
                                 </button>
                               )}
                             </div>
@@ -275,7 +275,7 @@ export const AdminOrders: React.FC = () => {
 
                 <div className="px-5 py-4 border-t border-slate-200 flex justify-between items-center bg-slate-50/50">
                   <p className="text-sm text-slate-600">
-                    {((pagination.page - 1) * pagination.limit) + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} / {pagination.total} đơn
+                    {((pagination.page - 1) * pagination.limit) + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} / {pagination.total} orders
                   </p>
                   <div className="flex gap-2">
                     <button
@@ -283,14 +283,14 @@ export const AdminOrders: React.FC = () => {
                       disabled={pagination.page === 1}
                       className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
                     >
-                      <ChevronLeft className="h-4 w-4" /> Trước
+                      <ChevronLeft className="h-4 w-4" /> Previous
                     </button>
                     <button
                       onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
                       disabled={pagination.page >= pagination.pages}
                       className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
                     >
-                      Sau <ChevronRight className="h-4 w-4" />
+                      Next <ChevronRight className="h-4 w-4" />
                     </button>
                   </div>
                 </div>

@@ -15,7 +15,6 @@ import { UserProfile } from './pages/UserProfile';
 import { PaymentSuccess } from './pages/PaymentSuccess';
 import { PaymentCancel } from './pages/PaymentCancel';
 import { Checkout } from './pages/Checkout';
-import { BuyerDashboard } from './pages/buyer/BuyerDashboard';
 import { BuyerOrders } from './pages/buyer/BuyerOrders';
 import { BuyerWishlist } from './pages/buyer/BuyerWishlist';
 import { BuyerProfile } from './pages/buyer/BuyerProfile';
@@ -86,11 +85,6 @@ const App: React.FC = () => {
           <Route path="/profile" element={<BuyerSellerOnlyGate><UserProfile /></BuyerSellerOnlyGate>} />
           
           {/* Buyer Routes */}
-          <Route path="/buyer/dashboard" element={
-            <ProtectedRoute allowedRoles={['BUYER', 'SELLER']}>
-              <BuyerDashboard />
-            </ProtectedRoute>
-          } />
           <Route path="/buyer/orders" element={
             <ProtectedRoute allowedRoles={['BUYER', 'SELLER']}>
               <BuyerOrders />

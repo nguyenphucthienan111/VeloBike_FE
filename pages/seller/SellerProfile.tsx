@@ -119,6 +119,7 @@ export const SellerProfile: React.FC = () => {
           city: formData.city || '',
           province: formData.province || '',
         },
+        avatar: avatarPreview || profile?.avatar || '',
       };
 
       const response = await fetch(`${API_BASE_URL}/users/me`, {
