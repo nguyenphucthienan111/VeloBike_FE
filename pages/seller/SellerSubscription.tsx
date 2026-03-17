@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../constants';
-import { useToast } from '../../components/Toast';
-import { Toast } from '../../components/Toast';
 import { Check, Sparkles, Zap, Crown, HelpCircle, Loader2, CreditCard } from 'lucide-react';
+
+const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+  window.dispatchEvent(new CustomEvent('showToast', { detail: { type, message } }));
+};
 
 interface Plan {
   name: string;
@@ -27,8 +29,10 @@ const PLAN_ICONS: Record<string, React.ReactNode> = {
   PREMIUM: <Crown size={20} className="text-amber-600" />,
 };
 
+// Higher number = higher tier
+const PLAN_RANK: Record<string, number> = { FREE: 0, BASIC: 1, PRO: 2, PREMIUM: 3 };
+
 export const SellerSubscription: React.FC = () => {
-  const { toast, showToast, hideToast } = useToast();
   const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,12 +121,6 @@ export const SellerSubscription: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.isVisible}
-        onClose={hideToast}
-      />
 
       {/* Header */}
       <div className="border-b border-gray-200 bg-white/80 backdrop-blur-sm">
@@ -148,6 +146,10 @@ export const SellerSubscription: React.FC = () => {
           {plans.map((plan) => {
             const isCurrent = currentSubscription?.planType === plan.name;
             const isPopular = plan.name === 'PRO';
+            const currentRank = PLAN_RANK[currentSubscription?.planType || 'FREE'] ?? 0;
+            const planRank = PLAN_RANK[plan.name] ?? 0;
+            const isDowngrade = !isCurrent && planRank < currentRank;
+            const isDisabled = isCurrent || isDowngrade || processing;
 
             return (
               <div
@@ -155,6 +157,8 @@ export const SellerSubscription: React.FC = () => {
                 className={`relative flex flex-col rounded-2xl border-2 bg-white transition-all duration-200 ${
                   isCurrent
                     ? 'border-green-500 shadow-lg shadow-green-500/10 scale-[1.02]'
+                    : isDowngrade
+                    ? 'border-gray-200 opacity-50'
                     : isPopular
                     ? 'border-accent shadow-md hover:shadow-lg'
                     : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
@@ -166,7 +170,7 @@ export const SellerSubscription: React.FC = () => {
                     Active
                   </div>
                 )}
-                {isPopular && !isCurrent && (
+                {isPopular && !isCurrent && !isDowngrade && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accent px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">
                     Most popular
                   </div>
@@ -204,10 +208,12 @@ export const SellerSubscription: React.FC = () => {
                   </ul>
 
                   <button
-                    onClick={() => handleSubscribe(plan.name)}
-                    disabled={isCurrent || processing}
+                    onClick={() => !isDisabled && handleSubscribe(plan.name)}
+                    disabled={isDisabled}
                     className={`w-full py-3 px-4 rounded-xl font-semibold text-sm transition-colors ${
                       isCurrent
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : isDowngrade
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                         : isPopular
                         ? 'bg-accent text-white hover:opacity-90'
@@ -215,7 +221,9 @@ export const SellerSubscription: React.FC = () => {
                     }`}
                   >
                     {isCurrent
-                      ? 'Currently active'
+                      ? 'Đang sử dụng'
+                      : isDowngrade
+                      ? 'Không thể hạ cấp'
                       : processing
                       ? 'Processing...'
                       : plan.price === 0

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { SellerHeaderUserMenu } from '../../components/SellerHeaderUserMenu';
 import { SellerPageLayout, SellerPageHeader } from '../../components/SellerPageLayout';
 import { API_BASE_URL } from '../../constants';
+import { Crown, Zap, Sparkles, CreditCard, ArrowRight } from 'lucide-react';
 
 interface DashboardStats {
   totalListings: number;
@@ -31,12 +32,29 @@ interface RecentTransaction {
 
 interface Notification {
   id: string;
+  _id: string;
   title: string;
   message: string;
   type: string;
   createdAt: string;
-  read: boolean;
+  isRead: boolean;
 }
+
+interface SubscriptionInfo {
+  planType: string;
+  displayName: string;
+  endDate: string;
+  status: string;
+  listingsUsed: number;
+  listingsLimit: number | string;
+}
+
+const PLAN_STYLES: Record<string, { icon: React.ReactNode; color: string; bg: string }> = {
+  FREE:    { icon: <CreditCard size={16} />, color: 'text-gray-600',  bg: 'bg-gray-100' },
+  BASIC:   { icon: <Zap size={16} />,        color: 'text-amber-600', bg: 'bg-amber-50' },
+  PRO:     { icon: <Sparkles size={16} />,   color: 'text-blue-600',  bg: 'bg-blue-50' },
+  PREMIUM: { icon: <Crown size={16} />,      color: 'text-amber-500', bg: 'bg-amber-50' },
+};
 
 export const SellerDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -47,6 +65,7 @@ export const SellerDashboard: React.FC = () => {
   const [recentTransactions, setRecentTransactions] = useState<RecentTransaction[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -114,6 +133,27 @@ export const SellerDashboard: React.FC = () => {
         const notifData = await notifRes.json();
         setNotifications(notifData.data || []);
       }
+
+      // Fetch subscription
+      const subRes = await fetch(`${API_BASE_URL}/subscriptions/my-subscription`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (subRes.ok) {
+        const subData = await subRes.json();
+        if (subData.success) {
+          const sub = subData.data.subscription;
+          const plan = subData.data.plan;
+          const usage = subData.data.usage;
+          setSubscription({
+            planType: sub.planType,
+            displayName: plan?.displayName || sub.planType,
+            endDate: sub.endDate,
+            status: sub.status,
+            listingsUsed: usage?.listings?.used ?? 0,
+            listingsLimit: usage?.listings?.limit ?? 0,
+          });
+        }
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -152,12 +192,79 @@ export const SellerDashboard: React.FC = () => {
   }
 
   return (
-    <SellerPageLayout>
-      <SellerPageHeader
-        title="Seller Dashboard"
-        subtitle={`Welcome back, ${user?.fullName || 'Seller'}!`}
-        rightSection={<SellerHeaderUserMenu user={user} />}
-      />
+    <div className="p-8">
+          {/* Header */}
+          <div className="flex justify-between items-start mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+              <p className="text-sm text-gray-600 mt-1">Welcome back, {user?.fullName || 'Seller'}!</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm">
+                <span>🔍</span>
+                <input type="text" placeholder="Search..." className="outline-none text-sm w-40" />
+              </div>
+              
+              {/* Notifications */}
+              <div className="relative">
+                <button 
+                  onClick={async () => {
+                    const next = !showNotifications;
+                    setShowNotifications(next);
+                    if (next && notifications.some(n => !n.isRead)) {
+                      const token = localStorage.getItem('accessToken');
+                      await fetch(`${API_BASE_URL}/notifications/read-all`, {
+                        method: 'PUT',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                      });
+                      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+                    }
+                  }}
+                  className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-gray-50 relative"
+                >
+                  🔔
+                  {notifications.filter(n => !n.isRead).length > 0 && (
+                    <span className="absolute top-0 right-0 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {notifications.filter(n => !n.isRead).length}
+                    </span>
+                  )}
+                </button>
+                
+                {/* Notifications Dropdown */}
+                {showNotifications && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-y-auto">
+                    <div className="p-4 border-b border-gray-200">
+                      <h3 className="font-bold text-gray-900">Notifications</h3>
+                    </div>
+                    {notifications.length > 0 ? (
+                      <div className="divide-y divide-gray-100">
+                        {notifications.map((notif) => (
+                          <div key={notif._id || notif.id} className={`p-4 hover:bg-gray-50 transition-colors ${!notif.isRead ? 'bg-blue-50' : ''}`}>
+                            <p className="font-semibold text-gray-900 text-sm">{notif.title}</p>
+                            <p className="text-gray-600 text-sm mt-1">{notif.message}</p>
+                            <p className="text-xs text-gray-500 mt-2">{new Date(notif.createdAt).toLocaleString()}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-8 text-center text-gray-500">No notifications</div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Message Button */}
+              <button 
+                onClick={() => navigate('/seller/messages')}
+                className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-gray-50 text-gray-700"
+                title="Tin nhắn"
+              >
+                💬
+              </button>
+              
+              <SellerHeaderUserMenu user={user} />
+            </div>
+          </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -252,8 +359,74 @@ export const SellerDashboard: React.FC = () => {
                 </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              {/* Subscription Status */}
+              {subscription && (() => {
+                const style = PLAN_STYLES[subscription.planType] || PLAN_STYLES.FREE;
+                const isFree = subscription.planType === 'FREE';
+                const isUnlimited = subscription.listingsLimit === 'unlimited' || subscription.listingsLimit === -1;
+                const usedNum = subscription.listingsUsed;
+                const limitNum = isUnlimited ? 0 : Number(subscription.listingsLimit);
+                const pct = (!isUnlimited && limitNum > 0) ? Math.min(100, Math.round((usedNum / limitNum) * 100)) : 0;
+                const endDate = new Date(subscription.endDate);
+                const isExpiringSoon = !isFree && (endDate.getTime() - Date.now()) < 7 * 24 * 60 * 60 * 1000;
+
+                return (
+                  <div className={`rounded-lg border shadow-sm p-5 ${style.bg} border-opacity-50`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className={`flex items-center gap-2 font-bold text-sm ${style.color}`}>
+                        {style.icon}
+                        {subscription.displayName}
+                      </div>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                        subscription.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      }`}>
+                        {subscription.status}
+                      </span>
+                    </div>
+
+                    {/* Listings quota */}
+                    <div className="mb-3">
+                      <div className="flex justify-between text-xs text-gray-600 mb-1">
+                        <span>Listings this month</span>
+                        <span className="font-semibold">
+                          {usedNum} / {isUnlimited ? '∞' : limitNum}
+                        </span>
+                      </div>
+                      {!isUnlimited && limitNum > 0 && (
+                        <div className="w-full bg-gray-200 rounded-full h-1.5">
+                          <div
+                            className={`h-1.5 rounded-full transition-all ${pct >= 90 ? 'bg-red-500' : pct >= 60 ? 'bg-amber-400' : 'bg-green-500'}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Expiry */}
+                    {!isFree && (
+                      <p className={`text-xs mb-3 ${isExpiringSoon ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
+                        {isExpiringSoon ? '⚠ Expires ' : 'Renews '}
+                        {endDate.toLocaleDateString('vi-VN')}
+                      </p>
+                    )}
+
+                    <button
+                      onClick={() => navigate('/seller/subscription')}
+                      className={`w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors ${
+                        isFree
+                          ? 'bg-black text-white hover:bg-gray-800'
+                          : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {isFree ? 'Upgrade Plan' : 'Manage Subscription'}
+                      <ArrowRight size={13} />
+                    </button>
+                  </div>
+                );
+              })()}
+
+              {/* Quick Actions */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
                 <div className="space-y-2">
                   <button 

@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useToast, Toast } from '../../components/Toast';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
 import { AdminPageLayout, AdminPageHeader, AdminErrorBanner, AdminLoadingState } from '../../components/AdminPageLayout';
+
+const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning' = 'success') => {
+  window.dispatchEvent(new CustomEvent('showToast', { detail: { type, message } }));
+};
 
 interface Listing {
   _id: string;
@@ -37,7 +40,6 @@ interface Listing {
 }
 
 export const AdminListings: React.FC = () => {
-  const { toast, showToast, hideToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [listings, setListings] = useState<Listing[]>([]);
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 20, pages: 0 });
@@ -462,15 +464,6 @@ export const AdminListings: React.FC = () => {
         </div>
       )}
 
-      {/* Toast Notification */}
-      {toast.isVisible && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          isVisible={toast.isVisible}
-          onClose={hideToast}
-        />
-      )}
     </AdminPageLayout>
   );
 };

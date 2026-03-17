@@ -117,6 +117,25 @@ export const BuyerProfile: React.FC = () => {
       setSuccess('');
       const token = localStorage.getItem('accessToken');
 
+      // Upload avatar first if a new file was selected
+      if (avatarFile) {
+        const formDataAvatar = new FormData();
+        formDataAvatar.append('avatar', avatarFile);
+
+        const avatarRes = await fetch(`${API_BASE_URL}/users/me/avatar`, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formDataAvatar,
+        });
+
+        if (!avatarRes.ok) {
+          const data = await avatarRes.json();
+          setError(data.message || 'Failed to upload avatar');
+          setSaving(false);
+          return;
+        }
+      }
+
       const body = {
         fullName: formData.fullName,
         phone: formData.phone || '',

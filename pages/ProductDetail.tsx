@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ShieldCheck, Ruler, Truck, ChevronLeft, AlertCircle, CheckCircle, Eye, MapPin, MessageCircle, Flag } from 'lucide-react';
+import { ShieldCheck, Ruler, Truck, ChevronLeft, ChevronRight, AlertCircle, CheckCircle, Eye, MapPin, MessageCircle, Flag, Heart } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { API_BASE_URL } from '../constants';
-import { Toast, useToast } from '../components/Toast';
+import { Toast } from '../components/Toast';
+import { useToast } from '../hooks/useToast';
 import { ReportModal } from '../components/ReportModal';
 
 interface ListingData {
@@ -81,8 +82,54 @@ export const ProductDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [imgVisible, setImgVisible] = useState(true);
   const [showReportModal, setShowReportModal] = useState(false);
-  const { toast, showToast, hideToast } = useToast();
+  const { toasts, addToast, removeToast } = useToast();
+  const thumbContainerRef = useRef<HTMLDivElement>(null);
+  const thumbItemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [sellerContact, setSellerContact] = useState<{ phone?: string; address?: { street?: string; district?: string; city?: string; province?: string } } | null>(null);
+
+  const changeImage = (index: number) => {
+    setImgVisible(false);
+    setTimeout(() => {
+      setSelectedImageIndex(index);
+      setImgVisible(true);
+    }, 150);
+  };
+
+  const toggleWishlist = async () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      addToast('warning', 'Vui lòng đăng nhập để lưu wishlist');
+      return;
+    }
+    if (!listing) return;
+    setWishlistLoading(true);
+    try {
+      if (isWishlisted) {
+        await fetch(`${API_BASE_URL}/wishlist/${listing._id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        setIsWishlisted(false);
+        addToast('info', 'Đã xóa khỏi wishlist');
+      } else {
+        await fetch(`${API_BASE_URL}/wishlist`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ listingId: listing._id })
+        });
+        setIsWishlisted(true);
+        addToast('success', 'Đã thêm vào wishlist');
+      }
+    } catch {
+      addToast('error', 'Có lỗi xảy ra');
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
 
   // Chỉ BUYER và SELLER mua hàng được — Admin/Inspector không
   const canPurchase = (() => {
@@ -146,6 +193,36 @@ export const ProductDetail: React.FC = () => {
     if (!id || !listing?._id) return;
     fetch(`${API_BASE_URL}/listings/${id}/view`, { method: 'PUT' }).catch(() => {});
   }, [id, listing?._id]);
+
+  // Check wishlist status
+  useEffect(() => {
+    if (!listing?._id) return;
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
+    fetch(`${API_BASE_URL}/wishlist/check/${listing._id}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(r => r.json())
+      .then(d => { if (d.success) setIsWishlisted(d.data?.isWishlisted ?? false); })
+      .catch(() => {});
+  }, [listing?._id]);
+
+  // Fetch seller contact info (phone + address)
+  useEffect(() => {
+    if (!listing?.sellerId?._id) return;
+    fetch(`${API_BASE_URL}/users/${listing.sellerId._id}`)
+      .then(r => r.json())
+      .then(d => { if (d.success) setSellerContact(d.data); })
+      .catch(() => {});
+  }, [listing?.sellerId?._id]);
+
+  // Auto-scroll thumbnail strip để active thumb luôn visible
+  useEffect(() => {
+    const el = thumbItemRefs.current[selectedImageIndex];
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }, [selectedImageIndex]);
 
   if (loading) {
     return (
@@ -232,7 +309,7 @@ export const ProductDetail: React.FC = () => {
   const handleBuyNow = () => {
     const token = localStorage.getItem('accessToken');
     if (!token) {
-      showToast('Vui lòng đăng nhập để mua hàng', 'warning');
+      addToast('warning', 'Vui lòng đăng nhập để mua hàng');
       navigate('/login', { state: { from: `/checkout/${listing._id}` } });
       return;
     }
@@ -256,8 +333,40 @@ export const ProductDetail: React.FC = () => {
         {/* Left Column: Media & 360 View */}
         <div className="lg:col-span-8">
           <div className="aspect-[4/3] bg-gray-100 mb-4 relative overflow-hidden group cursor-ew-resize">
-             <img src={mainImage} alt={bike.title} className="w-full h-full object-cover" />
+             <img
+               src={mainImage}
+               alt={bike.title}
+               className="w-full h-full object-cover transition-opacity duration-150"
+               style={{ opacity: imgVisible ? 1 : 0 }}
+             />
              
+             {/* Prev Arrow */}
+             {bike.images.length > 1 && (
+               <button
+                 onClick={() => changeImage((selectedImageIndex - 1 + bike.images.length) % bike.images.length)}
+                 className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-md opacity-0 group-hover:opacity-100 transition-opacity z-10"
+               >
+                 <ChevronLeft size={20} />
+               </button>
+             )}
+
+             {/* Next Arrow */}
+             {bike.images.length > 1 && (
+               <button
+                 onClick={() => changeImage((selectedImageIndex + 1) % bike.images.length)}
+                 className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-md opacity-0 group-hover:opacity-100 transition-opacity z-10"
+               >
+                 <ChevronRight size={20} />
+               </button>
+             )}
+             
+             {/* Image counter */}
+             {bike.images.length > 1 && (
+               <div className="absolute bottom-3 right-3 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+                 {selectedImageIndex + 1} / {bike.images.length}
+               </div>
+             )}
+
              {(listing.media?.spin360Urls && listing.media.spin360Urls.length > 0) && (
                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 pointer-events-none">
                    <div className="bg-white/90 px-4 py-2 rounded-full text-xs font-bold shadow-lg">
@@ -267,20 +376,39 @@ export const ProductDetail: React.FC = () => {
              )}
           </div>
           
-          {/* Thumbnail Gallery - chỉ dùng ảnh từ API, không mock/picsum */}
+          {/* Thumbnail Gallery */}
           {bike.images.length > 0 && (
-            <div className="grid grid-cols-4 gap-4">
-              {bike.images.map((img, index) => (
-                <div
-                  key={index}
-                  className={`aspect-square bg-gray-100 cursor-pointer hover:opacity-80 transition-opacity border-2 ${
-                    selectedImageIndex === index ? 'border-accent' : 'border-transparent'
-                  }`}
-                  onClick={() => setSelectedImageIndex(index)}
-                >
-                  <img src={img} alt={`${bike.title} ${index + 1}`} className="w-full h-full object-cover" />
-                </div>
-              ))}
+            <div className="relative group/thumb">
+              {/* Prev */}
+              <button
+                onClick={() => changeImage((selectedImageIndex - 1 + bike.images.length) % bike.images.length)}
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 z-10 bg-white border border-gray-200 rounded-full p-1.5 shadow hover:bg-gray-50 opacity-0 group-hover/thumb:opacity-100 transition-opacity"
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              <div ref={thumbContainerRef} className="flex gap-3 overflow-hidden scroll-smooth">
+                {bike.images.map((img, index) => (
+                  <div
+                    key={index}
+                    ref={el => { thumbItemRefs.current[index] = el; }}
+                    className={`flex-shrink-0 w-[calc(25%-9px)] aspect-square bg-gray-100 cursor-pointer hover:opacity-80 transition-all border-2 ${
+                      selectedImageIndex === index ? 'border-accent ring-2 ring-accent ring-offset-1 opacity-100' : 'border-transparent opacity-70'
+                    }`}
+                    onClick={() => changeImage(index)}
+                  >
+                    <img src={img} alt={`${bike.title} ${index + 1}`} className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
+
+              {/* Next */}
+              <button
+                onClick={() => changeImage((selectedImageIndex + 1) % bike.images.length)}
+                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 z-10 bg-white border border-gray-200 rounded-full p-1.5 shadow hover:bg-gray-50 opacity-0 group-hover/thumb:opacity-100 transition-opacity"
+              >
+                <ChevronRight size={16} />
+              </button>
             </div>
           )}
 
@@ -545,12 +673,26 @@ export const ProductDetail: React.FC = () => {
                     
                     {canPurchase && listing?.status === 'PUBLISHED' && (
                       <div className="flex flex-col gap-3">
-                        <button
-                          onClick={handleBuyNow}
-                          className="w-full bg-accent hover:bg-red-600 text-white py-4 font-bold uppercase tracking-widest transition-colors shadow-md rounded-sm text-lg"
-                        >
-                          MUA NGAY
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleBuyNow}
+                            className="flex-1 bg-accent hover:bg-red-600 text-white py-4 font-bold uppercase tracking-widest transition-colors shadow-md rounded-sm text-lg"
+                          >
+                            MUA NGAY
+                          </button>
+                          <button
+                            onClick={toggleWishlist}
+                            disabled={wishlistLoading}
+                            className={`px-4 py-4 border-2 rounded-sm transition-all shadow-sm ${
+                              isWishlisted
+                                ? 'border-red-400 bg-red-50 text-red-500 hover:bg-red-100'
+                                : 'border-gray-300 text-gray-400 hover:border-red-400 hover:text-red-400 hover:bg-red-50'
+                            }`}
+                            title={isWishlisted ? 'Xóa khỏi wishlist' : 'Thêm vào wishlist'}
+                          >
+                            <Heart size={22} fill={isWishlisted ? 'currentColor' : 'none'} />
+                          </button>
+                        </div>
                         
                         {listing.sellerId && (
                           <button
@@ -610,13 +752,34 @@ export const ProductDetail: React.FC = () => {
                 )}
             </div>
 
-            {/* Location */}
-            {listing.location?.address && (
+            {/* Contact */}
+            {sellerContact && (sellerContact.phone || sellerContact.address?.city) && (
               <div className="border-t border-gray-100 pt-6">
-                <h3 className="font-bold mb-2 text-sm flex items-center gap-2">
-                  <MapPin size={16} className="text-gray-400" /> Location
+                <h3 className="font-bold mb-3 text-sm flex items-center gap-2">
+                  <MapPin size={16} className="text-gray-400" /> Contact
                 </h3>
-                <p className="text-sm text-gray-600">{listing.location.address}</p>
+                <div className="space-y-1.5 text-sm text-gray-600">
+                  {sellerContact.phone && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400">📞</span>
+                      <a href={`tel:${sellerContact.phone}`} className="hover:text-accent transition-colors">
+                        {sellerContact.phone}
+                      </a>
+                    </div>
+                  )}
+                  {sellerContact.address && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-gray-400 mt-0.5">📍</span>
+                      <span>
+                        {[
+                          sellerContact.address.street,
+                          sellerContact.address.district,
+                          sellerContact.address.city || sellerContact.address.province,
+                        ].filter(Boolean).join(', ')}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -633,20 +796,16 @@ export const ProductDetail: React.FC = () => {
         </div>
       </div>
 
-      {/* Toast Notification */}
       <Toast
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.isVisible}
-        onClose={hideToast}
-        duration={3000}
+        toasts={toasts}
+        onRemove={removeToast}
       />
 
       {showReportModal && listing && (
         <ReportModal 
             listingId={listing._id}
             onClose={() => setShowReportModal(false)}
-            onSuccess={() => showToast('Đã gửi báo cáo thành công. Admin sẽ xem xét sớm.', 'success')}
+            onSuccess={() => addToast('success', 'Đã gửi báo cáo thành công. Admin sẽ xem xét sớm.')}
         />
       )}
     </div>

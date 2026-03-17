@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SellerHeaderUserMenu } from '../../components/SellerHeaderUserMenu';
-import { SellerPageLayout, SellerPageHeader } from '../../components/SellerPageLayout';
-import { Toast, useToast } from '../../components/Toast';
 import { API_BASE_URL } from '../../constants';
+
+const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+  window.dispatchEvent(new CustomEvent('showToast', { detail: { type, message } }));
+};
 
 interface Listing {
   _id: string;
@@ -32,7 +34,6 @@ export const SellerInventory: React.FC = () => {
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [bulkStatus, setBulkStatus] = useState('PUBLISHED');
   const [user, setUser] = useState<any>(null);
-  const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -462,26 +463,6 @@ export const SellerInventory: React.FC = () => {
             {listings.filter((l) => l.status === 'PUBLISHED').length}
           </p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <p className="text-gray-600 text-sm mb-3">Total Views</p>
-          <p className="text-4xl font-bold text-gray-900">
-            {listings.reduce((sum, l) => sum + l.views, 0).toLocaleString()}
-          </p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <p className="text-gray-600 text-sm mb-3">Total Revenue</p>
-          <p className="text-3xl font-bold text-gray-900">
-            {formatCurrency(listings.reduce((sum, l) => sum + l.amount, 0))}
-          </p>
-        </div>
-      </div>
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.isVisible}
-        onClose={hideToast}
-        duration={3000}
-      />
-    </SellerPageLayout>
+    </div>
   );
 };

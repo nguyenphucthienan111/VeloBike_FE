@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Toast, useToast } from '../../components/Toast';
+import { Toast } from '../../components/Toast';
+import { useToast } from '../../hooks/useToast';
 import { API_BASE_URL } from '../../constants';
 import { useCatalog, CatalogBrand, CatalogCategory } from '../../hooks/useCatalog';
 
 export const AddProduct: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
-  const { toast, showToast, hideToast } = useToast();
-  const { brands, categories, getTypeForCategory, fetch: fetchCatalog, loading: catalogLoading } = useCatalog();
+  const [uploadProgress, setUploadProgress] = useState<{[key: string]: number}>({});
+  const { toasts, addToast, removeToast } = useToast();
+  const [userLocation, setUserLocation] = useState({ address: 'Ho Chi Minh City', coordinates: [106.6297, 10.8231] });
   
   const [formData, setFormData] = useState({
     title: '',
@@ -21,7 +22,17 @@ export const AddProduct: React.FC = () => {
     size: '',
     amount: '',
     videoUrl: '',
-    inspectionRequired: true, // Default to true for safety
+    inspectionRequired: true,
+    // Specs
+    frameMaterial: '',
+    groupset: '',
+    brakeType: '',
+    wheelset: '',
+    suspensionType: '',
+    travelFront: '',
+    weight: '',
+    motor: '',
+    battery: '',
   });
 
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
@@ -29,20 +40,41 @@ export const AddProduct: React.FC = () => {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [videoPreviews, setVideoPreviews] = useState<string>('');
 
-  // Double check KYC status
+  // Double check KYC status + validate profile đầy đủ trước khi đăng bài
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
+    const token = localStorage.getItem('accessToken');
+    if (!token) { navigate('/login'); return; }
+
+    fetch(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.success) return;
+        const user = data.data;
+
         if (user.role === 'SELLER' && user.kycStatus !== 'VERIFIED' && user.kycStatus !== 'APPROVED') {
-          showToast('Tài khoản chưa được xác thực KYC. Vui lòng hoàn tất xác thực.', 'error');
+          addToast('error', 'Tài khoản chưa được xác thực KYC. Vui lòng hoàn tất xác thực.');
           navigate('/seller/kyc');
+          return;
         }
-      } catch {}
-    }
-    fetchCatalog();
-  }, [navigate, fetchCatalog]);
+
+        const missingPhone = !user.phone?.trim();
+        const missingAddress = !user.address?.street?.trim() || !user.address?.city?.trim();
+        if (missingPhone || missingAddress) {
+          addToast('warning', 'Vui lòng cập nhật số điện thoại và địa chỉ đầy đủ trước khi đăng sản phẩm.');
+          navigate('/seller/profile');
+          return;
+        }
+
+        // Cập nhật location từ profile thật
+        const parts = [user.address.district, user.address.city || user.address.province].filter(Boolean);
+        const addressStr = parts.join(', ') || user.address.street;
+        setUserLocation(prev => ({ ...prev, address: addressStr }));
+
+        // Sync lại localStorage
+        localStorage.setItem('user', JSON.stringify(user));
+      })
+      .catch(() => {});
+  }, [navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -98,22 +130,28 @@ export const AddProduct: React.FC = () => {
     
     // Frontend validation
     if (!formData.title || formData.title.length < 5 || formData.title.length > 200) {
-      showToast('Title must be between 5 and 200 characters', 'warning');
+      addToast('warning', 'Title must be between 5 and 200 characters');
       return;
     }
 
     if (!formData.description || formData.description.length < 10) {
-      showToast('Description must be at least 10 characters', 'warning');
+      addToast('warning', 'Description must be at least 10 characters');
       return;
     }
 
     if (!formData.brand || !formData.model || !formData.amount || !formData.size) {
-      showToast('Please fill in all required fields', 'warning');
+      addToast('warning', 'Please fill in all required fields');
+      return;
+    }
+
+    if ((formData.type === 'ROAD' || formData.type === 'TRIATHLON') &&
+        (!formData.frameMaterial || !formData.groupset || !formData.brakeType)) {
+      addToast('warning', 'Road/Triathlon bike cần điền Frame Material, Groupset và Brake Type');
       return;
     }
 
     if (uploadedImages.length === 0) {
-      showToast('Please upload at least one image', 'warning');
+      addToast('warning', 'Please upload at least one image');
       return;
     }
 
@@ -125,7 +163,7 @@ export const AddProduct: React.FC = () => {
       const thumbnails = imagePreviews.filter((url) => url && url.startsWith('data:'));
 
       if (thumbnails.length === 0) {
-        showToast('Vui lòng chọn ảnh sản phẩm', 'error');
+        addToast('error', 'Vui lòng chọn ảnh sản phẩm');
         setLoading(false);
         return;
       }
@@ -142,11 +180,22 @@ export const AddProduct: React.FC = () => {
           model: formData.model,
           year: parseInt(formData.year.toString()),
           size: formData.size,
-          condition: 'GOOD', // Default condition, can be added to form later
+          condition: 'GOOD',
+        },
+        specs: {
+          ...(formData.frameMaterial && { frameMaterial: formData.frameMaterial }),
+          ...(formData.groupset && { groupset: formData.groupset }),
+          ...(formData.brakeType && { brakeType: formData.brakeType }),
+          ...(formData.wheelset && { wheelset: formData.wheelset }),
+          ...(formData.suspensionType && { suspensionType: formData.suspensionType }),
+          ...(formData.travelFront && { travelFront: formData.travelFront }),
+          ...(formData.weight && { weight: parseFloat(formData.weight) }),
+          ...(formData.motor && { motor: formData.motor }),
+          ...(formData.battery && { battery: formData.battery }),
         },
         pricing: {
-          amount: parseFloat(formData.amount), // Amount in VND (API expects VND)
-          currency: 'VND', // API default is VND
+          amount: parseFloat(formData.amount),
+          currency: 'VND',
         },
         media: {
           thumbnails: thumbnails,
@@ -154,8 +203,8 @@ export const AddProduct: React.FC = () => {
         },
         location: {
           type: 'Point',
-          coordinates: [106.6297, 10.8231], // Default to Ho Chi Minh City, should be from geolocation or form
-          address: 'Ho Chi Minh City', // Default address, should be from form
+          coordinates: userLocation.coordinates,
+          address: userLocation.address,
         },
         inspectionRequired: formData.inspectionRequired,
       };
@@ -172,31 +221,30 @@ export const AddProduct: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          showToast('Product added successfully! (Status: DRAFT)', 'success');
+          addToast('success', 'Product added successfully! (Status: DRAFT)');
           setTimeout(() => {
             navigate('/seller/inventory');
           }, 1500);
         } else {
-          showToast(data.message || 'Không thể tạo listing', 'error');
+          addToast('error', data.message || 'Không thể tạo listing');
         }
       } else {
-        const error = await response.json();
-        const errorMessage = error.message || error.error || 'Error creating listing';
-        
-        // Log validation errors if available
-        if (error.errors && Array.isArray(error.errors)) {
-          console.error('Validation Errors:', error.errors);
-          const errorDetails = error.errors.map((e: any) => e.message || e).join(', ');
-          showToast(`${errorMessage}: ${errorDetails}`, 'error');
-        } else {
-          showToast(errorMessage, 'error');
-        }
-        
-        console.error('API Error:', error);
+        let errorMessage = 'Error creating listing';
+        try {
+          const error = await response.json();
+          errorMessage = error?.message || error?.error || errorMessage;
+          if (error?.errors && Array.isArray(error.errors)) {
+            console.error('Validation Errors:', error.errors);
+            const errorDetails = error.errors.map((e: any) => e.message || e).join(', ');
+            errorMessage = `${errorMessage}: ${errorDetails}`;
+          }
+          console.error('API Error:', error);
+        } catch {}
+        addToast('error', errorMessage);
       }
     } catch (error: any) {
       console.error('Error adding product:', error);
-      showToast('Error adding product', 'error');
+      addToast('error', 'Error adding product');
     } finally {
       setLoading(false);
     }
@@ -384,6 +432,99 @@ export const AddProduct: React.FC = () => {
               </div>
             </div>
 
+            {/* Specs - hiện theo bike type */}
+            {(formData.type === 'ROAD' || formData.type === 'TRIATHLON') && (
+              <div className="border border-blue-100 bg-blue-50 rounded-lg p-5 space-y-4">
+                <p className="text-sm font-semibold text-blue-800">Thông số kỹ thuật (bắt buộc cho Road/Triathlon)</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Frame Material *</label>
+                    <input type="text" name="frameMaterial" placeholder="Carbon, Aluminum..." value={formData.frameMaterial} onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Groupset *</label>
+                    <input type="text" name="groupset" placeholder="Shimano 105, SRAM Rival..." value={formData.groupset} onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Brake Type *</label>
+                    <select name="brakeType" value={formData.brakeType} onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required>
+                      <option value="">Chọn loại phanh</option>
+                      <option value="Disc">Disc</option>
+                      <option value="Rim">Rim</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Wheelset</label>
+                    <input type="text" name="wheelset" placeholder="Shimano RS500..." value={formData.wheelset} onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
+                    <input type="number" name="weight" placeholder="7.5" step="0.1" value={formData.weight} onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {formData.type === 'MTB' && (
+              <div className="border border-green-100 bg-green-50 rounded-lg p-5 space-y-4">
+                <p className="text-sm font-semibold text-green-800">Thông số kỹ thuật MTB</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Frame Material</label>
+                    <input type="text" name="frameMaterial" placeholder="Aluminum, Carbon..." value={formData.frameMaterial} onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Suspension Type</label>
+                    <select name="suspensionType" value={formData.suspensionType} onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                      <option value="">Chọn loại</option>
+                      <option value="Hardtail">Hardtail</option>
+                      <option value="Full-Suspension">Full-Suspension</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Travel Front (mm)</label>
+                    <input type="text" name="travelFront" placeholder="120mm" value={formData.travelFront} onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Groupset</label>
+                    <input type="text" name="groupset" placeholder="Shimano Deore..." value={formData.groupset} onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {formData.type === 'E_BIKE' && (
+              <div className="border border-purple-100 bg-purple-50 rounded-lg p-5 space-y-4">
+                <p className="text-sm font-semibold text-purple-800">Thông số E-Bike</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Motor</label>
+                    <input type="text" name="motor" placeholder="Bosch Performance CX..." value={formData.motor} onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Battery</label>
+                    <input type="text" name="battery" placeholder="625Wh" value={formData.battery} onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Frame Material</label>
+                    <input type="text" name="frameMaterial" placeholder="Aluminum..." value={formData.frameMaterial} onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Images */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Product Images <span className="text-red-500">*</span></label>
@@ -481,11 +622,8 @@ export const AddProduct: React.FC = () => {
         </div>
 
       <Toast
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.isVisible}
-        onClose={hideToast}
-        duration={3000}
+        toasts={toasts}
+        onRemove={removeToast}
       />
     </div>
   );

@@ -2,10 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MessageCircle, CreditCard, XCircle, RefreshCw, AlertTriangle, CheckCircle, Truck, ShoppingBag } from 'lucide-react';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
-import { Toast, useToast } from '../../components/Toast';
 import { DisputeModal } from '../../components/DisputeModal';
 import { ConfirmReceivedModal } from '../../components/ConfirmReceivedModal';
 import { ReviewModal } from '../../components/ReviewModal';
+
+const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
+  const t = type === 'warning' ? 'info' : type;
+  window.dispatchEvent(new CustomEvent('showToast', { detail: { type: t, message } }));
+};
 
 interface OrderListing {
   _id: string;
@@ -47,7 +51,6 @@ export const BuyerOrders: React.FC = () => {
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { toast, showToast, hideToast } = useToast();
 
   const handlePayment = async (orderId: string) => {
     try {
@@ -360,15 +363,7 @@ export const BuyerOrders: React.FC = () => {
         </div>
       </div>
 
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.isVisible}
-        onClose={hideToast}
-      />
-
-      {/* Content card */}
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden mt-4">
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {error && (
           <div className="bg-red-50 text-red-700 px-6 py-4 text-sm border-b border-red-100">
             {error}

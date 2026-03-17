@@ -1,5 +1,5 @@
 import React from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { SellerLayout } from './components/SellerLayout';
 import { Home } from './pages/Home';
@@ -32,6 +32,7 @@ import { SellerProfile } from './pages/seller/SellerProfile';
 import { SellerSubscription } from './pages/seller/SellerSubscription';
 import { SellerNotifications } from './pages/seller/SellerNotifications';
 import { SellerKyc } from './pages/seller/SellerKyc';
+import { SubscriptionSuccess } from './pages/seller/SubscriptionSuccess';
 import { AddProduct } from './pages/seller/AddProduct';
 import { EditProduct } from './pages/seller/EditProduct';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
@@ -61,7 +62,7 @@ import { BuyerSellerOnlyGate } from './components/BuyerSellerOnlyGate';
 
 const App: React.FC = () => {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <Layout>
         <Routes>
           <Route path="/" element={<BuyerSellerOnlyGate><Home /></BuyerSellerOnlyGate>} />
@@ -85,6 +86,7 @@ const App: React.FC = () => {
           <Route path="/profile" element={<BuyerSellerOnlyGate><UserProfile /></BuyerSellerOnlyGate>} />
           
           {/* Buyer Routes */}
+          <Route path="/buyer/dashboard" element={<Navigate to="/" replace />} />
           <Route path="/buyer/orders" element={
             <ProtectedRoute allowedRoles={['BUYER', 'SELLER']}>
               <BuyerOrders />
@@ -118,6 +120,12 @@ const App: React.FC = () => {
               <SellerKyc />
             </ProtectedRoute>
           } />
+          <Route path="/subscription/success" element={
+            <ProtectedRoute allowedRoles={['BUYER', 'SELLER']}>
+              <SubscriptionSuccess />
+            </ProtectedRoute>
+          } />
+          <Route path="/subscription/cancel" element={<Navigate to="/seller/subscription" replace />} />
           <Route path="/seller" element={
             <ProtectedRoute allowedRoles={['BUYER', 'SELLER']}>
               <SellerGate>
@@ -202,7 +210,7 @@ const App: React.FC = () => {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
-    </HashRouter>
+    </BrowserRouter>
   );
 };
 

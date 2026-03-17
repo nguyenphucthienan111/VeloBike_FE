@@ -38,6 +38,10 @@ interface UseAuthReturn {
   clearError: () => void;
 }
 
+const showToast = (type: 'success' | 'error' | 'info', message: string) => {
+  window.dispatchEvent(new CustomEvent('showToast', { detail: { type, message } }));
+};
+
 export const useAuth = (): UseAuthReturn => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -80,6 +84,8 @@ export const useAuth = (): UseAuthReturn => {
         // Dispatch event to notify Layout component
         window.dispatchEvent(new Event('authChange'));
 
+        showToast('success', 'Welcome back! You have signed in successfully.');
+
         // Redirect based on role (or from state if BUYER/SELLER came from checkout)
         const role = user?.role;
         const from = (location.state as any)?.from;
@@ -90,7 +96,7 @@ export const useAuth = (): UseAuthReturn => {
             navigate(from, { replace: true });
           } else {
             console.log('➡️ Redirecting to /marketplace');
-            navigate('/marketplace');
+            navigate('/');
           }
         } else if (role === 'ADMIN') {
           console.log('➡️ Redirecting to /admin/dashboard');
@@ -132,6 +138,7 @@ export const useAuth = (): UseAuthReturn => {
           return { success: false };
         }
 
+        showToast('success', 'Account created! Please check your email to verify your account.');
         return { userId: responseData.user?.id, success: true };
       } catch (err: any) {
         setError(err.message || 'An error occurred during registration');
@@ -166,7 +173,8 @@ export const useAuth = (): UseAuthReturn => {
       if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
 
       // Show success message and redirect after 2 seconds
-      setError(null); // Clear any previous errors
+      setError(null);
+      showToast('success', 'Email verified successfully! Redirecting to login...');
       
       // Dispatch event to notify Layout component
       window.dispatchEvent(new Event('authStatusChanged'));
@@ -201,6 +209,7 @@ export const useAuth = (): UseAuthReturn => {
         return false;
       }
 
+      showToast('success', 'Verification code resent! Please check your email.');
       return true;
     } catch (err: any) {
       setError(err.message || 'An error occurred');
