@@ -34,6 +34,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const [orderCount, setOrderCount] = useState<number>(0);
   const [notificationUnread, setNotificationUnread] = useState<number>(0);
   const [wishlistCount, setWishlistCount] = useState<number>(0);
+  const [messageUnread, setMessageUnread] = useState<number>(0);
   const [refreshKey, setRefreshKey] = useState(0);
   
   // Hide header for seller, admin, and inspector dashboard pages
@@ -201,6 +202,35 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     return () => window.removeEventListener('wishlistRefresh', onRefresh);
   }, [isAuthenticated, userRole]);
 
+  // Số tin nhắn chưa đọc
+  const fetchMessageUnread = () => {
+    if (!isAuthenticated) { setMessageUnread(0); return; }
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
+    fetch(`${API_BASE_URL}/messages/unread`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => res.status === 401 ? null : res.json())
+      .then((data) => {
+        if (data?.data?.unreadCount != null) setMessageUnread(Number(data.data.unreadCount));
+        else setMessageUnread(0);
+      })
+      .catch(() => setMessageUnread(0));
+  };
+  useEffect(() => {
+    fetchMessageUnread();
+  }, [isAuthenticated, refreshKey]);
+  // Reset khi user mở trang messages
+  useEffect(() => {
+    if (location.pathname === '/messages' || location.pathname.startsWith('/seller/messages')) {
+      setMessageUnread(0);
+    }
+  }, [location.pathname]);
+  // Listen for new message socket events via custom DOM event
+  useEffect(() => {
+    const onNewMessage = () => fetchMessageUnread();
+    window.addEventListener('newMessageReceived', onNewMessage);
+    return () => window.removeEventListener('newMessageReceived', onNewMessage);
+  }, [isAuthenticated]);
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
@@ -259,7 +289,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 <>
                   <Link to="/" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname === '/' ? 'text-black' : 'text-gray-500'}`}>HOME</Link>
                   <Link to="/marketplace" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname === '/marketplace' ? 'text-black' : 'text-gray-500'}`}>MARKETPLACE</Link>
-                  <Link to="/inspection" className="text-xs font-medium text-gray-500 hover:text-accent transition-colors">INSPECTION SERVICE</Link>
+                  <Link to="/inspection" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname === '/inspection' ? 'text-black' : 'text-gray-500'}`}>INSPECTION SERVICE</Link>
+                  <Link to="/inspectors" className={`text-xs font-medium hover:text-accent transition-colors ${location.pathname === '/inspectors' ? 'text-black' : 'text-gray-500'}`}>INSPECTORS</Link>
                 </>
               )}
             </nav>
@@ -295,18 +326,28 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                           </span>
                         )}
                       </Link>
-                      <Link to="/messages" className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:border-accent hover:text-accent rounded-full px-3 py-2 text-sm font-medium transition-colors" title="Messages">
+                      <Link to="/messages" className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:border-accent hover:text-accent rounded-full px-3 py-2 text-sm font-medium transition-colors relative" title="Messages">
                         <MessageCircle size={18} />
                         <span>Messages</span>
+                        {messageUnread > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-accent text-white text-[10px] font-bold min-w-[1.1rem] h-[1.1rem] px-0.5 rounded-full flex items-center justify-center">
+                            {messageUnread > 99 ? '99+' : messageUnread}
+                          </span>
+                        )}
                       </Link>
                     </>
                   )}
                   {/* SELLER khi về trang mua hàng: giữ đầy đủ tính năng buyer (wishlist, đơn hàng, thông báo) + nút seller */}
                   {userRole === 'SELLER' && (
                     <>
-                      <Link to="/messages" className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:border-accent hover:text-accent rounded-full px-3 py-2 text-sm font-medium transition-colors" title="Messages (shared inbox)">
+                      <Link to="/messages" className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:border-accent hover:text-accent rounded-full px-3 py-2 text-sm font-medium transition-colors relative" title="Messages (shared inbox)">
                         <MessageCircle size={18} />
                         <span>Messages</span>
+                        {messageUnread > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-accent text-white text-[10px] font-bold min-w-[1.1rem] h-[1.1rem] px-0.5 rounded-full flex items-center justify-center">
+                            {messageUnread > 99 ? '99+' : messageUnread}
+                          </span>
+                        )}
                       </Link>
                       <Link to="/buyer/wishlist" className="text-accent hover:text-accent/80 transition-colors relative p-1 rounded-full hover:bg-gray-100" title="Danh sách yêu thích">
                         <Heart size={20} />
@@ -393,6 +434,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                         {/* Other */}
                         <div className="py-2 border-t border-gray-100">
                           <p className="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Other</p>
+                          {(userRole === 'BUYER' || userRole === 'SELLER') && (
+                            <Link to="/buyer/payment-history" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
+                              <CreditCard size={18} className="text-gray-500 flex-shrink-0" />
+                              <span className="flex-1">Payment history</span>
+                              <ChevronRight size={16} className="text-gray-400" />
+                            </Link>
+                          )}
                           <Link to={profileUrl} onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
                             <Settings size={18} className="text-gray-500 flex-shrink-0" />
                             <span className="flex-1">Account settings</span>

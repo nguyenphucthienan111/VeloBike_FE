@@ -18,6 +18,20 @@ interface Transaction {
   status: string;
   description: string;
   createdAt: string;
+  metadata?: {
+    breakdown?: {
+      itemPrice?: number;
+      platformFee?: number;
+      commissionRate?: number;
+      commissionPercent?: number;
+      planName?: string;
+      sellerReceived?: number;
+    };
+    commissionRate?: number;
+    commissionPercent?: number;
+    planName?: string;
+    itemPrice?: number;
+  };
 }
 
 interface Withdrawal {
@@ -34,6 +48,15 @@ interface BankAccount {
   accountName?: string;
   accountNumber?: string;
   bankName?: string;
+}
+
+interface SubscriptionInfo {
+  planType: string;
+  commissionRate: number;
+  commissionPercent: number;
+  planDisplayName: string;
+  endDate?: string;
+  status: string;
 }
 
 export const SellerWallet: React.FC = () => {
@@ -53,6 +76,9 @@ export const SellerWallet: React.FC = () => {
   const [withdrawLoading, setWithdrawLoading] = useState(false);
   const [withdrawError, setWithdrawError] = useState('');
   const [cancelWithdrawId, setCancelWithdrawId] = useState<string | null>(null);
+  const [heldAmount, setHeldAmount] = useState(0);
+  const [availableToWithdraw, setAvailableToWithdraw] = useState(0);
+  const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfo | null>(null);
 
   // Bank Account Management
   const [savedBankAccount, setSavedBankAccount] = useState<BankAccount | null>(null);
@@ -116,13 +142,14 @@ export const SellerWallet: React.FC = () => {
         const sellerTypes = ['PAYMENT_RELEASE', 'WITHDRAW', 'PLATFORM_FEE'];
         const list = raw
           .filter((t: { type?: string }) => sellerTypes.includes(t.type))
-          .map((t: { _id: string; type: string; amount: number; status: string; description: string; createdAt: string }) => ({
+          .map((t: { _id: string; type: string; amount: number; status: string; description: string; createdAt: string; metadata?: any }) => ({
             id: t._id,
             type: t.type,
             amount: t.amount,
             status: t.status,
             description: t.description,
             createdAt: t.createdAt,
+            metadata: t.metadata,
           }));
         setTransactions(list);
         // Tính totalEarnings (PAYMENT_RELEASE) và totalWithdrawn (WITHDRAW) từ list
@@ -133,6 +160,16 @@ export const SellerWallet: React.FC = () => {
           if (t.type === 'WITHDRAW') totalWithdrawn += t.amount;
         });
         setBalance((prev) => (prev ? { ...prev, totalEarnings, totalWithdrawn } : { balance: 0, totalEarnings, totalWithdrawn }));
+
+        // Calculate held amount: PAYMENT_RELEASE transactions within last 7 days
+        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+        let held = 0;
+        list.forEach((t: { type: string; amount: number; createdAt: string }) => {
+          if (t.type === 'PAYMENT_RELEASE' && new Date(t.createdAt).getTime() > sevenDaysAgo) {
+            held += t.amount;
+          }
+        });
+        setHeldAmount(held);
       }
 
       // Lịch sử rút tiền: GET /api/wallet/withdrawals
@@ -170,6 +207,34 @@ export const SellerWallet: React.FC = () => {
         const userData = await userRes.json();
         if (userData.success && userData.data?.bankAccount) {
           setSavedBankAccount(userData.data.bankAccount);
+        }
+      }
+
+      // Subscription info
+      const subRes = await fetch(`${API_BASE_URL}/subscriptions/my-subscription`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (subRes.ok) {
+        const subData = await subRes.json();
+        const sub = subData.data?.subscription;
+        const plan = subData.data?.plan;
+        if (sub) {
+          const planDisplayMap: Record<string, string> = {
+            FREE: 'Free', BASIC: 'Basic', PRO: 'Pro', PREMIUM: 'Premium',
+          };
+          // Use commissionRate from plan object (from DB), fallback to hardcoded map
+          const fallbackRates: Record<string, number> = {
+            FREE: 0.12, BASIC: 0.10, PRO: 0.08, PREMIUM: 0.05,
+          };
+          const commissionRate = plan?.commissionRate ?? fallbackRates[sub.planType] ?? 0.12;
+          setSubscriptionInfo({
+            planType: sub.planType,
+            commissionRate,
+            commissionPercent: Math.round(commissionRate * 100),
+            planDisplayName: planDisplayMap[sub.planType] || sub.planType,
+            endDate: sub.endDate,
+            status: sub.status,
+          });
         }
       }
     } catch (error) {
@@ -378,7 +443,7 @@ export const SellerWallet: React.FC = () => {
   };
 
   const handleCancelWithdrawal = async (id: string) => {
-    if (!confirm('Bạn có chắc muốn hủy yêu cầu rút tiền này?')) return;
+    if (!confirm('Are you sure you want to cancel this withdrawal request?')) return;
     setCancelWithdrawId(id);
     try {
       const token = localStorage.getItem('accessToken');
@@ -400,7 +465,7 @@ export const SellerWallet: React.FC = () => {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
     }).format(value);
@@ -414,6 +479,44 @@ export const SellerWallet: React.FC = () => {
       'SUCCESS': 'bg-green-100 text-green-800',
     };
     return statusMap[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getPlanBadgeStyle = (planType: string) => {
+    const map: Record<string, string> = {
+      FREE: 'bg-gray-100 text-gray-700 border border-gray-300',
+      BASIC: 'bg-blue-100 text-blue-700 border border-blue-300',
+      PRO: 'bg-purple-100 text-purple-700 border border-purple-300',
+      PREMIUM: 'bg-yellow-100 text-yellow-700 border border-yellow-400',
+    };
+    return map[planType] || 'bg-gray-100 text-gray-700';
+  };
+
+  const getPlanIcon = (planType: string) => {
+    const map: Record<string, string> = {
+      FREE: '🆓',
+      BASIC: '✓',
+      PRO: '⭐',
+      PREMIUM: '👑',
+    };
+    return map[planType] || '📦';
+  };
+
+  const getTransactionTypeLabel = (type: string) => {
+    const map: Record<string, string> = {
+      PAYMENT_RELEASE: 'Payout',
+      PLATFORM_FEE: 'Commission Fee',
+      WITHDRAW: 'Withdrawal',
+    };
+    return map[type] || type;
+  };
+
+  const getTransactionTypeStyle = (type: string) => {
+    const map: Record<string, string> = {
+      PAYMENT_RELEASE: 'bg-green-100 text-green-700',
+      PLATFORM_FEE: 'bg-orange-100 text-orange-700',
+      WITHDRAW: 'bg-blue-100 text-blue-700',
+    };
+    return map[type] || 'bg-gray-100 text-gray-700';
   };
 
   if (loading) {
@@ -456,6 +559,91 @@ export const SellerWallet: React.FC = () => {
               <p className="text-gray-600 text-xs font-semibold">TOTAL WITHDRAWN</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">{formatCurrency(balance?.totalWithdrawn || 0)}</p>
             </div>
+        </div>
+
+        {/* Subscription & Commission Info */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Subscription & Commission Fee</h2>
+              <p className="text-sm text-gray-500 mt-1">Commission is automatically deducted when an order is completed</p>
+            </div>
+            <button
+              onClick={() => navigate('/seller/subscription')}
+              className="text-xs text-gray-600 hover:text-gray-900 underline whitespace-nowrap"
+            >
+              Upgrade Plan
+            </button>
+          </div>
+
+          {subscriptionInfo ? (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Current Plan */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-xs text-gray-500 mb-2">CURRENT PLAN</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">{getPlanIcon(subscriptionInfo.planType)}</span>
+                  <span className={`px-2 py-1 rounded text-xs font-bold ${getPlanBadgeStyle(subscriptionInfo.planType)}`}>
+                    {subscriptionInfo.planDisplayName}
+                  </span>
+                </div>
+                {subscriptionInfo.planType !== 'FREE' && subscriptionInfo.endDate && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    Expires: {new Date(subscriptionInfo.endDate).toLocaleDateString('en-US')}
+                  </p>
+                )}
+              </div>
+
+              {/* Commission Rate */}
+              <div className="bg-orange-50 rounded-lg p-4 border border-orange-100">
+                <p className="text-xs text-gray-500 mb-2">COMMISSION RATE</p>
+                <p className="text-3xl font-bold text-orange-600">{subscriptionInfo.commissionPercent}%</p>
+                <p className="text-xs text-gray-500 mt-1">per successful transaction</p>
+              </div>
+
+              {/* Example Calculation */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-xs text-gray-500 mb-2">EXAMPLE CALCULATION</p>
+                <div className="space-y-1 text-xs text-gray-600">
+                  <div className="flex justify-between">
+                    <span>Bike sale price:</span>
+                    <span className="font-medium">10,000,000đ</span>
+                  </div>
+                  <div className="flex justify-between text-orange-600">
+                    <span>Commission ({subscriptionInfo.commissionPercent}%):</span>
+                    <span className="font-medium">-{formatCurrency(10000000 * subscriptionInfo.commissionRate)}</span>
+                  </div>
+                  <div className="flex justify-between text-green-700 font-semibold border-t border-gray-200 pt-1 mt-1">
+                    <span>You receive:</span>
+                    <span>{formatCurrency(10000000 * (1 - subscriptionInfo.commissionRate))}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">CURRENT PLAN</p>
+                  <span className="px-2 py-1 rounded text-xs font-bold bg-gray-100 text-gray-700 border border-gray-300">🆓 Free</span>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">COMMISSION RATE</p>
+                  <p className="text-3xl font-bold text-orange-600">12%</p>
+                  <p className="text-xs text-gray-500">per transaction</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-2">PLAN COMPARISON</p>
+                  <div className="space-y-1 text-xs text-gray-600">
+                    <div className="flex justify-between"><span>Free:</span><span className="text-orange-600 font-medium">12%</span></div>
+                    <div className="flex justify-between"><span>Basic:</span><span className="text-orange-600 font-medium">10%</span></div>
+                    <div className="flex justify-between"><span>Pro:</span><span className="text-orange-600 font-medium">8%</span></div>
+                    <div className="flex justify-between"><span>Premium:</span><span className="text-green-600 font-medium">5%</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Bank account section */}
@@ -577,37 +765,81 @@ export const SellerWallet: React.FC = () => {
 
         {/* Transaction history */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-6">Transaction history</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-6">Transaction History</h2>
             {transactions.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">DATE</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">TYPE</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">AMOUNT</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">DESCRIPTION</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-600 text-xs">STATUS</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {transactions.map((transaction) => (
-                      <tr key={transaction.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                        <td className="py-4 px-4 text-gray-900 font-semibold">
-                          {new Date(transaction.createdAt).toLocaleDateString('en-US')}
-                        </td>
-                        <td className="py-4 px-4 text-gray-700">{transaction.type}</td>
-                        <td className="py-4 px-4 text-gray-900 font-semibold">{formatCurrency(transaction.amount)}</td>
-                        <td className="py-4 px-4 text-gray-700">{transaction.description}</td>
-                        <td className="py-4 px-4">
-                          <span className={`px-3 py-1 rounded text-xs font-semibold ${getStatusBadge(transaction.status)}`}>
-                            {transaction.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="space-y-3">
+                {transactions.map((transaction) => {
+                  const bd = transaction.metadata?.breakdown;
+                  const isRelease = transaction.type === 'PAYMENT_RELEASE';
+                  const isPlatformFee = transaction.type === 'PLATFORM_FEE';
+                  return (
+                    <div key={transaction.id} className="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${getTransactionTypeStyle(transaction.type)}`}>
+                              {getTransactionTypeLabel(transaction.type)}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${getStatusBadge(transaction.status)}`}>
+                              {transaction.status}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {new Date(transaction.createdAt).toLocaleDateString('vi-VN')}
+                            </span>
+                          </div>
+
+                          {isRelease && bd && (
+                            <div className="mt-2 bg-gray-50 rounded p-3 text-xs space-y-1">
+                              <div className="flex justify-between text-gray-600">
+                                <span>Bike sale price:</span>
+                                <span className="font-medium">{formatCurrency(bd.itemPrice || 0)}</span>
+                              </div>
+                              <div className="flex justify-between text-orange-600">
+                                <span>
+                                  Commission ({bd.commissionPercent ?? Math.round((bd.commissionRate || 0) * 100)}%
+                                  {bd.planName ? ` - ${bd.planName} plan` : ''})
+                                </span>
+                                <span className="font-medium">-{formatCurrency(bd.platformFee || 0)}</span>
+                              </div>
+                              <div className="flex justify-between text-green-700 font-semibold border-t border-gray-200 pt-1">
+                                <span>You receive:</span>
+                                <span>{formatCurrency(bd.sellerReceived || transaction.amount)}</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {isPlatformFee && transaction.metadata && (
+                            <div className="mt-2 bg-orange-50 rounded p-3 text-xs space-y-1">
+                              <div className="flex justify-between text-orange-700">
+                                <span>
+                                  Commission {transaction.metadata.commissionPercent ?? Math.round((transaction.metadata.commissionRate || 0) * 100)}%
+                                  {transaction.metadata.planName ? ` (${transaction.metadata.planName} plan)` : ''}
+                                </span>
+                                <span className="font-medium">{formatCurrency(transaction.amount)}</span>
+                              </div>
+                              {transaction.metadata.itemPrice && (
+                                <div className="flex justify-between text-gray-500">
+                                  <span>On sale price:</span>
+                                  <span>{formatCurrency(transaction.metadata.itemPrice)}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {!isRelease && !isPlatformFee && (
+                            <p className="text-xs text-gray-500 mt-1 truncate">{transaction.description}</p>
+                          )}
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <p className={`text-base font-bold ${isRelease ? 'text-green-600' : isPlatformFee ? 'text-orange-600' : 'text-gray-900'}`}>
+                            {isRelease ? '+' : isPlatformFee ? '-' : ''}{formatCurrency(transaction.amount)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <p className="text-gray-500 text-sm text-center py-8">No transactions yet</p>

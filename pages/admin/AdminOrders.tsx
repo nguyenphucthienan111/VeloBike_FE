@@ -1,32 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
 import { AdminPageLayout, AdminPageHeader, AdminErrorBanner, AdminLoadingState } from '../../components/AdminPageLayout';
 
 interface Order {
   _id: string;
-  buyerId: {
-    _id: string;
-    fullName: string;
-    email: string;
-  };
-  sellerId: {
-    _id: string;
-    fullName: string;
-    email: string;
-  };
-  listingId: {
-    _id: string;
-    title: string;
-  };
+  buyerId: { _id: string; fullName: string; email: string };
+  sellerId: { _id: string; fullName: string; email: string };
+  listingId: { _id: string; title: string };
   status: string;
   amount: number;
-  financials: {
-    platformFee: number;
-    sellerAmount: number;
-  };
+  financials: { platformFee: number; sellerAmount: number; totalAmount?: number };
   createdAt: string;
 }
+
+// FSM: mỗi status chỉ có đúng 1 next action admin có thể trigger
+const NEXT_ACTION: Record<string, { label: string; confirm: string; color: string } | null> = {
+  ESCROW_LOCKED:       { label: 'Start Inspection',  confirm: 'Start inspection for this order?',          color: 'text-amber-700 border-amber-200 hover:bg-amber-50' },
+  INSPECTION_PASSED:   { label: 'Mark as Shipped',   confirm: 'Mark this order as shipped?',               color: 'text-violet-700 border-violet-200 hover:bg-violet-50' },
+  SHIPPING:            { label: 'Mark as Delivered',  confirm: 'Mark this order as delivered?',             color: 'text-blue-700 border-blue-200 hover:bg-blue-50' },
+  DELIVERED:           { label: 'Release Payment',   confirm: 'Release payout to seller? This cannot be undone.', color: 'text-emerald-700 border-emerald-200 hover:bg-emerald-50' },
+};
+
+// Map action → API endpoint + method
+const ACTION_API: Record<string, { url: (id: string) => string; method: string; body?: object }> = {
+  ESCROW_LOCKED:     { url: (id) => `${API_BASE_URL}/orders/${id}/start-inspection`, method: 'POST' },
+  INSPECTION_PASSED: { url: (id) => `${API_BASE_URL}/orders/${id}/status`,           method: 'PUT', body: { status: 'SHIPPING' } },
+  SHIPPING:          { url: (id) => `${API_BASE_URL}/orders/${id}/status`,           method: 'PUT', body: { status: 'DELIVERED' } },
+  DELIVERED:         { url: (id) => `${API_BASE_URL}/admin/orders/${id}/payout`,     method: 'PUT' },
+};
 
 export const AdminOrders: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -34,27 +36,20 @@ export const AdminOrders: React.FC = () => {
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 20, pages: 0 });
   const [statusFilter, setStatusFilter] = useState('');
   const [error, setError] = useState('');
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchOrders();
-  }, [pagination.page, statusFilter]);
+  useEffect(() => { fetchOrders(); }, [pagination.page, statusFilter]);
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('accessToken');
       if (!token) return;
-
-      const params = new URLSearchParams({
-        page: pagination.page.toString(),
-        limit: pagination.limit.toString(),
-      });
+      const params = new URLSearchParams({ page: pagination.page.toString(), limit: pagination.limit.toString() });
       if (statusFilter) params.append('status', statusFilter);
-
       const response = await fetch(`${API_BASE_URL}/admin/orders?${params}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-
       if (response.ok) {
         const data = await response.json();
         setOrders(data.data);
@@ -63,54 +58,36 @@ export const AdminOrders: React.FC = () => {
         setError('Failed to load orders');
       }
     } catch (error) {
-      console.error('Error fetching orders:', error);
       setError(isConnectionError(error) ? CONNECTION_ERROR_MESSAGE : 'Error loading orders');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleReleasePayout = async (orderId: string) => {
-    if (!confirm('Are you sure you want to release payout for this order?')) return;
+  const handleNextStep = async (order: Order) => {
+    const action = NEXT_ACTION[order.status];
+    const api = ACTION_API[order.status];
+    if (!action || !api) return;
+    if (!confirm(action.confirm)) return;
 
+    setActionLoading(order._id);
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`${API_BASE_URL}/admin/orders/${orderId}/payout`, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}` },
+      const res = await fetch(api.url(order._id), {
+        method: api.method,
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        ...(api.body ? { body: JSON.stringify(api.body) } : {}),
       });
-
-      if (response.ok) {
-        alert('Payout released successfully');
+      const data = await res.json();
+      if (res.ok) {
         fetchOrders();
       } else {
-        const data = await response.json();
-        alert(data.message || 'Failed to release payout');
+        alert(data.message || 'Action failed');
       }
-    } catch (error) {
-      console.error('Error releasing payout:', error);
-      alert('Error releasing payout');
-    }
-  };
-
-  const handleStartInspection = async (orderId: string) => {
-    if (!confirm('Start manual inspection for this order? (Admin only - for debugging)')) return;
-    try {
-      const token = localStorage.getItem('accessToken');
-      const response = await fetch(`${API_BASE_URL}/orders/${orderId}/start-inspection`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      const data = await response.json();
-      if (response.ok) {
-        alert(data.message || 'Inspection started');
-        fetchOrders();
-      } else {
-        alert(data.message || 'Failed to start inspection');
-      }
-    } catch (error) {
-      console.error('Error starting inspection:', error);
-      alert('Error starting inspection');
+    } catch {
+      alert('Error performing action');
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -126,10 +103,7 @@ export const AdminOrders: React.FC = () => {
       a.download = `orders-export-${new Date().toISOString().slice(0, 10)}.csv`;
       a.click();
       window.URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error(e);
-      alert('Export failed');
-    }
+    } catch { alert('Export failed'); }
   };
 
   const formatCurrency = (amount: number) => {
@@ -249,21 +223,23 @@ export const AdminOrders: React.FC = () => {
                           </td>
                           <td className="px-5 py-3.5">
                             <div className="flex flex-col gap-1">
-                              {order.status === 'ESCROW_LOCKED' && (
+                              {NEXT_ACTION[order.status] ? (
                                 <button
-                                  onClick={() => handleStartInspection(order._id)}
-                                  className="px-3 py-1.5 text-xs font-medium text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-left"
+                                  onClick={() => handleNextStep(order)}
+                                  disabled={actionLoading === order._id}
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-lg transition-colors disabled:opacity-50 ${NEXT_ACTION[order.status]!.color}`}
                                 >
-                                  Start inspection
+                                  {actionLoading === order._id ? (
+                                    <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <ArrowRight size={12} />
+                                  )}
+                                  {NEXT_ACTION[order.status]!.label}
                                 </button>
-                              )}
-                              {order.status === 'DELIVERED' && (
-                                <button
-                                  onClick={() => handleReleasePayout(order._id)}
-                                  className="px-3 py-1.5 text-xs font-medium text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-50 transition-colors text-left"
-                                >
-                                  Release payment
-                                </button>
+                              ) : (
+                                <span className="text-xs text-slate-400 italic">
+                                  {['COMPLETED','REFUNDED','CANCELLED'].includes(order.status) ? 'Finalized' : 'Awaiting action'}
+                                </span>
                               )}
                             </div>
                           </td>

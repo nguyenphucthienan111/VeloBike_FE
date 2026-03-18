@@ -77,7 +77,7 @@ export const SellerInventory: React.FC = () => {
 
   const formatCurrency = (value: number) => {
     if (!value || isNaN(value)) return '0 VNĐ';
-    return new Intl.NumberFormat('en-US', { 
+    return new Intl.NumberFormat('vi-VN', { 
       style: 'currency', 
       currency: 'VND',
       minimumFractionDigits: 0,
@@ -240,6 +240,8 @@ export const SellerInventory: React.FC = () => {
         return 'bg-green-100 text-green-800';
       case 'DRAFT':
         return 'bg-yellow-100 text-yellow-800';
+      case 'RESERVED':
+        return 'bg-purple-100 text-purple-800';
       case 'SOLD':
         return 'bg-blue-100 text-blue-800';
       case 'PENDING_APPROVAL':
@@ -446,37 +448,41 @@ export const SellerInventory: React.FC = () => {
                         {new Date(listing.createdAt).toLocaleDateString('en-US')}
                       </td>
                       <td className="px-3 py-4 align-middle">
-                        <div className="flex flex-col divide-y divide-gray-200 border border-gray-200 rounded-lg overflow-hidden w-fit">
-                          <button
-                            onClick={() => navigate(`/seller/edit-listing/${listing._id}`)}
-                            className="px-3 py-1.5 text-blue-600 hover:bg-blue-50 text-sm font-medium text-left"
-                          >
-                            Edit
-                          </button>
-                          {listing.status === 'DRAFT' && (
+                        {['RESERVED', 'SOLD'].includes(listing.status) ? (
+                          <span className="text-xs text-gray-400 italic">Locked</span>
+                        ) : (
+                          <div className="flex flex-col divide-y divide-gray-200 border border-gray-200 rounded-lg overflow-hidden w-fit">
                             <button
-                              onClick={() => handleSubmitForApproval(listing._id)}
-                              className="px-3 py-1.5 text-green-600 hover:bg-green-50 text-sm font-medium text-left"
+                              onClick={() => navigate(`/seller/edit-listing/${listing._id}`)}
+                              className="px-3 py-1.5 text-blue-600 hover:bg-blue-50 text-sm font-medium text-left"
                             >
-                              Submit
+                              Edit
                             </button>
-                          )}
-                          {listing.status === 'PUBLISHED' && (
+                            {listing.status === 'DRAFT' && (
+                              <button
+                                onClick={() => handleSubmitForApproval(listing._id)}
+                                className="px-3 py-1.5 text-green-600 hover:bg-green-50 text-sm font-medium text-left"
+                              >
+                                Submit
+                              </button>
+                            )}
+                            {listing.status === 'PUBLISHED' && (
+                              <button
+                                onClick={() => handleBoostListing(listing._id)}
+                                className="px-3 py-1.5 text-amber-600 hover:bg-amber-50 text-sm font-medium text-left"
+                                title="Boost this listing to the top"
+                              >
+                                🚀 Boost
+                              </button>
+                            )}
                             <button
-                              onClick={() => handleBoostListing(listing._id)}
-                              className="px-3 py-1.5 text-amber-600 hover:bg-amber-50 text-sm font-medium text-left"
-                              title="Boost this listing to the top"
+                              onClick={() => handleDeleteListing(listing._id)}
+                              className="px-3 py-1.5 text-red-600 hover:bg-red-50 text-sm font-medium text-left"
                             >
-                              🚀 Boost
+                              Delete
                             </button>
-                          )}
-                          <button
-                            onClick={() => handleDeleteListing(listing._id)}
-                            className="px-3 py-1.5 text-red-600 hover:bg-red-50 text-sm font-medium text-left"
-                          >
-                            Delete
-                          </button>
-                        </div>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))

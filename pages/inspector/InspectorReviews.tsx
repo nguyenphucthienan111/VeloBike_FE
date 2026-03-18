@@ -92,7 +92,7 @@ export const InspectorReviews: React.FC = () => {
         <InspectorHeader />
         <div className="flex-1 p-8">
           <div className="max-w-4xl mx-auto">
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">Đánh giá của tôi</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">My Reviews</h1>
 
             {/* Stats Overview */}
             {stats && (
@@ -101,14 +101,14 @@ export const InspectorReviews: React.FC = () => {
                   <div className="text-center">
                     <p className="text-5xl font-bold text-gray-900">{stats.averageRating.toFixed(1)}</p>
                     <StarDisplay value={stats.averageRating} size={20} />
-                    <p className="text-sm text-gray-500 mt-1">{stats.totalReviews} đánh giá</p>
+                    <p className="text-sm text-gray-500 mt-1">{stats.totalReviews} reviews</p>
                   </div>
                   <div className="flex-1 grid grid-cols-2 gap-3">
                     {([
-                      ['professionalism', 'Chuyên nghiệp'],
-                      ['accuracy', 'Độ chính xác'],
-                      ['communication', 'Giao tiếp'],
-                      ['timeliness', 'Đúng giờ'],
+                      ['professionalism', 'Professionalism'],
+                      ['accuracy', 'Accuracy'],
+                      ['communication', 'Communication'],
+                      ['timeliness', 'Timeliness'],
                     ] as const).map(([key, label]) => (
                       <div key={key} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
                         <span className="text-xs text-gray-600">{label}</span>
@@ -123,7 +123,7 @@ export const InspectorReviews: React.FC = () => {
                 {stats.totalReviews === 0 && (
                   <div className="flex items-center gap-2 text-gray-500 text-sm">
                     <TrendingUp size={16} />
-                    <span>Chưa có đánh giá nào. Hoàn thành các inspection để nhận đánh giá từ khách hàng.</span>
+                    <span>No reviews yet. Complete inspections to receive feedback from customers.</span>
                   </div>
                 )}
               </div>
@@ -133,7 +133,7 @@ export const InspectorReviews: React.FC = () => {
             {reviews.length === 0 ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
                 <Star size={40} className="text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">Chưa có đánh giá nào</p>
+                <p className="text-gray-500">No reviews yet</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -152,7 +152,7 @@ export const InspectorReviews: React.FC = () => {
                         <div>
                           <p className="text-sm font-semibold text-gray-900">{review.reviewerId?.fullName || 'Ẩn danh'}</p>
                           <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
-                            {review.reviewerRole === 'BUYER' ? 'Người mua' : 'Người bán'}
+                            {review.reviewerRole === 'BUYER' ? 'Buyer' : 'Seller'}
                           </span>
                         </div>
                       </div>
@@ -166,11 +166,19 @@ export const InspectorReviews: React.FC = () => {
 
                     <p className="text-sm text-gray-700 mb-3">{review.comment}</p>
 
-                    <div className="grid grid-cols-4 gap-2 text-xs text-gray-500 border-t pt-3">
-                      {(['professionalism', 'accuracy', 'communication', 'timeliness'] as const).map((k) => (
-                        <div key={k} className="text-center">
-                          <Star size={10} className="text-yellow-400 inline" fill="currentColor" />
-                          <span className="ml-0.5">{review.categories[k]}</span>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-gray-500 border-t pt-3">
+                      {([
+                        ['professionalism', 'Professionalism'],
+                        ['accuracy', 'Accuracy'],
+                        ['communication', 'Communication'],
+                        ['timeliness', 'Timeliness'],
+                      ] as const).map(([k, label]) => (
+                        <div key={k} className="flex items-center justify-between">
+                          <span className="text-gray-500">{label}</span>
+                          <div className="flex items-center gap-0.5">
+                            <Star size={10} className="text-yellow-400" fill="currentColor" />
+                            <span className="font-semibold text-gray-700">{review.categories[k]}</span>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -187,10 +195,10 @@ export const InspectorReviews: React.FC = () => {
                 {totalPages > 1 && (
                   <div className="flex justify-center gap-2 pt-2">
                     <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                      className="px-3 py-1 border rounded text-sm disabled:opacity-40">Trước</button>
+                      className="px-3 py-1 border rounded text-sm disabled:opacity-40">Previous</button>
                     <span className="px-3 py-1 text-sm text-gray-600">{page} / {totalPages}</span>
                     <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                      className="px-3 py-1 border rounded text-sm disabled:opacity-40">Sau</button>
+                      className="px-3 py-1 border rounded text-sm disabled:opacity-40">Next</button>
                   </div>
                 )}
               </div>

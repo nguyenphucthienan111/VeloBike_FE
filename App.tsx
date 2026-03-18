@@ -40,11 +40,11 @@ import { AdminUsers } from './pages/admin/AdminUsers';
 import { AdminListings } from './pages/admin/AdminListings';
 import { AdminOrders } from './pages/admin/AdminOrders';
 import { AdminAnalytics } from './pages/admin/AdminAnalytics';
-import { AdminInspectors } from './pages/admin/AdminInspectors';
+// import { AdminInspectors } from './pages/admin/AdminInspectors';
 import { AdminProfile } from './pages/admin/AdminProfile';
-import { AdminCatalog } from './pages/admin/AdminCatalog';
+// import { AdminCatalog } from './pages/admin/AdminCatalog';
 import { AdminDisputes } from './pages/admin/AdminDisputes';
-import { AdminReports } from './pages/admin/AdminReports';
+// import { AdminReports } from './pages/admin/AdminReports';
 import { AdminWithdrawals } from './pages/admin/AdminWithdrawals';
 import { AdminTransactions } from './pages/admin/AdminTransactions';
 import { AdminSubscriptions } from './pages/admin/AdminSubscriptions';
@@ -57,6 +57,9 @@ import { InspectionDetail } from './pages/inspector/InspectionDetail';
 import { InspectorProfile } from './pages/inspector/InspectorProfile';
 import { InspectorWallet } from './pages/inspector/InspectorWallet';
 import { InspectorReviews } from './pages/inspector/InspectorReviews';
+import { InspectorApply } from './pages/InspectorApply';
+import { InspectorPublicProfile } from './pages/InspectorPublicProfile';
+import { Inspectors } from './pages/Inspectors';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { SellerGate } from './components/SellerGate';
 import { BuyerSellerOnlyGate } from './components/BuyerSellerOnlyGate';
@@ -161,15 +164,15 @@ const App: React.FC = () => {
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="listings" element={<AdminListings />} />
-            <Route path="catalog" element={<AdminCatalog />} />
+            {/* <Route path="catalog" element={<AdminCatalog />} /> */}
             <Route path="orders" element={<AdminOrders />} />
             <Route path="disputes" element={<AdminDisputes />} />
-            <Route path="reports" element={<AdminReports />} />
+            {/* <Route path="reports" element={<AdminReports />} /> */}
             <Route path="withdrawals" element={<AdminWithdrawals />} />
             <Route path="transactions" element={<AdminTransactions />} />
             <Route path="subscriptions" element={<AdminSubscriptions />} />
             <Route path="analytics" element={<AdminAnalytics />} />
-            <Route path="inspectors" element={<AdminInspectors />} />
+            {/* <Route path="inspectors" element={<AdminInspectors />} /> */}
             <Route path="profile" element={<AdminProfile />} />
           </Route>
           
@@ -209,6 +212,14 @@ const App: React.FC = () => {
               <InspectorReviews />
             </ProtectedRoute>
           } />
+          <Route path="/inspector-apply" element={
+            <ProtectedRoute allowedRoles={['BUYER', 'SELLER']}>
+              <InspectorApply />
+            </ProtectedRoute>
+          } />
+          {/* Public inspector profile - no auth required */}
+          <Route path="/inspector/:id/profile" element={<InspectorPublicProfile />} />
+          <Route path="/inspectors" element={<Inspectors />} />
           <Route path="/inspector/profile" element={
             <ProtectedRoute allowedRoles={['INSPECTOR']}>
               <InspectorProfile />

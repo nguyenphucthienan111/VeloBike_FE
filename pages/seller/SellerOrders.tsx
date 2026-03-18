@@ -42,7 +42,10 @@ export const SellerOrders: React.FC = () => {
   ];
 
   const statuses = ['ALL', 'CREATED', 'ESCROW_LOCKED', 'IN_INSPECTION', 'INSPECTION_PASSED', 'SHIPPING', 'DELIVERED', 'COMPLETED'];
-  
+
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0);
+
   const statusColors: {[key: string]: string} = {
     CREATED: 'bg-blue-100 text-blue-800',
     ESCROW_LOCKED: 'bg-yellow-100 text-yellow-800',
@@ -237,7 +240,7 @@ export const SellerOrders: React.FC = () => {
                     <tr key={order._id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 text-sm text-gray-900 font-mono">{order._id.substring(0, 8)}</td>
                       <td className="px-6 py-4 text-sm text-gray-600">{order.listingId?.title || 'N/A'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900 font-medium">${order.totalAmount}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900 font-medium">{formatCurrency(order.totalAmount)}</td>
                       <td className="px-6 py-4 text-sm">
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -392,7 +395,7 @@ export const SellerOrders: React.FC = () => {
                 <div className="space-y-2 text-sm">
                   <p><span className="font-medium">Order ID:</span> {selectedOrder._id}</p>
                   <p><span className="font-medium">Product:</span> {selectedOrder.listingId?.title || 'N/A'}</p>
-                  <p><span className="font-medium">Amount:</span> ${selectedOrder.totalAmount}</p>
+                  <p><span className="font-medium">Amount:</span> {formatCurrency(selectedOrder.totalAmount)}</p>
                   <p><span className="font-medium">Created:</span> {new Date(selectedOrder.createdAt).toLocaleString()}</p>
                 </div>
               </div>
@@ -442,7 +445,7 @@ export const SellerOrders: React.FC = () => {
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Escrow Status</h3>
                   <div className="space-y-2 text-sm">
                     <p><span className="font-medium">Status:</span> {selectedOrder.escrowStatus.status}</p>
-                    <p><span className="font-medium">Amount Held:</span> ${selectedOrder.escrowStatus.amountHeld}</p>
+                    <p><span className="font-medium">Amount Held:</span> {formatCurrency(selectedOrder.escrowStatus.amountHeld)}</p>
                   </div>
                 </div>
               )}

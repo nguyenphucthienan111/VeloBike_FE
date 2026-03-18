@@ -45,12 +45,20 @@ export const InspectionService: React.FC = () => {
             When you buy a bike on the Marketplace, you can add an inspection to your order.
             The inspection fee is shown clearly at checkout.
           </p>
-          <Link
-            to="/marketplace"
-            className="inline-flex items-center gap-2 bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
-          >
-            Browse Marketplace
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              to="/marketplace"
+              className="inline-flex items-center gap-2 bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
+            >
+              Browse Marketplace
+            </Link>
+            <Link
+              to="/inspectors"
+              className="inline-flex items-center gap-2 bg-white border border-gray-300 text-gray-800 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            >
+              View our inspectors
+            </Link>
+          </div>
         </div>
       </div>
     </div>

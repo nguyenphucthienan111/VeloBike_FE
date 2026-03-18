@@ -24,6 +24,12 @@ interface UserProfile {
   emailVerified?: boolean;
   createdAt?: string;
   reputation?: { score: number; reviewCount: number };
+  inspectorProfile?: {
+    bio?: string;
+    yearsOfExperience?: number;
+    specializations?: string[];
+    certificates?: Array<{ imageUrl: string }>;
+  };
 }
 
 export const InspectorProfile: React.FC = () => {
@@ -49,6 +55,16 @@ export const InspectorProfile: React.FC = () => {
 
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+
+  // Inspector profile fields
+  const [inspectorForm, setInspectorForm] = useState({
+    bio: '',
+    yearsOfExperience: 0,
+    specializations: '' as string, // comma-separated
+  });
+  const [certificates, setCertificates] = useState<Array<{ imageUrl: string }>>([]);
+  const [certUploading, setCertUploading] = useState<boolean[]>([]);
+  const [savingInspector, setSavingInspector] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -82,6 +98,15 @@ export const InspectorProfile: React.FC = () => {
           },
         });
         setAvatarPreview(profileData.avatar || null);
+        if (profileData.inspectorProfile) {
+          const ip = profileData.inspectorProfile;
+          setInspectorForm({
+            bio: ip.bio || '',
+            yearsOfExperience: ip.yearsOfExperience || 0,
+            specializations: (ip.specializations || []).join(', '),
+          });
+          setCertificates((ip.certificates || []).map((c: any) => ({ imageUrl: c.imageUrl || '' })));
+        }
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -120,6 +145,82 @@ export const InspectorProfile: React.FC = () => {
         setAvatarPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveInspectorProfile = async () => {
+    try {
+      setSavingInspector(true);
+      setError('');
+      setSuccess('');
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+
+      const payload = {
+        bio: inspectorForm.bio,
+        yearsOfExperience: Number(inspectorForm.yearsOfExperience),
+        specializations: inspectorForm.specializations.split(',').map(s => s.trim()).filter(Boolean),
+        certificates: certificates.filter(c => c.imageUrl).map(c => ({
+          name: '',
+          issuedBy: '',
+          issuedYear: new Date().getFullYear(),
+          imageUrl: c.imageUrl,
+        })),
+      };
+
+      const res = await fetch(`${API_BASE_URL}/users/me/inspector-profile`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        setSuccess('Inspector profile updated!');
+        await fetchProfile();
+      } else {
+        const data = await res.json();
+        setError(data.message || 'Failed to update');
+      }
+    } catch {
+      setError('Error saving inspector profile');
+    } finally {
+      setSavingInspector(false);
+    }
+  };
+
+  const addCertificate = () => {
+    setCertificates(prev => [...prev, { imageUrl: '' }]);
+    setCertUploading(prev => [...prev, false]);
+  };
+
+  const updateCertificate = (index: number, field: string, value: string | number) => {
+    setCertificates(prev => prev.map((c, i) => i === index ? { ...c, [field]: value } : c));
+  };
+
+  const removeCertificate = (index: number) => {
+    setCertificates(prev => prev.filter((_, i) => i !== index));
+    setCertUploading(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleCertImageUpload = async (index: number, file: File) => {
+    setCertUploading(prev => prev.map((v, i) => i === index ? true : v));
+    try {
+      const token = localStorage.getItem('accessToken');
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await fetch(`${API_BASE_URL}/upload`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        updateCertificate(index, 'imageUrl', data.url || data.data?.url || '');
+      }
+    } catch (e) {
+      console.error('Certificate upload failed', e);
+    } finally {
+      setCertUploading(prev => prev.map((v, i) => i === index ? false : v));
     }
   };
 
@@ -400,6 +501,121 @@ export const InspectorProfile: React.FC = () => {
                       />
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Inspector Profile */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 className="text-lg font-bold text-gray-900 mb-4">Inspector Profile</h2>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Bio</label>
+                    <textarea
+                      value={inspectorForm.bio}
+                      onChange={(e) => setInspectorForm(p => ({ ...p, bio: e.target.value }))}
+                      rows={3}
+                      placeholder="Describe your experience and expertise..."
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Years of Experience</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={inspectorForm.yearsOfExperience}
+                      onChange={(e) => setInspectorForm(p => ({ ...p, yearsOfExperience: Number(e.target.value) }))}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Specializations <span className="text-gray-400 font-normal">(comma-separated)</span></label>
+                    <input
+                      type="text"
+                      value={inspectorForm.specializations}
+                      onChange={(e) => setInspectorForm(p => ({ ...p, specializations: e.target.value }))}
+                      placeholder="e.g. Road Bikes, MTB, E-Bikes"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Certificates */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-bold text-gray-900">Certificates</h2>
+                  <button
+                    onClick={addCertificate}
+                    className="px-3 py-1.5 bg-gray-900 text-white text-sm rounded-lg hover:bg-gray-800 transition-colors"
+                  >
+                    + Add
+                  </button>
+                </div>
+                {certificates.length === 0 ? (
+                  <p className="text-sm text-gray-500">No certificates added yet.</p>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {certificates.map((cert, i) => (
+                      <div key={i} className="border border-gray-200 rounded-lg overflow-hidden relative group">
+                        {/* Image preview */}
+                        <div className="aspect-[4/3] bg-gray-100 flex items-center justify-center">
+                          {cert.imageUrl ? (
+                            <img src={cert.imageUrl} alt={`Certificate ${i + 1}`} className="w-full h-full object-cover" />
+                          ) : certUploading[i] ? (
+                            <div className="flex flex-col items-center gap-2 text-gray-400">
+                              <div className="animate-spin h-6 w-6 border-2 border-gray-400 border-t-transparent rounded-full" />
+                              <span className="text-xs">Uploading...</span>
+                            </div>
+                          ) : (
+                            <label className="flex flex-col items-center gap-2 cursor-pointer text-gray-400 hover:text-gray-600 w-full h-full justify-center">
+                              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                              <span className="text-xs">Click to upload</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => e.target.files?.[0] && handleCertImageUpload(i, e.target.files[0])}
+                              />
+                            </label>
+                          )}
+                        </div>
+                        {/* Re-upload overlay when image exists */}
+                        {cert.imageUrl && !certUploading[i] && (
+                          <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                            <span className="text-white text-xs font-medium bg-black/60 px-2 py-1 rounded">Change image</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => e.target.files?.[0] && handleCertImageUpload(i, e.target.files[0])}
+                            />
+                          </label>
+                        )}
+                        {/* Remove button */}
+                        <button
+                          onClick={() => removeCertificate(i)}
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          ×
+                        </button>
+                        <div className="px-2 py-1.5 bg-white border-t border-gray-100">
+                          <p className="text-xs text-gray-500 text-center">Certificate #{i + 1}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-4 flex gap-3">
+                  <button
+                    onClick={handleSaveInspectorProfile}
+                    disabled={savingInspector}
+                    className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-600 transition-colors text-sm font-medium"
+                  >
+                    {savingInspector ? 'Saving...' : 'Save Inspector Profile'}
+                  </button>
                 </div>
               </div>
 

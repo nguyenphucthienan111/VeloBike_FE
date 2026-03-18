@@ -64,7 +64,7 @@ export const SellerSubscription: React.FC = () => {
 
   const formatCurrency = (value: number) => {
     if (value === 0) return 'Free';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND' }).format(value);
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
   };
 
   const handleSubscribe = async (planType: string) => {

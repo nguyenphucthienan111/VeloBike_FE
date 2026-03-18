@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { MessageCircle, Send, Paperclip, Image as ImageIcon, Smile } from 'lucide-react';
+import { MessageCircle, Send, Paperclip, Image as ImageIcon, Smile, Search } from 'lucide-react';
 import { API_BASE_URL } from '../constants';
 import { handleSessionExpired } from '../utils/auth';
 import { io } from 'socket.io-client';
@@ -127,6 +127,9 @@ export const Messages: React.FC = () => {
       if (data.type === 'NEW_MESSAGE') {
         const newMessage = data.message;
         
+        // Notify Layout to refresh unread count
+        window.dispatchEvent(new CustomEvent('newMessageReceived'));
+
         // 1. Update messages list if viewing this conversation
         if (selected && newMessage.conversationId === selected.conversationId) {
           setMessages((prev) => {
@@ -335,7 +338,20 @@ export const Messages: React.FC = () => {
         <div className="flex flex-1 min-h-0">
           <div className="w-64 sm:w-72 border-r border-gray-200 flex flex-col flex-shrink-0">
             <div className="p-4 border-b border-gray-100">
-              <p className="text-sm font-semibold text-gray-700">Conversations</p>
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-xl font-bold text-gray-900">Messages</p>
+                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 text-sm">
+                  {conversations.length}
+                </div>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 focus:bg-white transition-colors"
+                />
+              </div>
             </div>
             <div className="flex-1 overflow-y-auto">
               {conversations.length > 0 ? (
@@ -347,19 +363,41 @@ export const Messages: React.FC = () => {
                       setSelected(c);
                       fetchMessages(c);
                     }}
-                    className={`w-full text-left p-3 border-b border-gray-50 hover:bg-gray-50 transition-colors ${selected?.id === c.id ? 'bg-gray-100' : ''}`}
+                    className={`w-full flex items-start gap-3 p-4 hover:bg-gray-50 transition-all border-l-4 ${
+                      selected?.id === c.id ? 'bg-blue-50 border-blue-600' : 'border-transparent'
+                    }`}
                   >
-                    <p className="font-medium text-gray-900 text-sm truncate">{c.userName}</p>
-                    <p className="text-xs text-gray-500 truncate mt-0.5">{c.lastMessage || '(No messages yet)'}</p>
-                    {c.unreadCount > 0 && (
-                      <span className="inline-flex items-center justify-center mt-1 bg-accent text-white text-xs font-bold rounded-full min-w-[1.25rem] h-5 px-1">
-                        {c.unreadCount}
-                      </span>
-                    )}
+                    <div className="relative shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border border-gray-100">
+                        {c.userAvatar ? (
+                          <img src={c.userAvatar} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-lg font-bold text-gray-500">{c.userName.charAt(0).toUpperCase()}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0 text-left">
+                      <div className="flex justify-between items-baseline mb-1">
+                        <h3 className={`text-sm truncate ${selected?.id === c.id ? 'font-bold text-gray-900' : 'font-semibold text-gray-700'}`}>
+                          {c.userName}
+                        </h3>
+                        <span className="text-xs text-gray-400 shrink-0">
+                          {c.lastMessageTime ? new Date(c.lastMessageTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''}
+                        </span>
+                      </div>
+                      <p className={`text-sm truncate ${selected?.id === c.id ? 'text-gray-700 font-medium' : 'text-gray-500'}`}>
+                        {c.lastMessage || 'Start a conversation'}
+                      </p>
+                      {c.unreadCount > 0 && (
+                        <span className="inline-flex items-center justify-center mt-1 bg-blue-600 text-white text-xs font-bold rounded-full min-w-[1.25rem] h-5 px-1">
+                          {c.unreadCount}
+                        </span>
+                      )}
+                    </div>
                   </button>
                 ))
               ) : (
-                <div className="p-6 text-center text-gray-500">
+                <div className="flex flex-col items-center justify-center h-64 text-gray-400">
                   <MessageCircle className="w-10 h-10 mx-auto mb-2 text-gray-300" />
                   <p className="text-sm">No conversations yet</p>
                   <p className="text-xs mt-1">Start a chat from listing or order pages.</p>
@@ -371,11 +409,20 @@ export const Messages: React.FC = () => {
           {selected ? (
             <div className="flex-1 flex flex-col min-w-0">
               <div className="p-4 border-b border-gray-200 bg-gray-50/50 flex justify-between items-center">
-                <div>
-                  <p className="font-semibold text-gray-900">{selected.userName}</p>
-                  <p className="text-xs text-gray-500">
-                    {selected.sellerId === selected.userId ? 'Seller' : 'Buyer'}
-                  </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border border-gray-100">
+                    {selected.userAvatar ? (
+                      <img src={selected.userAvatar} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="font-bold text-gray-600">{selected.userName.charAt(0).toUpperCase()}</span>
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">{selected.userName}</p>
+                    <p className="text-xs text-gray-500">
+                      {selected.sellerId === selected.userId ? 'Seller' : 'Buyer'}
+                    </p>
+                  </div>
                 </div>
               </div>
               

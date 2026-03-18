@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { API_BASE_URL } from '../constants';
 
 interface SellerSidebarProps {
   stats?: {
@@ -10,15 +11,39 @@ interface SellerSidebarProps {
 export const SellerSidebar: React.FC<SellerSidebarProps> = ({ stats }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [messageUnread, setMessageUnread] = useState(0);
 
   const isActive = (path: string) => location.pathname === path;
+
+  const fetchUnread = () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
+    fetch(`${API_BASE_URL}/messages/unread`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (data?.data?.unreadCount != null) setMessageUnread(Number(data.data.unreadCount));
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    fetchUnread();
+    // Reset when on messages page
+    if (location.pathname === '/seller/messages') setMessageUnread(0);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const onNew = () => fetchUnread();
+    window.addEventListener('newMessageReceived', onNew);
+    return () => window.removeEventListener('newMessageReceived', onNew);
+  }, []);
 
   const navItems = [
     { path: '/seller/dashboard', label: 'Dashboard' },
     { path: '/seller/inventory', label: 'Inventory' },
     { path: '/seller/analytics', label: 'Sales' },
     { path: '/seller/orders', label: 'Orders' },
-    { path: '/seller/messages', label: 'Messages' },
+    { path: '/seller/messages', label: 'Messages', badge: messageUnread },
     { path: '/seller/reviews', label: 'Reviews' },
     { path: '/seller/wallet', label: 'Wallet' },
     { path: '/seller/subscription', label: 'Subscription' },
@@ -48,13 +73,18 @@ export const SellerSidebar: React.FC<SellerSidebarProps> = ({ stats }) => {
           <button
             key={item.path}
             onClick={() => navigate(item.path)}
-            className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
+            className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-between ${
               isActive(item.path)
                 ? 'bg-gray-900 text-white'
                 : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
-            {item.label}
+            <span>{item.label}</span>
+            {item.badge != null && item.badge > 0 && (
+              <span className="bg-red-500 text-white text-[10px] font-bold min-w-[1.1rem] h-[1.1rem] px-0.5 rounded-full flex items-center justify-center">
+                {item.badge > 99 ? '99+' : item.badge}
+              </span>
+            )}
           </button>
         ))}
       </nav>

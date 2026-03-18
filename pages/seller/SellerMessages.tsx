@@ -104,6 +104,8 @@ export const SellerMessages: React.FC = () => {
     socket.on(eventName, (data: any) => {
       if (data.type === 'NEW_MESSAGE') {
         const newMessage = data.message;
+        // Notify Layout/Sidebar to refresh unread count
+        window.dispatchEvent(new CustomEvent('newMessageReceived'));
         if (selectedConversation && newMessage.conversationId === selectedConversation.conversationId) {
           setMessages((prev) => {
             if (prev.some(m => m.id === newMessage._id)) return prev;

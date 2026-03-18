@@ -11,15 +11,15 @@ export const AdminSidebar: React.FC = () => {
     { path: '/admin/dashboard', label: 'Dashboard' },
     { path: '/admin/users', label: 'Users' },
     { path: '/admin/listings', label: 'Listings' },
-    { path: '/admin/catalog', label: 'Catalog' },
+    // { path: '/admin/catalog', label: 'Catalog' },
     { path: '/admin/orders', label: 'Orders' },
     { path: '/admin/disputes', label: 'Disputes' },
-    { path: '/admin/reports', label: 'Reports' },
+    // { path: '/admin/reports', label: 'Reports' },
     { path: '/admin/withdrawals', label: 'Withdrawals' },
     { path: '/admin/transactions', label: 'Transactions' },
     { path: '/admin/subscriptions', label: 'Subscriptions' },
     { path: '/admin/analytics', label: 'Analytics' },
-    { path: '/admin/inspectors', label: 'Inspectors' },
+    // { path: '/admin/inspectors', label: 'Inspectors' },
     { path: '/admin/profile', label: 'My Profile' },
   ];
 

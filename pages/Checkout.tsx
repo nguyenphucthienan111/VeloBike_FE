@@ -300,8 +300,11 @@ export const Checkout: React.FC = () => {
   const formatPrice = (amount: number) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 
-  const inspectionFee = requestInspection && !listing?.sellerHasFreeInspection ? 1000 : 0;
-  const shippingFee = 1000;
+  const INSPECTION_FEE = 500000;
+  const SHIPPING_FEE = 150000;
+
+  const inspectionFee = requestInspection && !listing?.sellerHasFreeInspection ? INSPECTION_FEE : 0;
+  const shippingFee = SHIPPING_FEE;
   const totalAmount = (listing?.pricing?.amount || 0) + inspectionFee + shippingFee;
 
   if (loading) {
@@ -399,16 +402,16 @@ export const Checkout: React.FC = () => {
               {listing.sellerHasFreeInspection ? (
                 <p className="text-sm text-green-700 mb-4">Seller sponsors the inspection fee — free for you.</p>
               ) : (
-                <p className="text-sm text-gray-600 mb-4">Inspection fee: 1,000 VND</p>
+                <p className="text-sm text-gray-600 mb-4">Inspection fee: {formatPrice(INSPECTION_FEE)}</p>
               )}
               <div className="space-y-3">
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="radio" name="inspection" checked={requestInspection} onChange={() => setRequestInspection(true)} className="mt-0.5" />
-                  <span className="text-sm text-gray-700">Yes, hire an inspector{!listing.sellerHasFreeInspection && ' (+1,000 VND)'}</span>
+                  <span className="text-sm text-gray-700">Yes, hire an inspector{!listing.sellerHasFreeInspection && ` (+${formatPrice(INSPECTION_FEE)})`}</span>
                 </label>
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="radio" name="inspection" checked={!requestInspection} onChange={() => setRequestInspection(false)} className="mt-0.5" />
-                  <span className="text-sm text-gray-700">No, skip inspection{!listing.sellerHasFreeInspection && ' (save 1,000 VND)'}</span>
+                  <span className="text-sm text-gray-700">No, skip inspection{!listing.sellerHasFreeInspection && ` (save ${formatPrice(INSPECTION_FEE)})`}</span>
                 </label>
               </div>
             </>
@@ -486,11 +489,11 @@ export const Checkout: React.FC = () => {
             </div>
             <div className="flex justify-between text-gray-600">
               <span>Inspection fee</span>
-              <span>{inspectionFee === 0 ? '0 ₫' : '1.000 ₫'}</span>
+              <span>{formatPrice(inspectionFee)}</span>
             </div>
             <div className="flex justify-between text-gray-600">
               <span>Shipping fee</span>
-              <span>1.000 ₫</span>
+              <span>{formatPrice(shippingFee)}</span>
             </div>
             <div className="flex justify-between font-bold text-base pt-4 mt-2 border-t border-gray-200">
               <span className="text-gray-900">Total payment</span>
