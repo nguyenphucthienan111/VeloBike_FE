@@ -37,6 +37,7 @@ export const SellerOrders: React.FC = () => {
   const [selectedShipmentOrder, setSelectedShipmentOrder] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState('GHN_STD');
   const [decisionLoading, setDecisionLoading] = useState<string | null>(null);
+  const [decisionModal, setDecisionModal] = useState<{ orderId: string; title: string } | null>(null);
 
   const providers = [
     { id: 'GHN_STD', name: 'Giao Hàng Nhanh (GHN)' },
@@ -340,23 +341,13 @@ export const SellerOrders: React.FC = () => {
                             View Details
                           </button>
                           {order.status === 'IN_INSPECTION' && order.inspectionVerdict === 'SUGGEST_ADJUSTMENT' && (
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs text-orange-600 font-medium">Điều chỉnh?</span>
-                              <button
-                                onClick={() => handleSellerDecision(order._id, 'PROCEED')}
-                                disabled={!!decisionLoading}
-                                className="px-2 py-0.5 bg-green-600 text-white text-xs rounded hover:bg-green-700 disabled:opacity-50"
-                              >
-                                {decisionLoading === `${order._id}-PROCEED` ? '...' : 'Tiếp tục'}
-                              </button>
-                              <button
-                                onClick={() => handleSellerDecision(order._id, 'CANCEL')}
-                                disabled={!!decisionLoading}
-                                className="px-2 py-0.5 bg-red-600 text-white text-xs rounded hover:bg-red-700 disabled:opacity-50"
-                              >
-                                {decisionLoading === `${order._id}-CANCEL` ? '...' : 'Huỷ'}
-                              </button>
-                            </div>
+                            <button
+                              onClick={() => setDecisionModal({ orderId: order._id, title: order.listingId?.title || 'this order' })}
+                              className="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-50 border border-orange-300 text-orange-700 text-xs font-semibold rounded-lg hover:bg-orange-100 transition"
+                            >
+                              <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse" />
+                              Action Required
+                            </button>
                           )}
                           {(order.status === 'INSPECTION_PASSED' ||
                             (order.status === 'ESCROW_LOCKED' && !order.inspectionRequired)) && (
@@ -560,6 +551,60 @@ export const SellerOrders: React.FC = () => {
               <button onClick={() => setShowDetailModal(false)}
                 className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 text-sm font-medium">
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Adjustment Decision Modal */}
+      {decisionModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full shadow-xl">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+                  <AlertTriangle size={18} className="text-orange-600" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-gray-900">Inspector Suggests Adjustment</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">{decisionModal.title}</p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-600 mt-4 leading-relaxed">
+                The inspector has reviewed this bike and recommends some adjustments before proceeding. Please check the inspection report for details, then choose how to proceed.
+              </p>
+            </div>
+            <div className="p-5 space-y-3">
+              <button
+                onClick={() => { handleSellerDecision(decisionModal.orderId, 'PROCEED'); setDecisionModal(null); }}
+                disabled={!!decisionLoading}
+                className="w-full flex items-center gap-4 px-4 py-4 border-2 border-gray-200 rounded-xl hover:border-gray-900 hover:bg-gray-50 transition disabled:opacity-50 text-left"
+              >
+                <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                  <CheckCircle size={17} className="text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Proceed with sale</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Accept the adjustments and move to shipping</p>
+                </div>
+              </button>
+              <button
+                onClick={() => { handleSellerDecision(decisionModal.orderId, 'CANCEL'); setDecisionModal(null); }}
+                disabled={!!decisionLoading}
+                className="w-full flex items-center gap-4 px-4 py-4 border-2 border-gray-200 rounded-xl hover:border-red-300 hover:bg-red-50 transition disabled:opacity-50 text-left"
+              >
+                <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                  <span className="text-red-600 font-bold text-sm">✕</span>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Cancel order</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Buyer will be refunded item price + shipping. Inspection fee goes to the inspector.</p>
+                </div>
+              </button>
+            </div>
+            <div className="px-5 pb-5">
+              <button onClick={() => setDecisionModal(null)} className="w-full py-2 text-sm text-gray-400 hover:text-gray-600 transition">
+                Decide later
               </button>
             </div>
           </div>
