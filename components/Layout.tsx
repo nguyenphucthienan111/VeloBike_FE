@@ -431,9 +431,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                         <div className="py-2 border-t border-gray-100">
                           <p className="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Other</p>
                           {(userRole === 'BUYER' || userRole === 'SELLER') && (
-                            <Link to="/buyer/payment-history" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
+                            <Link to="/buyer/wallet" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50">
                               <CreditCard size={18} className="text-gray-500 flex-shrink-0" />
-                              <span className="flex-1">Payment history</span>
+                              <span className="flex-1">My wallet</span>
                               <ChevronRight size={16} className="text-gray-400" />
                             </Link>
                           )}

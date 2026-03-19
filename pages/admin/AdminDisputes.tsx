@@ -37,6 +37,8 @@ export const AdminDisputes: React.FC = () => {
   const [resolutionNote, setResolutionNote] = useState('');
   const [refundAmount, setRefundAmount] = useState<number>(0);
   const [processing, setProcessing] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{ action: 'REFUND_BUYER' | 'PAY_SELLER' } | null>(null);
+  const [toastMsg, setToastMsg] = useState('');
 
   useEffect(() => {
     fetchDisputes();
@@ -73,20 +75,30 @@ export const AdminDisputes: React.FC = () => {
     }
   };
 
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(''), 3500);
+  };
+
   const handleResolve = async (action: 'REFUND_BUYER' | 'PAY_SELLER') => {
     if (!selectedDispute) return;
     if (!resolutionNote) {
-      alert('Please provide a resolution note');
+      showToast('Please provide a resolution note');
       return;
     }
-    
-    if (!confirm(`Are you sure you want to ${action === 'REFUND_BUYER' ? 'REFUND the Buyer' : 'PAY the Seller'}? This action cannot be undone.`)) return;
+    setConfirmModal({ action });
+  };
+
+  const handleConfirmResolve = async () => {
+    if (!selectedDispute || !confirmModal) return;
+    const action = confirmModal.action;
+    setConfirmModal(null);
 
     setProcessing(true);
     try {
       const token = localStorage.getItem('accessToken');
       
-      // 1. Resolve Dispute
+      // 1. Resolve Dispute — backend tự xử lý phân phối tiền và cập nhật order status
       const body = {
         resolution: resolutionNote,
         compensationAmount: action === 'REFUND_BUYER' ? refundAmount : 0
@@ -106,46 +118,14 @@ export const AdminDisputes: React.FC = () => {
         throw new Error(data.message || 'Failed to resolve dispute');
       }
 
-      // 2. Update Order Status & Financials
-      // If REFUND_BUYER -> Set Order to REFUNDED
-      // If PAY_SELLER -> Try to Release Payout (Note: This might fail if Order is not DELIVERED due to BE restriction)
-      
-      if (action === 'REFUND_BUYER') {
-        const orderRes = await fetch(`${API_BASE_URL}/orders/${selectedDispute.orderId._id}/status`, {
-          method: 'PUT',
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ status: 'REFUNDED', note: `Dispute resolved: ${resolutionNote}` })
-        });
-        if (!orderRes.ok) console.error('Failed to update order status to REFUNDED');
-      } else {
-        // PAY_SELLER -> Release Payout
-        // Backend Requirement: Order must be in DELIVERED status to release payout.
-        // If it's DISPUTED, this might fail. We'll try to set it to COMPLETED manually if payout fails, 
-        // but money won't be transferred automatically if releasePayout fails.
-        
-        const payoutRes = await fetch(`${API_BASE_URL}/admin/orders/${selectedDispute.orderId._id}/payout`, {
-          method: 'PUT',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        if (!payoutRes.ok) {
-            const payoutData = await payoutRes.json();
-            console.error('Failed to release payout to seller:', payoutData.message);
-            alert(`Warning: Dispute resolved but Payout failed. Reason: ${payoutData.message}. Please handle payout manually.`);
-        }
-      }
-
-      alert('Dispute resolved successfully');
+      showToast('Dispute resolved successfully');
       setSelectedDispute(null);
       setResolutionNote('');
       setRefundAmount(0);
       fetchDisputes();
     } catch (error) {
       console.error('Error resolving dispute:', error);
-      alert('Error resolving dispute');
+      showToast('Error resolving dispute');
     } finally {
       setProcessing(false);
     }
@@ -356,8 +336,7 @@ export const AdminDisputes: React.FC = () => {
                       >
                         {processing ? 'Processing...' : 'Pay Seller (Deny Claim)'}
                       </button>
-                    </div>
-                  </div>
+                    </div>                  </div>
                 )}
 
                 {/* Display Resolution if Resolved */}
@@ -379,6 +358,57 @@ export const AdminDisputes: React.FC = () => {
             </div>
           </div>
         )}
+
+      {/* Confirmation Modal */}
+      {confirmModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl max-w-sm w-full p-6 shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              {confirmModal.action === 'REFUND_BUYER' ? (
+                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                  <AlertTriangle size={20} className="text-red-600" />
+                </div>
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                  <CheckCircle size={20} className="text-green-600" />
+                </div>
+              )}
+              <h3 className="text-lg font-bold text-gray-900">
+                {confirmModal.action === 'REFUND_BUYER' ? 'Refund Buyer?' : 'Pay Seller?'}
+              </h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-6">
+              {confirmModal.action === 'REFUND_BUYER'
+                ? 'Buyer will be refunded and the claim will be accepted. This action cannot be undone.'
+                : "Seller will receive payment and the buyer's claim will be denied. This action cannot be undone."}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmModal(null)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmResolve}
+                disabled={processing}
+                className={`flex-1 px-4 py-2 rounded-lg text-white font-semibold disabled:opacity-50 ${
+                  confirmModal.action === 'REFUND_BUYER' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'
+                }`}
+              >
+                {processing ? 'Processing...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      {toastMsg && (
+        <div className="fixed bottom-6 right-6 z-[70] bg-gray-900 text-white px-5 py-3 rounded-lg shadow-lg text-sm">
+          {toastMsg}
+        </div>
+      )}
     </AdminPageLayout>
   );
 };

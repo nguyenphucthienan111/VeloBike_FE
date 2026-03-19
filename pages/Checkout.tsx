@@ -28,6 +28,7 @@ export const Checkout: React.FC = () => {
   const [orderLoading, setOrderLoading] = useState(false);
   const [hasActiveOrder, setHasActiveOrder] = useState(false);
   const [existingOrderId, setExistingOrderId] = useState<string | null>(null);
+  const [listingLocked, setListingLocked] = useState(false);
   const [requestInspection, setRequestInspection] = useState(true);
   const [shippingAddress, setShippingAddress] = useState({
     fullName: '',
@@ -38,6 +39,11 @@ export const Checkout: React.FC = () => {
     province: '',
     zipCode: '',
   });
+  const [shippingBreakdown, setShippingBreakdown] = useState<{
+    distanceKm: number; baseFee: number; weightFee: number; bulkySurcharge: number;
+    total: number; weightKg: number; note: string;
+  } | null>(null);
+  const [shippingLoading, setShippingLoading] = useState(false);
   const { toasts, addToast, removeToast } = useToast();
 
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -101,7 +107,7 @@ export const Checkout: React.FC = () => {
         // Parallel fetch: Listing details AND User's existing orders
         const [listingRes, ordersRes] = await Promise.all([
           fetch(`${API_BASE_URL}/listings/${listingId}`),
-          fetch(`${API_BASE_URL}/orders?role=buyer&limit=50`, { // Fetch all recent orders, filter client-side
+          fetch(`${API_BASE_URL}/orders?role=buyer&limit=50`, {
             headers: { 'Authorization': `Bearer ${token}` }
           })
         ]);
@@ -122,29 +128,30 @@ export const Checkout: React.FC = () => {
         // Check for existing active order (CREATED or ESCROW_LOCKED etc)
         if (ordersRes.ok) {
           const ordersData = await ordersRes.json();
-          // Find any order for this listing that is NOT cancelled/refunded/completed
-          const activeOrder = ordersData.data?.find((o: any) => {
+          const myActiveOrder = ordersData.data?.find((o: any) => {
             const isThisListing = o.listingId?._id === listingId || o.listingId === listingId;
             const isActiveStatus = !['CANCELLED', 'REFUNDED', 'COMPLETED'].includes(o.status);
             return isThisListing && isActiveStatus;
           });
           
-          if (activeOrder) {
-            // If we found an active order, we should resume it (if CREATED) or show status
-            if (activeOrder.status === 'CREATED') {
-                setExistingOrderId(activeOrder._id);
-                // Pre-fill address
-                if (activeOrder.shippingAddress) {
-                    setShippingAddress(prev => ({
-                        ...prev,
-                        ...activeOrder.shippingAddress
-                    }));
-                }
+          if (myActiveOrder) {
+            if (myActiveOrder.status === 'CREATED') {
+              setExistingOrderId(myActiveOrder._id);
+              if (myActiveOrder.shippingAddress) {
+                setShippingAddress((prev: any) => ({ ...prev, ...myActiveOrder.shippingAddress }));
+              }
             } else {
-                // If order exists but is not CREATED (e.g. PAID), we should probably redirect or show message
-                // For now, let's just mark hasActiveOrder to disable new creation
-                setHasActiveOrder(true);
+              setHasActiveOrder(true);
             }
+          } else {
+            // No order from me — check if someone else locked this listing
+            try {
+              const availRes = await fetch(`${API_BASE_URL}/orders/listing-availability?listingId=${listingId}`);
+              const availData = await availRes.json();
+              if (availData.success && !availData.available) {
+                setListingLocked(true);
+              }
+            } catch (_) {}
           }
         }
 
@@ -204,7 +211,11 @@ export const Checkout: React.FC = () => {
         const orderRes = await fetch(`${API_BASE_URL}/orders`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token.trim()}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ listingId: listing._id, inspectionRequired }),
+          body: JSON.stringify({
+            listingId: listing._id,
+            inspectionRequired,
+            buyerCity: shippingAddress.province || shippingAddress.city || '',
+          }),
         });
         const orderData = await orderRes.json();
         console.log('Order creation response:', orderData);
@@ -300,11 +311,32 @@ export const Checkout: React.FC = () => {
   const formatPrice = (amount: number) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 
+  const fetchShippingEstimate = async (city: string, province: string) => {
+    if (!listingId || (!city && !province)) return;
+    setShippingLoading(true);
+    try {
+      const loc = province || city;
+      const res = await fetch(`${API_BASE_URL}/orders/shipping-estimate?listingId=${listingId}&buyerCity=${encodeURIComponent(loc)}&buyerProvince=${encodeURIComponent(province || '')}`);
+      const data = await res.json();
+      if (data.success) setShippingBreakdown(data.data);
+    } catch (_) {}
+    finally { setShippingLoading(false); }
+  };
+
+  // Re-estimate when buyer city/province changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (shippingAddress.city || shippingAddress.province) {
+        fetchShippingEstimate(shippingAddress.city, shippingAddress.province);
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [shippingAddress.city, shippingAddress.province, listingId]);
   const INSPECTION_FEE = 500000;
-  const SHIPPING_FEE = 150000;
+  const DEFAULT_SHIPPING_FEE = 30000;
 
   const inspectionFee = requestInspection && !listing?.sellerHasFreeInspection ? INSPECTION_FEE : 0;
-  const shippingFee = SHIPPING_FEE;
+  const shippingFee = shippingBreakdown?.total ?? DEFAULT_SHIPPING_FEE;
   const totalAmount = (listing?.pricing?.amount || 0) + inspectionFee + shippingFee;
 
   if (loading) {
@@ -390,6 +422,13 @@ export const Checkout: React.FC = () => {
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
             <p className="text-sm text-amber-900 font-medium">This product has already been reserved by someone</p>
             <p className="text-xs text-amber-700 mt-1">Please choose another product</p>
+          </div>
+        )}
+
+        {listingLocked && !isOwner && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+            <p className="text-sm text-amber-900 font-medium">⏳ This product is currently being reserved by another buyer</p>
+            <p className="text-xs text-amber-700 mt-1">If they don't complete payment within 15 minutes, the product will become available again. Please try again later.</p>
           </div>
         )}
 
@@ -495,6 +534,35 @@ export const Checkout: React.FC = () => {
               <span>Shipping fee</span>
               <span>{formatPrice(shippingFee)}</span>
             </div>
+            {shippingBreakdown && (
+              <div className="ml-2 mt-1 mb-1 text-xs text-gray-400 space-y-0.5 border-l-2 border-gray-100 pl-3">
+                {shippingBreakdown.distanceKm > 0 && (
+                  <div className="flex justify-between">
+                    <span>Khoảng cách ước tính</span>
+                    <span>~{shippingBreakdown.distanceKm} km</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span>Phí cơ bản ({shippingBreakdown.note})</span>
+                  <span>{formatPrice(shippingBreakdown.baseFee)}</span>
+                </div>
+                {shippingBreakdown.weightFee > 0 && (
+                  <div className="flex justify-between">
+                    <span>Phí cân nặng ({shippingBreakdown.weightKg}kg)</span>
+                    <span>{formatPrice(shippingBreakdown.weightFee)}</span>
+                  </div>
+                )}
+                {shippingBreakdown.bulkySurcharge > 0 && (
+                  <div className="flex justify-between">
+                    <span>Phụ phí hàng cồng kềnh</span>
+                    <span>{formatPrice(shippingBreakdown.bulkySurcharge)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+            {shippingLoading && (
+              <p className="text-xs text-gray-400 ml-2">Đang tính phí vận chuyển...</p>
+            )}
             <div className="flex justify-between font-bold text-base pt-4 mt-2 border-t border-gray-200">
               <span className="text-gray-900">Total payment</span>
               <span className="text-accent">{formatPrice(totalAmount)}</span>
@@ -504,10 +572,10 @@ export const Checkout: React.FC = () => {
 
         <button
           onClick={handleSubmit}
-          disabled={orderLoading || (hasActiveOrder && !existingOrderId) || isOwner}
+          disabled={orderLoading || (hasActiveOrder && !existingOrderId) || isOwner || listingLocked}
           className="w-full bg-accent hover:bg-red-600 text-white py-4 font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-xl"
         >
-          {orderLoading ? 'PROCESSING...' : (isOwner ? 'YOUR OWN PRODUCT' : (existingOrderId ? 'CONTINUE TO PAYMENT' : (hasActiveOrder ? 'ALREADY RESERVED' : 'CHECKOUT')))}
+          {orderLoading ? 'PROCESSING...' : (isOwner ? 'YOUR OWN PRODUCT' : listingLocked ? 'RESERVED BY ANOTHER BUYER' : (existingOrderId ? 'CONTINUE TO PAYMENT' : (hasActiveOrder ? 'ALREADY RESERVED' : 'CHECKOUT')))}
         </button>
       </div>
       <Toast toasts={toasts} onRemove={removeToast} />

@@ -21,6 +21,7 @@ import { BuyerProfile } from './pages/buyer/BuyerProfile';
 import { Messages } from './pages/Messages';
 import { BuyerNotifications } from './pages/buyer/BuyerNotifications';
 import { BuyerPaymentHistory } from './pages/buyer/BuyerPaymentHistory';
+import { BuyerWallet } from './pages/buyer/BuyerWallet';
 import { SellerDashboard } from './pages/seller/SellerDashboard';
 import { SellerInventory } from './pages/seller/SellerInventory';
 import { SellerAnalytics } from './pages/seller/SellerAnalytics';
@@ -117,6 +118,11 @@ const App: React.FC = () => {
           <Route path="/buyer/payment-history" element={
             <ProtectedRoute allowedRoles={['BUYER', 'SELLER']}>
               <BuyerPaymentHistory />
+            </ProtectedRoute>
+          } />
+          <Route path="/buyer/wallet" element={
+            <ProtectedRoute allowedRoles={['BUYER', 'SELLER']}>
+              <BuyerWallet />
             </ProtectedRoute>
           } />
           

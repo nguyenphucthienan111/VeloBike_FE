@@ -18,6 +18,7 @@ interface Order {
   updatedAt: string;
   timeline?: any[];
   escrowStatus?: any;
+  inspectionVerdict?: string; // populated client-side
 }
 
 export const SellerOrders: React.FC = () => {
@@ -35,6 +36,7 @@ export const SellerOrders: React.FC = () => {
   const [showShipmentModal, setShowShipmentModal] = useState(false);
   const [selectedShipmentOrder, setSelectedShipmentOrder] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState('GHN_STD');
+  const [decisionLoading, setDecisionLoading] = useState<string | null>(null);
 
   const providers = [
     { id: 'GHN_STD', name: 'Giao Hàng Nhanh (GHN)' },
@@ -76,7 +78,22 @@ export const SellerOrders: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setOrders(data.data || []);
+        const fetchedOrders: Order[] = data.data || [];
+
+        // For IN_INSPECTION orders, fetch inspection verdict to detect SUGGEST_ADJUSTMENT
+        const inInspectionOrders = fetchedOrders.filter(o => o.status === 'IN_INSPECTION');
+        const verdictMap: Record<string, string> = {};
+        await Promise.all(inInspectionOrders.map(async (o) => {
+          try {
+            const r = await fetch(`${API_BASE_URL}/inspections/${o._id}`, { headers: { Authorization: `Bearer ${token}` } });
+            if (r.ok) {
+              const d = await r.json();
+              if (d.data?.overallVerdict) verdictMap[o._id] = d.data.overallVerdict;
+            }
+          } catch { /* ignore */ }
+        }));
+
+        setOrders(fetchedOrders.map(o => ({ ...o, inspectionVerdict: verdictMap[o._id] })));
       } else {
         setError('Failed to fetch orders');
       }
@@ -84,6 +101,28 @@ export const SellerOrders: React.FC = () => {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSellerDecision = async (orderId: string, decision: 'PROCEED' | 'CANCEL') => {
+    setDecisionLoading(`${orderId}-${decision}`);
+    try {
+      const token = localStorage.getItem('accessToken');
+      const res = await fetch(`${API_BASE_URL}/orders/${orderId}/seller-decision`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ decision }),
+      });
+      if (res.ok) {
+        await fetchOrders();
+      } else {
+        const d = await res.json();
+        alert(d.message || 'Có lỗi xảy ra');
+      }
+    } catch (err: any) {
+      alert('Error: ' + err.message);
+    } finally {
+      setDecisionLoading(null);
     }
   };
 
@@ -300,6 +339,25 @@ export const SellerOrders: React.FC = () => {
                           >
                             View Details
                           </button>
+                          {order.status === 'IN_INSPECTION' && order.inspectionVerdict === 'SUGGEST_ADJUSTMENT' && (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs text-orange-600 font-medium">Điều chỉnh?</span>
+                              <button
+                                onClick={() => handleSellerDecision(order._id, 'PROCEED')}
+                                disabled={!!decisionLoading}
+                                className="px-2 py-0.5 bg-green-600 text-white text-xs rounded hover:bg-green-700 disabled:opacity-50"
+                              >
+                                {decisionLoading === `${order._id}-PROCEED` ? '...' : 'Tiếp tục'}
+                              </button>
+                              <button
+                                onClick={() => handleSellerDecision(order._id, 'CANCEL')}
+                                disabled={!!decisionLoading}
+                                className="px-2 py-0.5 bg-red-600 text-white text-xs rounded hover:bg-red-700 disabled:opacity-50"
+                              >
+                                {decisionLoading === `${order._id}-CANCEL` ? '...' : 'Huỷ'}
+                              </button>
+                            </div>
+                          )}
                           {(order.status === 'INSPECTION_PASSED' ||
                             (order.status === 'ESCROW_LOCKED' && !order.inspectionRequired)) && (
                             <button

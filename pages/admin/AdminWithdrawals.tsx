@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
 import { AdminPageLayout, AdminPageHeader, AdminErrorBanner, AdminLoadingState } from '../../components/AdminPageLayout';
+import { Toast } from '../../components/Toast';
+import { useToast } from '../../hooks/useToast';
 
 interface Withdrawal {
   _id: string;
@@ -36,7 +38,11 @@ export const AdminWithdrawals: React.FC = () => {
   const [completeModal, setCompleteModal] = useState<Withdrawal | null>(null);
   const [rejectModal, setRejectModal] = useState<Withdrawal | null>(null);
   const [completeForm, setCompleteForm] = useState({ transferProof: '', note: '' });
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofPreview, setProofPreview] = useState<string | null>(null);
+  const [uploadingProof, setUploadingProof] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+  const { toasts, addToast, removeToast } = useToast();
 
   const fetchWithdrawals = async () => {
     try {
@@ -88,12 +94,12 @@ export const AdminWithdrawals: React.FC = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        alert(data.message || 'Approved');
+        addToast('success', data.message || 'Approved');
         fetchWithdrawals();
         fetchStats();
-      } else alert(data.message || 'Failed');
+      } else addToast('error', data.message || 'Failed');
     } catch (e) {
-      alert('Error');
+      addToast('error', 'Error');
     } finally {
       setActionLoading(null);
     }
@@ -104,21 +110,42 @@ export const AdminWithdrawals: React.FC = () => {
     setActionLoading(completeModal._id);
     try {
       const token = localStorage.getItem('accessToken');
+
+      // Upload proof image if selected
+      let proofUrl = completeForm.transferProof;
+      if (proofFile) {
+        setUploadingProof(true);
+        const formData = new FormData();
+        formData.append('image', proofFile);
+        const uploadRes = await fetch(`${API_BASE_URL}/upload`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
+        const uploadData = await uploadRes.json();
+        setUploadingProof(false);
+        if (!uploadRes.ok) throw new Error(uploadData.message || 'Upload failed');
+        proofUrl = uploadData.url || uploadData.data?.url || '';
+      }
+
       const res = await fetch(`${API_BASE_URL}/admin/withdrawals/${completeModal._id}/complete`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transferProof: completeForm.transferProof || undefined, note: completeForm.note || undefined }),
+        body: JSON.stringify({ transferProof: proofUrl || undefined, note: completeForm.note || undefined }),
       });
       const data = await res.json();
       if (res.ok) {
-        alert(data.message || 'Transfer confirmed');
+        addToast('success', data.message || 'Transfer confirmed');
         setCompleteModal(null);
         setCompleteForm({ transferProof: '', note: '' });
+        setProofFile(null);
+        setProofPreview(null);
         fetchWithdrawals();
         fetchStats();
-      } else alert(data.message || 'Failed');
-    } catch (e) {
-      alert('Error');
+      } else addToast('error', data.message || 'Failed');
+    } catch (e: any) {
+      setUploadingProof(false);
+      addToast('error', e.message || 'Error');
     } finally {
       setActionLoading(null);
     }
@@ -126,7 +153,7 @@ export const AdminWithdrawals: React.FC = () => {
 
   const handleReject = async () => {
     if (!rejectModal || !rejectReason.trim()) {
-      alert('Please enter a rejection reason');
+      addToast('warning', 'Please enter a rejection reason');
       return;
     }
     setActionLoading(rejectModal._id);
@@ -139,14 +166,14 @@ export const AdminWithdrawals: React.FC = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        alert(data.message || 'Rejected');
+        addToast('success', data.message || 'Rejected');
         setRejectModal(null);
         setRejectReason('');
         fetchWithdrawals();
         fetchStats();
-      } else alert(data.message || 'Failed');
+      } else addToast('error', data.message || 'Failed');
     } catch (e) {
-      alert('Error');
+      addToast('error', 'Error');
     } finally {
       setActionLoading(null);
     }
@@ -294,28 +321,58 @@ export const AdminWithdrawals: React.FC = () => {
       {/* Modal Complete */}
       {completeModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-bold mb-4">Confirm transfer completed</h3>
-            <p className="text-gray-600 mb-4">Amount: {formatCurrency(completeModal.netAmount)} → {completeModal.bankAccount?.accountNumber}</p>
-            <div className="space-y-3 mb-4">
-              <input
-                type="text"
-                placeholder="Transfer proof link (optional)"
-                value={completeForm.transferProof}
-                onChange={(e) => setCompleteForm(f => ({ ...f, transferProof: e.target.value }))}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
-              />
-              <textarea
-                placeholder="Note (optional)"
-                value={completeForm.note}
-                onChange={(e) => setCompleteForm(f => ({ ...f, note: e.target.value }))}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
-                rows={2}
-              />
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold mb-1">Confirm transfer completed</h3>
+            <p className="text-gray-500 text-sm mb-4">Amount: {formatCurrency(completeModal.netAmount)} → {completeModal.bankAccount?.accountNumber}</p>
+
+            {/* Image upload */}
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Transfer proof (optional)</label>
+              {proofPreview ? (
+                <div className="relative">
+                  <img src={proofPreview} alt="proof" className="w-full h-40 object-cover rounded-lg border" />
+                  <button
+                    onClick={() => { setProofFile(null); setProofPreview(null); }}
+                    className="absolute top-2 right-2 bg-white rounded-full w-6 h-6 flex items-center justify-center text-gray-600 shadow text-xs hover:bg-red-50"
+                  >✕</button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                  <span className="text-2xl mb-1">📷</span>
+                  <span className="text-xs text-gray-500">Click to upload screenshot</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setProofFile(file);
+                        setProofPreview(URL.createObjectURL(file));
+                      }
+                    }}
+                  />
+                </label>
+              )}
             </div>
+
+            <textarea
+              placeholder="Note (optional)"
+              value={completeForm.note}
+              onChange={(e) => setCompleteForm(f => ({ ...f, note: e.target.value }))}
+              className="w-full border rounded-lg px-3 py-2 text-sm mb-4"
+              rows={2}
+            />
             <div className="flex gap-2 justify-end">
-              <button onClick={() => { setCompleteModal(null); setCompleteForm({ transferProof: '', note: '' }); }} className="px-4 py-2 border rounded-lg">Cancel</button>
-              <button onClick={handleComplete} disabled={!!actionLoading} className="px-4 py-2 bg-green-600 text-white rounded-lg disabled:opacity-50">Confirm</button>
+              <button
+                onClick={() => { setCompleteModal(null); setCompleteForm({ transferProof: '', note: '' }); setProofFile(null); setProofPreview(null); }}
+                className="px-4 py-2 border rounded-lg text-sm"
+              >Cancel</button>
+              <button
+                onClick={handleComplete}
+                disabled={!!actionLoading || uploadingProof}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm disabled:opacity-50"
+              >{uploadingProof ? 'Uploading...' : 'Confirm'}</button>
             </div>
           </div>
         </div>
@@ -341,6 +398,7 @@ export const AdminWithdrawals: React.FC = () => {
           </div>
         </div>
       )}
+      <Toast toasts={toasts} onRemove={removeToast} />
     </AdminPageLayout>
   );
 };

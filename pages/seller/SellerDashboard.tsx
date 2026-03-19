@@ -418,11 +418,11 @@ export const SellerDashboard: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Free inspections this month */}
+                    {/* Free inspections this subscription period */}
                     {subscription.inspectionsLimit > 0 && (
                       <div className="mb-2">
                         <div className="flex justify-between text-xs text-gray-600 mb-1">
-                          <span>🔍 Free inspections/month</span>
+                          <span>🔍 Free inspections (this period)</span>
                           <span className={`font-semibold ${subscription.inspectionsUsed >= subscription.inspectionsLimit ? 'text-red-500' : 'text-green-600'}`}>
                             {subscription.inspectionsUsed} / {subscription.inspectionsLimit}
                           </span>

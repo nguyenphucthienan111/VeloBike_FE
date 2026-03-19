@@ -735,7 +735,7 @@ export const ProductDetail: React.FC = () => {
                             onClick={handleBuyNow}
                             className="flex-1 bg-accent hover:bg-red-600 text-white py-4 font-bold uppercase tracking-widest transition-colors shadow-md rounded-sm text-lg"
                           >
-                            MUA NGAY
+                            BUY NOW
                           </button>
                           <button
                             onClick={toggleWishlist}

@@ -28,6 +28,8 @@ interface Withdrawal {
   bankAccount: string;
   requestedAt: string;
   processedAt?: string;
+  transferProof?: string;
+  note?: string;
 }
 
 interface BankAccount {
@@ -52,6 +54,7 @@ export const InspectorWallet: React.FC = () => {
   const [withdrawLoading, setWithdrawLoading] = useState(false);
   const [withdrawError, setWithdrawError] = useState('');
   const [cancelWithdrawId, setCancelWithdrawId] = useState<string | null>(null);
+  const [proofModal, setProofModal] = useState<{ image?: string; note?: string } | null>(null);
 
   // Bank Account Management
   const [savedBankAccount, setSavedBankAccount] = useState<BankAccount | null>(null);
@@ -143,7 +146,7 @@ export const InspectorWallet: React.FC = () => {
       }
       if (withdrawRes.ok) {
         const data = await withdrawRes.json();
-        const list = (data.data || []).map((w: { _id: string; amount: number; fee?: number; status: string; bankAccount?: { accountNumber?: string }; requestedAt: string; processedAt?: string }) => ({
+        const list = (data.data || []).map((w: { _id: string; amount: number; fee?: number; status: string; bankAccount?: { accountNumber?: string }; requestedAt: string; processedAt?: string; transferProof?: string; note?: string }) => ({
           id: w._id,
           amount: w.amount,
           fee: w.fee ?? 0,
@@ -151,6 +154,8 @@ export const InspectorWallet: React.FC = () => {
           bankAccount: w.bankAccount?.accountNumber ? `***${String(w.bankAccount.accountNumber).slice(-4)}` : '-',
           requestedAt: w.requestedAt,
           processedAt: w.processedAt,
+          transferProof: w.transferProof,
+          note: w.note,
         }));
         setWithdrawals(list);
       }
@@ -388,10 +393,10 @@ export const InspectorWallet: React.FC = () => {
         await fetchWalletData();
       } else {
         const data = await res.json();
-        alert(data.message || 'Failed to cancel request');
+        console.error(data.message || 'Failed to cancel request');
       }
     } catch (e) {
-      alert('Error cancelling request');
+      console.error('Error cancelling request');
     } finally {
       setCancelWithdrawId(null);
     }
@@ -571,6 +576,15 @@ export const InspectorWallet: React.FC = () => {
                                 {cancelWithdrawId === withdrawal.id ? 'Cancelling...' : 'Cancel request'}
                               </button>
                             )}
+                            {withdrawal.status === 'COMPLETED' && (withdrawal.transferProof || withdrawal.note) && (
+                              <button
+                                type="button"
+                                onClick={() => setProofModal({ image: withdrawal.transferProof, note: withdrawal.note })}
+                                className="text-blue-600 text-sm font-medium hover:underline"
+                              >
+                                View proof
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -746,6 +760,29 @@ export const InspectorWallet: React.FC = () => {
                   {withdrawLoading ? 'Processing...' : 'Withdraw'}
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Transfer Proof Modal */}
+        {proofModal && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setProofModal(null)}>
+            <div className="bg-white rounded-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold">Transfer Proof</h3>
+                <button onClick={() => setProofModal(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+              </div>
+              {proofModal.image && (
+                <a href={proofModal.image} target="_blank" rel="noopener noreferrer">
+                  <img src={proofModal.image} alt="Transfer proof" className="w-full rounded-lg border mb-3 hover:opacity-90 transition" />
+                </a>
+              )}
+              {proofModal.note && (
+                <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-700">
+                  <p className="text-xs text-gray-400 mb-1">Admin note</p>
+                  {proofModal.note}
+                </div>
+              )}
             </div>
           </div>
         )}
