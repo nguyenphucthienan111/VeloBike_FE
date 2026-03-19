@@ -88,21 +88,17 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     window.addEventListener('authStatusChanged', handleAuthChanged);
     window.addEventListener('authChange', handleAuthChanged);
     
-    // Also check periodically (as backup)
-    const interval = setInterval(checkAuth, 1000);
-    
     return () => {
       clearTimeout(timeoutId);
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('authStatusChanged', handleAuthChanged);
       window.removeEventListener('authChange', handleAuthChanged);
-      clearInterval(interval);
     };
   }, [refreshKey]);
 
   // Số đơn hàng (mua hàng) - cho cả BUYER và SELLER khi về trang mua hàng
   useEffect(() => {
-    if (!isAuthenticated || (userRole !== 'BUYER' && userRole !== 'SELLER')) {
+    if (!isAuthenticated || (userRole !== 'BUYER' && userRole !== 'SELLER') || isDashboardPage) {
       setOrderCount(0);
       return;
     }
@@ -124,11 +120,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         else setOrderCount(0);
       })
       .catch(() => setOrderCount(0));
-  }, [isAuthenticated, userRole, refreshKey]);
+  }, [isAuthenticated, userRole, refreshKey, isDashboardPage]);
 
   // Số thông báo chưa đọc (icon chuông) - GET /api/notifications
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || isDashboardPage) {
       setNotificationUnread(0);
       return;
     }
@@ -153,7 +149,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         }
       })
       .catch(() => setNotificationUnread(0));
-  }, [isAuthenticated, refreshKey]);
+  }, [isAuthenticated, refreshKey, isDashboardPage]);
 
   // Refetch notification count khi trang Notifications đánh dấu đã đọc
   useEffect(() => {
@@ -179,7 +175,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   // Số lượng wishlist (icon tim) - GET /api/wishlist/count
   const fetchWishlistCount = () => {
-    if (!isAuthenticated || (userRole !== 'BUYER' && userRole !== 'SELLER')) {
+    if (!isAuthenticated || (userRole !== 'BUYER' && userRole !== 'SELLER') || isDashboardPage) {
       setWishlistCount(0);
       return;
     }
@@ -195,7 +191,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   };
   useEffect(() => {
     fetchWishlistCount();
-  }, [isAuthenticated, userRole, refreshKey]);
+  }, [isAuthenticated, userRole, refreshKey, isDashboardPage]);
   useEffect(() => {
     const onRefresh = () => fetchWishlistCount();
     window.addEventListener('wishlistRefresh', onRefresh);
@@ -204,7 +200,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   // Số tin nhắn chưa đọc
   const fetchMessageUnread = () => {
-    if (!isAuthenticated) { setMessageUnread(0); return; }
+    if (!isAuthenticated || isDashboardPage) { setMessageUnread(0); return; }
     const token = localStorage.getItem('accessToken');
     if (!token) return;
     fetch(`${API_BASE_URL}/messages/unread`, { headers: { Authorization: `Bearer ${token}` } })
@@ -217,7 +213,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   };
   useEffect(() => {
     fetchMessageUnread();
-  }, [isAuthenticated, refreshKey]);
+  }, [isAuthenticated, refreshKey, isDashboardPage]);
   // Reset khi user mở trang messages
   useEffect(() => {
     if (location.pathname === '/messages' || location.pathname.startsWith('/seller/messages')) {

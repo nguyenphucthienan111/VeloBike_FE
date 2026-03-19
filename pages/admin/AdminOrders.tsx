@@ -26,14 +26,12 @@ interface Order {
 const NEXT_ACTION: Record<string, { label: string; confirm: string; color: string } | null> = {
   ESCROW_LOCKED:       { label: 'Start Inspection',  confirm: 'Start inspection for this order?',          color: 'text-amber-700 border-amber-200 hover:bg-amber-50' },
   INSPECTION_PASSED:   { label: 'Mark as Shipped',   confirm: 'Mark this order as shipped?',               color: 'text-violet-700 border-violet-200 hover:bg-violet-50' },
-  SHIPPING:            { label: 'Mark as Delivered',  confirm: 'Mark this order as delivered?',             color: 'text-blue-700 border-blue-200 hover:bg-blue-50' },
   DELIVERED:           { label: 'Release Payment',   confirm: 'Release payout to seller? This cannot be undone.', color: 'text-emerald-700 border-emerald-200 hover:bg-emerald-50' },
 };
 
 const ACTION_API: Record<string, { url: (id: string) => string; method: string; body?: object }> = {
   ESCROW_LOCKED:     { url: (id) => `${API_BASE_URL}/orders/${id}/start-inspection`, method: 'POST' },
   INSPECTION_PASSED: { url: (id) => `${API_BASE_URL}/orders/${id}/status`,           method: 'PUT', body: { status: 'SHIPPING' } },
-  SHIPPING:          { url: (id) => `${API_BASE_URL}/orders/${id}/status`,           method: 'PUT', body: { status: 'DELIVERED' } },
   DELIVERED:         { url: (id) => `${API_BASE_URL}/admin/orders/${id}/payout`,     method: 'PUT' },
 };
 
@@ -53,6 +51,9 @@ export const AdminOrders: React.FC = () => {
   const [inspectors, setInspectors] = useState<Inspector[]>([]);
   const [selectedInspector, setSelectedInspector] = useState('');
   const [assignLoading, setAssignLoading] = useState(false);
+
+  // Confirm action modal state
+  const [confirmModal, setConfirmModal] = useState<{ open: boolean; order: Order | null }>({ open: false, order: null });
 
   useEffect(() => { fetchOrders(); }, [pagination.page, statusFilter]);
 
@@ -125,9 +126,16 @@ export const AdminOrders: React.FC = () => {
 
   const handleNextStep = async (order: Order) => {
     const action = NEXT_ACTION[order.status];
+    if (!action) return;
+    setConfirmModal({ open: true, order });
+  };
+
+  const executeNextStep = async () => {
+    const order = confirmModal.order;
+    if (!order) return;
     const api = ACTION_API[order.status];
-    if (!action || !api) return;
-    if (!confirm(action.confirm)) return;
+    if (!api) return;
+    setConfirmModal({ open: false, order: null });
 
     setActionLoading(order._id);
     try {
@@ -298,7 +306,7 @@ export const AdminOrders: React.FC = () => {
                             </button>
                           ) : (
                             <span className="text-xs text-slate-400 italic">
-                              {['COMPLETED','REFUNDED','CANCELLED'].includes(order.status) ? 'Finalized' : 'Awaiting action'}
+                              {['COMPLETED','REFUNDED','CANCELLED'].includes(order.status) ? 'Finalized' : order.status === 'SHIPPING' ? 'Awaiting buyer confirmation' : 'Awaiting action'}
                             </span>
                           )}
                           {ASSIGNABLE_STATUSES.includes(order.status) && (
@@ -342,6 +350,37 @@ export const AdminOrders: React.FC = () => {
           </>
         )}
       </div>
+
+      {/* Confirm Action Modal */}
+      {confirmModal.open && confirmModal.order && (() => {
+        const action = NEXT_ACTION[confirmModal.order.status];
+        const isRelease = confirmModal.order.status === 'DELIVERED';
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${isRelease ? 'bg-emerald-50' : 'bg-amber-50'}`}>
+                <ArrowRight size={22} className={isRelease ? 'text-emerald-600' : 'text-amber-600'} />
+              </div>
+              <h2 className="text-base font-semibold text-slate-900 text-center mb-1">{action?.label}</h2>
+              <p className="text-sm text-slate-500 text-center mb-6">{action?.confirm}</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setConfirmModal({ open: false, order: null })}
+                  className="flex-1 px-4 py-2 text-sm border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={executeNextStep}
+                  className={`flex-1 px-4 py-2 text-sm text-white rounded-lg font-medium ${isRelease ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-500 hover:bg-amber-600'}`}
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Assign Inspector Modal */}
       {assignModal.open && assignModal.order && (

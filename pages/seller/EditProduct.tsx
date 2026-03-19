@@ -549,6 +549,11 @@ export const EditProduct: React.FC = () => {
                     <input type="text" name="groupset" placeholder="Shimano Deore..." value={formData.groupset} onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg) *</label>
+                    <input type="number" name="weight" placeholder="12.5" step="0.1" min="1" value={formData.weight} onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required />
+                  </div>
                 </div>
               </div>
             )}
@@ -571,6 +576,43 @@ export const EditProduct: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Frame Material</label>
                     <input type="text" name="frameMaterial" placeholder="Aluminum..." value={formData.frameMaterial} onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg) *</label>
+                    <input type="number" name="weight" placeholder="22.0" step="0.1" min="1" value={formData.weight} onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {formData.type === 'GRAVEL' && (
+              <div className="border border-orange-100 bg-orange-50 rounded-lg p-5 space-y-4">
+                <p className="text-sm font-semibold text-orange-800">Gravel Technical Specifications</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Frame Material</label>
+                    <input type="text" name="frameMaterial" placeholder="Carbon, Aluminum..." value={formData.frameMaterial} onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Groupset</label>
+                    <input type="text" name="groupset" placeholder="SRAM Apex, Shimano GRX..." value={formData.groupset} onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Brake Type</label>
+                    <select name="brakeType" value={formData.brakeType} onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                      <option value="">Select brake type</option>
+                      <option value="Disc">Disc</option>
+                      <option value="Rim">Rim</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg) *</label>
+                    <input type="number" name="weight" placeholder="9.0" step="0.1" min="1" value={formData.weight} onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required />
                   </div>
                 </div>
               </div>

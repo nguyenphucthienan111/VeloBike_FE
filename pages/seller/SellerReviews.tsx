@@ -58,7 +58,7 @@ export const SellerReviews: React.FC = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/reviews/seller-reviews', {
+      const response = await fetch('http://localhost:5000/api/reviews/my-reviews', {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 

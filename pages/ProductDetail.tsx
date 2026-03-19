@@ -75,6 +75,50 @@ interface ListingData {
   sellerPlanType?: string;
 }
 
+// Inline component: Seller reviews visible to buyers
+const SellerReviewsSection: React.FC<{ sellerId: string; listingId: string }> = ({ sellerId, listingId }) => {
+  const [reviews, setReviews] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    fetch(`${API_BASE_URL}/reviews/${sellerId}?limit=5&listingId=${listingId}`)
+      .then(r => r.json())
+      .then(d => { if (d.success) setReviews(d.data || []); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [sellerId, listingId]);
+
+  if (loading || reviews.length === 0) return null;
+
+  return (
+    <div className="mt-12 border border-gray-100 p-8 rounded-sm">
+      <h2 className="text-2xl font-bold mb-6">Seller Reviews</h2>
+      <div className="space-y-5">
+        {reviews.map((r: any) => (
+          <div key={r._id} className="border-b border-gray-100 pb-5 last:border-0 last:pb-0">
+            <div className="flex items-center justify-between mb-1">
+              <span className="font-semibold text-sm text-gray-900">{r.reviewerId?.fullName || 'Buyer'}</span>
+              <span className="text-xs text-gray-400">{new Date(r.createdAt).toLocaleDateString('vi-VN')}</span>
+            </div>
+            <div className="flex gap-0.5 mb-2">
+              {[1,2,3,4,5].map(s => (
+                <span key={s} className={s <= r.rating ? 'text-yellow-400' : 'text-gray-200'}>★</span>
+              ))}
+            </div>
+            <p className="text-sm text-gray-700">{r.comment}</p>
+            {r.reply && (
+              <div className="mt-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+                <p className="text-xs font-semibold text-gray-500 mb-1">Seller reply</p>
+                <p className="text-sm text-gray-700">{r.reply}</p>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -432,6 +476,9 @@ export const ProductDetail: React.FC = () => {
               {bike.description}
             </p>
           </div>
+
+          {/* Seller Reviews Section */}
+          {listing.sellerId?._id && <SellerReviewsSection sellerId={listing.sellerId._id} listingId={listing._id} />}
 
           {/* Inspection Report Section - chỉ hiện khi có inspectionScore thật */}
           {bike.inspectionRequired && (

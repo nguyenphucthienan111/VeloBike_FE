@@ -10,6 +10,7 @@ interface DashboardStats {
   totalOrders: number;
   totalRevenue: number;
   commissionRevenue: number;
+  pendingCommission: number;
   subscriptionRevenue: number;
   openDisputes: number;
   pendingListings: number;
@@ -110,7 +111,7 @@ export const AdminDashboard: React.FC = () => {
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Platform Revenue</p>
             <p className="mt-0.5 text-2xl font-bold text-slate-900">{fmt(stats?.totalRevenue ?? 0)}</p>
             <div className="mt-1 space-y-0.5">
-              <p className="text-xs text-slate-400">Commission: {fmt(stats?.commissionRevenue ?? 0)}</p>
+              <p className="text-xs text-slate-400">Commission: {fmt(stats?.commissionRevenue ?? 0)}{(stats?.pendingCommission ?? 0) > 0 && <span className="text-amber-500 ml-1">(+{fmt(stats?.pendingCommission ?? 0)} pending)</span>}</p>
               <p className="text-xs text-slate-400">Subscriptions: {fmt(stats?.subscriptionRevenue ?? 0)}</p>
             </div>
           </div>

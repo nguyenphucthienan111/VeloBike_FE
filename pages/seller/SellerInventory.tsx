@@ -16,6 +16,7 @@ interface Listing {
   views: number;
   status: string;
   createdAt: string;
+  boostedUntil?: string;
   media?: {
     thumbnails?: string[];
   };
@@ -52,7 +53,7 @@ export const SellerInventory: React.FC = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/listings/my-listings', {
+      const response = await fetch(`${API_BASE_URL}/listings/my-listings`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
@@ -130,11 +131,11 @@ export const SellerInventory: React.FC = () => {
   };
 
   const handleBulkDelete = async () => {
-    if (!confirm(`Are you sure you want to delete ${selectedListings.length} products?`)) return;
-
+    if (selectedListings.length === 0) return;
+    // Use confirm modal pattern — for now use toast on success/fail
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch('http://localhost:5000/api/bulk/listings/delete', {
+      const response = await fetch(`${API_BASE_URL}/bulk/listings/delete`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -146,25 +147,25 @@ export const SellerInventory: React.FC = () => {
       if (response.ok) {
         setListings(listings.filter(l => !selectedListings.includes(l._id)));
         setSelectedListings([]);
-        alert('Deleted successfully!');
+        showToast('Deleted successfully!', 'success');
       } else {
-        alert('Delete failed');
+        showToast('Delete failed', 'error');
       }
     } catch (error) {
       console.error('Error bulk deleting:', error);
-      alert('An error occurred');
+      showToast('An error occurred', 'error');
     }
   };
 
   const handleBulkUpdateStatus = async () => {
     if (selectedListings.length === 0) {
-      alert('Please select at least 1 product');
+      showToast('Please select at least 1 product', 'info');
       return;
     }
 
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch('http://localhost:5000/api/bulk/listings/update-status', {
+      const response = await fetch(`${API_BASE_URL}/bulk/listings/update-status`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -195,7 +196,7 @@ export const SellerInventory: React.FC = () => {
   const handleSubmitForApproval = async (id: string) => {
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`http://localhost:5000/api/listings/${id}/submit-approval`, {
+      const response = await fetch(`${API_BASE_URL}/listings/${id}/submit-approval`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -225,7 +226,9 @@ export const SellerInventory: React.FC = () => {
       const data = await response.json().catch(() => ({}));
       if (response.ok && data.success) {
         showToast('Listing boosted successfully!', 'success');
-        fetchListings();
+        // Update local state so button reflects boosted status immediately
+        const boostedUntil = data.data?.boostedUntil || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        setListings(prev => prev.map(l => l._id === id ? { ...l, boostedUntil } : l));
       } else {
         showToast(data?.message || 'Failed to boost listing', 'error');
       }
@@ -466,15 +469,23 @@ export const SellerInventory: React.FC = () => {
                                 Submit
                               </button>
                             )}
-                            {listing.status === 'PUBLISHED' && (
-                              <button
-                                onClick={() => handleBoostListing(listing._id)}
-                                className="px-3 py-1.5 text-amber-600 hover:bg-amber-50 text-sm font-medium text-left"
-                                title="Boost this listing to the top"
-                              >
-                                🚀 Boost
-                              </button>
-                            )}
+                            {listing.status === 'PUBLISHED' && (() => {
+                              const isBoosted = listing.boostedUntil && new Date(listing.boostedUntil) > new Date();
+                              return (
+                                <button
+                                  onClick={() => !isBoosted && handleBoostListing(listing._id)}
+                                  disabled={!!isBoosted}
+                                  className={`px-3 py-1.5 text-sm font-medium text-left transition-colors ${
+                                    isBoosted
+                                      ? 'text-gray-400 cursor-not-allowed bg-gray-50'
+                                      : 'text-amber-600 hover:bg-amber-50'
+                                  }`}
+                                  title={isBoosted ? `Boosted until ${new Date(listing.boostedUntil!).toLocaleDateString('vi-VN')}` : 'Boost this listing to the top'}
+                                >
+                                  {isBoosted ? '✅ Boosted' : '🚀 Boost'}
+                                </button>
+                              );
+                            })()}
                             <button
                               onClick={() => handleDeleteListing(listing._id)}
                               className="px-3 py-1.5 text-red-600 hover:bg-red-50 text-sm font-medium text-left"

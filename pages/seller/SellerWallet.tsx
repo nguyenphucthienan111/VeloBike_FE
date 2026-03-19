@@ -139,7 +139,7 @@ export const SellerWallet: React.FC = () => {
       if (transRes.ok) {
         const data = await transRes.json();
         const raw = Array.isArray(data.data) ? data.data : [];
-        const sellerTypes = ['PAYMENT_RELEASE', 'WITHDRAW', 'PLATFORM_FEE'];
+        const sellerTypes = ['PAYMENT_RELEASE', 'WITHDRAW', 'COMMISSION_DEBIT'];
         const list = raw
           .filter((t: { type?: string }) => sellerTypes.includes(t.type))
           .map((t: { _id: string; type: string; amount: number; status: string; description: string; createdAt: string; metadata?: any }) => ({
@@ -504,7 +504,7 @@ export const SellerWallet: React.FC = () => {
   const getTransactionTypeLabel = (type: string) => {
     const map: Record<string, string> = {
       PAYMENT_RELEASE: 'Payout',
-      PLATFORM_FEE: 'Commission Fee',
+      COMMISSION_DEBIT: 'Commission Fee',
       WITHDRAW: 'Withdrawal',
     };
     return map[type] || type;
@@ -513,7 +513,7 @@ export const SellerWallet: React.FC = () => {
   const getTransactionTypeStyle = (type: string) => {
     const map: Record<string, string> = {
       PAYMENT_RELEASE: 'bg-green-100 text-green-700',
-      PLATFORM_FEE: 'bg-orange-100 text-orange-700',
+      COMMISSION_DEBIT: 'bg-orange-100 text-orange-700',
       WITHDRAW: 'bg-blue-100 text-blue-700',
     };
     return map[type] || 'bg-gray-100 text-gray-700';
@@ -771,7 +771,7 @@ export const SellerWallet: React.FC = () => {
                 {transactions.map((transaction) => {
                   const bd = transaction.metadata?.breakdown;
                   const isRelease = transaction.type === 'PAYMENT_RELEASE';
-                  const isPlatformFee = transaction.type === 'PLATFORM_FEE';
+                  const isCommission = transaction.type === 'COMMISSION_DEBIT';
                   return (
                     <div key={transaction.id} className="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                       <div className="flex items-start justify-between gap-4">
@@ -808,14 +808,14 @@ export const SellerWallet: React.FC = () => {
                             </div>
                           )}
 
-                          {isPlatformFee && transaction.metadata && (
+                          {isCommission && transaction.metadata && (
                             <div className="mt-2 bg-orange-50 rounded p-3 text-xs space-y-1">
                               <div className="flex justify-between text-orange-700">
                                 <span>
                                   Commission {transaction.metadata.commissionPercent ?? Math.round((transaction.metadata.commissionRate || 0) * 100)}%
                                   {transaction.metadata.planName ? ` (${transaction.metadata.planName} plan)` : ''}
                                 </span>
-                                <span className="font-medium">{formatCurrency(transaction.amount)}</span>
+                                <span className="font-medium">-{formatCurrency(transaction.amount)}</span>
                               </div>
                               {transaction.metadata.itemPrice && (
                                 <div className="flex justify-between text-gray-500">
@@ -826,14 +826,14 @@ export const SellerWallet: React.FC = () => {
                             </div>
                           )}
 
-                          {!isRelease && !isPlatformFee && (
+                          {!isRelease && !isCommission && (
                             <p className="text-xs text-gray-500 mt-1 truncate">{transaction.description}</p>
                           )}
                         </div>
 
                         <div className="text-right shrink-0">
-                          <p className={`text-base font-bold ${isRelease ? 'text-green-600' : isPlatformFee ? 'text-orange-600' : 'text-gray-900'}`}>
-                            {isRelease ? '+' : isPlatformFee ? '-' : ''}{formatCurrency(transaction.amount)}
+                          <p className={`text-base font-bold ${isRelease ? 'text-green-600' : isCommission ? 'text-orange-600' : 'text-gray-900'}`}>
+                            {isRelease ? '+' : isCommission ? '-' : ''}{formatCurrency(transaction.amount)}
                           </p>
                         </div>
                       </div>

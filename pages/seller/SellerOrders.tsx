@@ -13,6 +13,7 @@ interface Order {
   totalAmount: number;
   financials?: { inspectionFee?: number; totalAmount?: number };
   inspectionRequired: boolean;
+  shippingInfo?: { carrier?: string; trackingNumber?: string; trackingUrl?: string };
   createdAt: string;
   updatedAt: string;
   timeline?: any[];
@@ -33,13 +34,11 @@ export const SellerOrders: React.FC = () => {
 
   const [showShipmentModal, setShowShipmentModal] = useState(false);
   const [selectedShipmentOrder, setSelectedShipmentOrder] = useState<string | null>(null);
-  const [selectedProvider, setSelectedProvider] = useState('ghn');
+  const [selectedProvider, setSelectedProvider] = useState('GHN_STD');
 
   const providers = [
-    { id: 'ghn', name: 'Giao Hàng Nhanh (GHN)', price: '30,000đ', time: '2-3 days' },
-    { id: 'ghtk', name: 'Giao Hàng Tiết Kiệm (GHTK)', price: '25,000đ', time: '3-4 days' },
-    { id: 'viettelpost', name: 'Viettel Post', price: '28,000đ', time: '2-4 days' },
-    { id: 'grab', name: 'GrabExpress (Hỏa tốc)', price: '50,000đ', time: '1-2 hours' },
+    { id: 'GHN_STD', name: 'Giao Hàng Nhanh (GHN)' },
+    { id: 'VTP_FAST', name: 'Viettel Post' },
   ];
 
   const statuses = ['ALL', 'CREATED', 'ESCROW_LOCKED', 'IN_INSPECTION', 'INSPECTION_PASSED', 'SHIPPING', 'DELIVERED', 'COMPLETED'];
@@ -110,9 +109,8 @@ export const SellerOrders: React.FC = () => {
 
       const data = await response.json();
       if (response.ok) {
-        alert(`Shipment created successfully with ${providers.find(p => p.id === selectedProvider)?.name}!`);
         setShowShipmentModal(false);
-        fetchOrders();
+        fetchOrders(); // Refresh to get updated shippingInfo + status
       } else {
         alert(data.message || 'Unable to create shipment');
       }
@@ -232,6 +230,7 @@ export const SellerOrders: React.FC = () => {
                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Amount</th>
                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Inspection</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Tracking</th>
                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Created</th>
                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Actions</th>
                   </tr>
@@ -241,7 +240,7 @@ export const SellerOrders: React.FC = () => {
                     <tr key={order._id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 text-sm text-gray-900 font-mono">{order._id.substring(0, 8)}</td>
                       <td className="px-6 py-4 text-sm text-gray-600">{order.listingId?.title || 'N/A'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900 font-medium">{formatCurrency(order.totalAmount)}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900 font-medium">{formatCurrency(order.financials?.totalAmount ?? order.totalAmount)}</td>
                       <td className="px-6 py-4 text-sm">
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -255,7 +254,7 @@ export const SellerOrders: React.FC = () => {
                         {(() => {
                           // inspectionRequired field (new orders), or infer from status/fee for old orders
                           const hasInspection = order.inspectionRequired === true ||
-                            ['IN_INSPECTION','INSPECTION_PASSED','INSPECTION_FAILED'].includes(order.status) ||
+                            ['IN_INSPECTION','INSPECTION_PASSED','INSPECTION_FAILED','SHIPPING','DELIVERED','COMPLETED'].includes(order.status) ||
                             (order.financials?.inspectionFee ?? 0) > 0;
                           return (
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -265,6 +264,27 @@ export const SellerOrders: React.FC = () => {
                             </span>
                           );
                         })()}
+                      </td>
+                      <td className="px-6 py-4 text-sm">
+                        {order.shippingInfo?.trackingNumber ? (
+                          <div>
+                            <p className="font-medium text-gray-900 text-xs">{order.shippingInfo.carrier}</p>
+                            {order.shippingInfo.trackingUrl ? (
+                              <a
+                                href={order.shippingInfo.trackingUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline font-mono text-xs"
+                              >
+                                {order.shippingInfo.trackingNumber}
+                              </a>
+                            ) : (
+                              <p className="font-mono text-xs text-gray-700">{order.shippingInfo.trackingNumber}</p>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-xs">—</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">
                         {new Date(order.createdAt).toLocaleDateString()}
@@ -337,25 +357,19 @@ export const SellerOrders: React.FC = () => {
                 {providers.map((provider) => (
                   <label 
                     key={provider.id} 
-                    className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-all ${
+                    className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-all ${
                       selectedProvider === provider.id ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600' : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <input 
-                        type="radio" 
-                        name="provider" 
-                        value={provider.id} 
-                        checked={selectedProvider === provider.id}
-                        onChange={() => setSelectedProvider(provider.id)}
-                        className="w-4 h-4 text-blue-600"
-                      />
-                      <div>
-                        <p className="font-medium text-gray-900">{provider.name}</p>
-                        <p className="text-xs text-gray-500">{provider.time}</p>
-                      </div>
-                    </div>
-                    <span className="font-bold text-gray-900">{provider.price}</span>
+                    <input 
+                      type="radio" 
+                      name="provider" 
+                      value={provider.id} 
+                      checked={selectedProvider === provider.id}
+                      onChange={() => setSelectedProvider(provider.id)}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <p className="font-medium text-gray-900">{provider.name}</p>
                   </label>
                 ))}
               </div>
@@ -382,47 +396,84 @@ export const SellerOrders: React.FC = () => {
       {/* Order Detail Modal */}
       {showDetailModal && selectedOrder && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-96 overflow-y-auto">
+          <div className="bg-white rounded-xl max-w-lg w-full shadow-xl overflow-hidden">
             {/* Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Order Details</h2>
-              <button
-                onClick={() => setShowDetailModal(false)}
-                className="text-gray-500 hover:text-gray-900 text-2xl"
-              >
-                ✕
-              </button>
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
+              <div>
+                <h2 className="text-base font-semibold text-gray-900">Order Details</h2>
+                <p className="text-xs text-gray-400 font-mono mt-0.5">#{selectedOrder._id}</p>
+              </div>
+              <button onClick={() => setShowDetailModal(false)} className="text-gray-400 hover:text-gray-700 text-xl leading-none">✕</button>
             </div>
 
-            {/* Content */}
-            <div className="p-6 space-y-6">
-              {/* Order Info */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Order Information</h3>
-                <div className="space-y-2 text-sm">
-                  <p><span className="font-medium">Order ID:</span> {selectedOrder._id}</p>
-                  <p><span className="font-medium">Product:</span> {selectedOrder.listingId?.title || 'N/A'}</p>
-                  <p><span className="font-medium">Amount:</span> {formatCurrency(selectedOrder.totalAmount)}</p>
-                  <p><span className="font-medium">Created:</span> {new Date(selectedOrder.createdAt).toLocaleString()}</p>
+            <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
+              {/* Status + Product */}
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{selectedOrder.listingId?.title || 'N/A'}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{new Date(selectedOrder.createdAt).toLocaleDateString('vi-VN')}</p>
                 </div>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold shrink-0 ${statusColors[selectedOrder.status] || 'bg-gray-100 text-gray-700'}`}>
+                  {selectedOrder.status}
+                </span>
               </div>
 
-              {/* Status Management */}
+              {/* Buyer */}
+              <div className="bg-gray-50 rounded-lg px-4 py-3 text-sm">
+                <p className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">Buyer</p>
+                <p className="font-medium text-gray-900">{selectedOrder.buyerId?.fullName || selectedOrder.buyerId?.name || 'N/A'}</p>
+                {selectedOrder.buyerId?.email && <p className="text-gray-500 text-xs">{selectedOrder.buyerId.email}</p>}
+              </div>
+
+              {/* Shipping */}
+              {selectedOrder.shippingInfo?.trackingNumber && (
+                <div className="bg-gray-50 rounded-lg px-4 py-3 text-sm">
+                  <p className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">Shipping</p>
+                  <p className="font-medium text-gray-900">{selectedOrder.shippingInfo.carrier}</p>
+                  {selectedOrder.shippingInfo.trackingUrl ? (
+                    <a href={selectedOrder.shippingInfo.trackingUrl} target="_blank" rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline font-mono text-xs">
+                      {selectedOrder.shippingInfo.trackingNumber}
+                    </a>
+                  ) : (
+                    <p className="font-mono text-xs text-gray-700">{selectedOrder.shippingInfo.trackingNumber}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Payment Breakdown */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Update Status</h3>
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-600 mb-3">Current Status: <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[selectedOrder.status]}`}>{selectedOrder.status}</span></p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {statuses.filter(s => s !== 'ALL' && s !== selectedOrder.status).map(status => (
-                      <button
-                        key={status}
-                        onClick={() => handleUpdateStatus(selectedOrder._id, status)}
-                        disabled={updatingStatus}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm font-medium"
-                      >
-                        → {status}
-                      </button>
-                    ))}
+                <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wide">Payment</p>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between text-gray-700">
+                    <span>Sale price</span>
+                    <span className="font-medium">{formatCurrency((selectedOrder as any).financials?.itemPrice ?? 0)}</span>
+                  </div>
+                  {((selectedOrder as any).financials?.inspectionFee ?? 0) > 0 && (
+                    <div className="flex justify-between text-gray-500">
+                      <span>Inspection fee</span>
+                      <span>{formatCurrency((selectedOrder as any).financials.inspectionFee)}</span>
+                    </div>
+                  )}
+                  {((selectedOrder as any).financials?.shippingFee ?? 0) > 0 && (
+                    <div className="flex justify-between text-gray-500">
+                      <span>Shipping fee</span>
+                      <span>{formatCurrency((selectedOrder as any).financials.shippingFee)}</span>
+                    </div>
+                  )}
+                  {((selectedOrder as any).financials?.platformFee ?? 0) > 0 && (
+                    <div className="flex justify-between text-orange-600">
+                      <span>Commission fee</span>
+                      <span className="font-medium">-{formatCurrency((selectedOrder as any).financials.platformFee)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-semibold text-gray-900 border-t border-gray-100 pt-2">
+                    <span>{selectedOrder.status === 'COMPLETED' ? 'You received' : 'Total'}</span>
+                    <span className={selectedOrder.status === 'COMPLETED' ? 'text-green-600' : ''}>
+                      {selectedOrder.status === 'COMPLETED'
+                        ? formatCurrency(((selectedOrder as any).financials?.itemPrice ?? 0) - ((selectedOrder as any).financials?.platformFee ?? 0))
+                        : formatCurrency((selectedOrder as any).financials?.totalAmount ?? selectedOrder.totalAmount)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -430,40 +481,26 @@ export const SellerOrders: React.FC = () => {
               {/* Timeline */}
               {selectedOrder.timeline && selectedOrder.timeline.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Order Timeline</h3>
-                  <div className="space-y-3">
-                    {selectedOrder.timeline.map((event, idx) => (
-                      <div key={idx} className="flex gap-3 text-sm">
-                        <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                  <p className="text-xs text-gray-500 mb-3 font-medium uppercase tracking-wide">Timeline</p>
+                  <div className="space-y-2">
+                    {[...selectedOrder.timeline].reverse().map((event: any, idx: number) => (
+                      <div key={idx} className="flex gap-3 text-xs">
+                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 shrink-0" />
                         <div>
-                          <p className="font-medium text-gray-900">{event.status}</p>
-                          <p className="text-gray-600">{new Date(event.timestamp).toLocaleString()}</p>
-                          {event.note && <p className="text-gray-500 italic">{event.note}</p>}
+                          <span className="font-medium text-gray-800">{event.status}</span>
+                          <span className="text-gray-400 ml-2">{new Date(event.timestamp).toLocaleString('vi-VN')}</span>
+                          {event.note && <p className="text-gray-400 italic">{event.note}</p>}
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
-
-              {/* Escrow Status */}
-              {selectedOrder.escrowStatus && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Escrow Status</h3>
-                  <div className="space-y-2 text-sm">
-                    <p><span className="font-medium">Status:</span> {selectedOrder.escrowStatus.status}</p>
-                    <p><span className="font-medium">Amount Held:</span> {formatCurrency(selectedOrder.escrowStatus.amountHeld)}</p>
-                  </div>
-                </div>
-              )}
             </div>
 
-            {/* Footer */}
-            <div className="border-t border-gray-200 px-6 py-4">
-              <button
-                onClick={() => setShowDetailModal(false)}
-                className="w-full px-4 py-2 bg-gray-300 text-gray-900 rounded-lg hover:bg-gray-400 transition-colors font-medium"
-              >
+            <div className="px-6 py-4 border-t border-gray-100">
+              <button onClick={() => setShowDetailModal(false)}
+                className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 text-sm font-medium">
                 Close
               </button>
             </div>

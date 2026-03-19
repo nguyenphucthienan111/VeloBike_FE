@@ -128,6 +128,8 @@ export const BuyerOrders: React.FC = () => {
   const [selectedInspectorName, setSelectedInspectorName] = useState('Inspector');
   const [selectedOrderForAction, setSelectedOrderForAction] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [reviewedOrderIds, setReviewedOrderIds] = useState<Set<string>>(new Set());
+  const [ratedInspectorOrderIds, setRatedInspectorOrderIds] = useState<Set<string>>(new Set());
 
   const handleOpenInspectorRating = async (orderId: string) => {
     try {
@@ -207,7 +209,40 @@ export const BuyerOrders: React.FC = () => {
         return;
       }
 
-      setOrders(Array.isArray(data.data) ? data.data : []);
+      const fetchedOrders: OrderItem[] = Array.isArray(data.data) ? data.data : [];
+      setOrders(fetchedOrders);
+
+      // Check which orders have already been reviewed
+      const reviewableOrders = fetchedOrders.filter(o =>
+        o.status === 'COMPLETED' || o.status === 'DELIVERED'
+      );
+      if (reviewableOrders.length > 0) {
+        const checks = await Promise.all(
+          reviewableOrders.map(o =>
+            fetch(`${API_BASE_URL}/reviews/check/${o._id}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }).then(r => r.json()).then(d => ({ id: o._id, reviewed: d.reviewed })).catch(() => ({ id: o._id, reviewed: false }))
+          )
+        );
+        const reviewed = new Set(checks.filter(c => c.reviewed).map(c => c.id));
+        setReviewedOrderIds(reviewed);
+      }
+
+      // Check which orders have already been inspector-rated
+      const inspectorRatableOrders = fetchedOrders.filter(o =>
+        ['INSPECTION_PASSED', 'SHIPPING', 'DELIVERED', 'COMPLETED'].includes(o.status)
+      );
+      if (inspectorRatableOrders.length > 0) {
+        const checks = await Promise.all(
+          inspectorRatableOrders.map(o =>
+            fetch(`${API_BASE_URL}/inspector-reviews/check-by-order/${o._id}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }).then(r => r.json()).then(d => ({ id: o._id, rated: d.hasReviewed })).catch(() => ({ id: o._id, rated: false }))
+          )
+        );
+        const rated = new Set(checks.filter(c => c.rated).map(c => c.id));
+        setRatedInspectorOrderIds(rated);
+      }
     } catch (err: any) {
       setError(isConnectionError(err) ? CONNECTION_ERROR_MESSAGE : (err.message || 'Failed to load orders.'));
       setOrders([]);
@@ -548,7 +583,7 @@ export const BuyerOrders: React.FC = () => {
                               Open dispute
                             </button>
                           )}
-                          {(order.status === 'COMPLETED' || order.status === 'DELIVERED') && (
+                          {(order.status === 'COMPLETED' || order.status === 'DELIVERED') && !reviewedOrderIds.has(order._id) && (
                             <button
                               type="button"
                               onClick={() => {
@@ -561,10 +596,13 @@ export const BuyerOrders: React.FC = () => {
                               Review
                             </button>
                           )}
-                          {(['INSPECTION_PASSED', 'SHIPPING', 'DELIVERED', 'COMPLETED'].includes(order.status)) && (
+                          {(['INSPECTION_PASSED', 'SHIPPING', 'DELIVERED', 'COMPLETED'].includes(order.status)) && !ratedInspectorOrderIds.has(order._id) && (
                             <button
                               type="button"
-                              onClick={() => handleOpenInspectorRating(order._id)}
+                              onClick={() => {
+                                setSelectedOrderForAction(order._id);
+                                handleOpenInspectorRating(order._id);
+                              }}
                               className="inline-flex items-center gap-1 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 px-3 py-1.5 rounded transition-colors shadow-sm"
                             >
                               ⭐ Rate Inspector
@@ -631,6 +669,7 @@ export const BuyerOrders: React.FC = () => {
           onClose={() => setShowReviewModal(false)}
           onSuccess={() => {
             showToast('Review submitted successfully', 'success');
+            setReviewedOrderIds(prev => new Set(prev).add(selectedOrderForAction!));
           }}
         />
       )}
@@ -640,7 +679,10 @@ export const BuyerOrders: React.FC = () => {
           inspectionId={selectedInspectionId}
           inspectorName={selectedInspectorName}
           onClose={() => setShowInspectorRatingModal(false)}
-          onSuccess={() => showToast('Đánh giá inspector thành công', 'success')}
+          onSuccess={() => {
+            showToast('Đánh giá inspector thành công', 'success');
+            if (selectedOrderForAction) setRatedInspectorOrderIds(prev => new Set(prev).add(selectedOrderForAction!));
+          }}
         />
       )}
     </div>

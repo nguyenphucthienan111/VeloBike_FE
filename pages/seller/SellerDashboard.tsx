@@ -47,6 +47,10 @@ interface SubscriptionInfo {
   status: string;
   listingsUsed: number;
   listingsLimit: number | string;
+  boostsUsed: number;
+  boostsLimit: number;
+  inspectionsUsed: number;
+  inspectionsLimit: number;
 }
 
 const PLAN_STYLES: Record<string, { icon: React.ReactNode; color: string; bg: string }> = {
@@ -79,71 +83,60 @@ export const SellerDashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       const token = localStorage.getItem('accessToken');
-      if (!token) {
-        setLoading(false);
-        return;
-      }
+      if (!token) { setLoading(false); return; }
 
-      // Fetch analytics dashboard
-      const analyticsRes = await fetch(`${API_BASE_URL}/analytics/seller/dashboard`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const headers = { 'Authorization': `Bearer ${token}` };
 
-      // Fetch recent orders for the table (richer data than transactions)
-      const ordersRes = await fetch(`${API_BASE_URL}/orders?role=seller&limit=5`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      // Fire all requests in parallel
+      const [analyticsRes, ordersRes, notifRes, subRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/analytics/seller/dashboard`, { headers }),
+        fetch(`${API_BASE_URL}/orders?role=seller&limit=5`, { headers }),
+        fetch(`${API_BASE_URL}/notifications`, { headers }),
+        fetch(`${API_BASE_URL}/subscriptions/my-subscription`, { headers }),
+      ]);
 
-      if (analyticsRes.ok) {
-        const data = await analyticsRes.json();
-        
+      // Parse all responses in parallel
+      const [analyticsData, ordersData, notifData, subData] = await Promise.all([
+        analyticsRes.ok ? analyticsRes.json() : null,
+        ordersRes.ok ? ordersRes.json() : null,
+        notifRes.ok ? notifRes.json() : null,
+        subRes.ok ? subRes.json() : null,
+      ]);
+
+      // Process analytics
+      if (analyticsData?.success) {
+        const overview = analyticsData.data?.overview;
         setStats({
-          totalListings: data.data?.overview?.totalListings || 0,
-          totalViews: data.data?.overview?.totalViews || 0,
-          totalSales: data.data?.overview?.totalSales || 0,
-          totalRevenue: data.data?.overview?.totalRevenue || 0,
-          averageOrderValue: data.data?.overview?.averageOrderValue || 0,
-          conversionRate: data.data?.overview?.conversionRate || 0,
+          totalListings: overview?.totalListings || 0,
+          totalViews: overview?.totalViews || 0,
+          totalSales: overview?.totalSales || 0,
+          totalRevenue: overview?.totalRevenue || 0,
+          averageOrderValue: overview?.averageOrderValue || 0,
+          conversionRate: overview?.conversionRate || 0,
         });
-
-        setTopListings(data.data?.topListings || []);
-        
-        // Use orders if available, otherwise fallback (though fallback is likely incomplete)
-        if (ordersRes.ok) {
-            const ordersData = await ordersRes.json();
-            const mappedOrders = ordersData.data.map((order: any) => ({
-                id: order._id,
-                buyerName: order.buyerId?.fullName || 'Unknown',
-                productTitle: order.listingId?.title || 'Unknown Product',
-                amount: order.totalAmount || 0,
-                status: order.status
-            }));
-            setRecentTransactions(mappedOrders);
-        } else {
-            setRecentTransactions(data.data?.recentTransactions || []);
-        }
+        setTopListings(analyticsData.data?.topListings || []);
       }
 
-      // Fetch notifications
-      const notifRes = await fetch(`${API_BASE_URL}/notifications`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-
-      if (notifRes.ok) {
-        const notifData = await notifRes.json();
-        setNotifications(notifData.data || []);
+      // Process orders
+      if (ordersData?.data) {
+        setRecentTransactions(ordersData.data.map((order: any) => ({
+          id: order._id,
+          buyerName: order.buyerId?.fullName || 'Unknown',
+          productTitle: order.listingId?.title || 'Unknown Product',
+          amount: order.financials?.totalAmount ?? order.financials?.itemPrice ?? 0,
+          status: order.status,
+        })));
       }
 
-      // Fetch subscription
-      const subRes = await fetch(`${API_BASE_URL}/subscriptions/my-subscription`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (subRes.ok) {
-        const subData = await subRes.json();
-        if (subData.success) {
-          const sub = subData.data.subscription;
-          const plan = subData.data.plan;
-          const usage = subData.data.usage;
+      // Process notifications
+      if (notifData?.data) setNotifications(notifData.data);
+
+      // Process subscription
+      if (subData?.success) {
+        const sub = subData.data.subscription;
+        const plan = subData.data.plan;
+        const usage = subData.data.usage;
+        if (sub) {
           setSubscription({
             planType: sub.planType,
             displayName: plan?.displayName || sub.planType,
@@ -151,6 +144,10 @@ export const SellerDashboard: React.FC = () => {
             status: sub.status,
             listingsUsed: usage?.listings?.used ?? 0,
             listingsLimit: usage?.listings?.limit ?? 0,
+            boostsUsed: usage?.boosts?.used ?? 0,
+            boostsLimit: usage?.boosts?.limit ?? 0,
+            inspectionsUsed: usage?.inspections?.used ?? 0,
+            inspectionsLimit: usage?.inspections?.limit ?? 0,
           });
         }
       }
@@ -317,7 +314,7 @@ export const SellerDashboard: React.FC = () => {
                           <td className="py-4 px-4 text-gray-900 font-semibold">{tx.id}</td>
                           <td className="py-4 px-4 text-gray-700">{tx.buyerName}</td>
                           <td className="py-4 px-4 text-gray-700">{tx.productTitle}</td>
-                          <td className="py-4 px-4 text-gray-900 font-semibold">${tx.amount.toLocaleString()}</td>
+                          <td className="py-4 px-4 text-gray-900 font-semibold">{formatCurrency(tx.amount)}</td>
                           <td className="py-4 px-4">
                             <span className={`px-3 py-1 rounded text-xs font-bold ${getStatusBadgeColor(tx.status)}`}>
                               {tx.status}
@@ -351,7 +348,7 @@ export const SellerDashboard: React.FC = () => {
                           <span>{listing.views} views</span>
                           <span>{listing.sales} sales</span>
                         </div>
-                        <p className="text-sm font-bold text-green-600 mt-2">{formatCurrency(listing.revenue)}</p>
+                        <p className="text-sm font-bold text-green-600 mt-2">{formatCurrency(listing.revenue ?? 0)}</p>
                       </div>
                     ))
                   ) : (
@@ -386,7 +383,7 @@ export const SellerDashboard: React.FC = () => {
                     </div>
 
                     {/* Listings quota */}
-                    <div className="mb-3">
+                    <div className="mb-2">
                       <div className="flex justify-between text-xs text-gray-600 mb-1">
                         <span>Listings this month</span>
                         <span className="font-semibold">
@@ -403,7 +400,42 @@ export const SellerDashboard: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Expiry */}
+                    {/* Boosts this week */}
+                    {subscription.boostsLimit > 0 && (
+                      <div className="mb-2">
+                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                          <span>🚀 Boosts this week</span>
+                          <span className={`font-semibold ${subscription.boostsUsed >= subscription.boostsLimit ? 'text-red-500' : 'text-green-600'}`}>
+                            {subscription.boostsUsed} / {subscription.boostsLimit}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-1.5">
+                          <div
+                            className={`h-1.5 rounded-full transition-all ${subscription.boostsUsed >= subscription.boostsLimit ? 'bg-red-500' : 'bg-blue-500'}`}
+                            style={{ width: `${Math.min(100, (subscription.boostsUsed / subscription.boostsLimit) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Free inspections this month */}
+                    {subscription.inspectionsLimit > 0 && (
+                      <div className="mb-2">
+                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                          <span>🔍 Free inspections/month</span>
+                          <span className={`font-semibold ${subscription.inspectionsUsed >= subscription.inspectionsLimit ? 'text-red-500' : 'text-green-600'}`}>
+                            {subscription.inspectionsUsed} / {subscription.inspectionsLimit}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-1.5">
+                          <div
+                            className={`h-1.5 rounded-full transition-all ${subscription.inspectionsUsed >= subscription.inspectionsLimit ? 'bg-red-500' : 'bg-purple-500'}`}
+                            style={{ width: `${Math.min(100, (subscription.inspectionsUsed / subscription.inspectionsLimit) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     {!isFree && (
                       <p className={`text-xs mb-3 ${isExpiringSoon ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
                         {isExpiringSoon ? '⚠ Expires ' : 'Renews '}
