@@ -1,12 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight, UserCog } from 'lucide-react';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
 import { AdminPageLayout, AdminPageHeader, AdminErrorBanner, AdminLoadingState } from '../../components/AdminPageLayout';
+
+interface Inspector {
+  _id: string;
+  fullName: string;
+  email: string;
+  address?: { city?: string; province?: string; district?: string };
+}
 
 interface Order {
   _id: string;
   buyerId: { _id: string; fullName: string; email: string };
-  sellerId: { _id: string; fullName: string; email: string };
+  sellerId: { _id: string; fullName: string; email: string; phone?: string; address?: { street?: string; city?: string; province?: string; district?: string } };
+  inspectorId?: { _id: string; fullName: string; email: string; address?: { city?: string; province?: string } };
   listingId: { _id: string; title: string };
   status: string;
   amount: number;
@@ -22,13 +30,15 @@ const NEXT_ACTION: Record<string, { label: string; confirm: string; color: strin
   DELIVERED:           { label: 'Release Payment',   confirm: 'Release payout to seller? This cannot be undone.', color: 'text-emerald-700 border-emerald-200 hover:bg-emerald-50' },
 };
 
-// Map action → API endpoint + method
 const ACTION_API: Record<string, { url: (id: string) => string; method: string; body?: object }> = {
   ESCROW_LOCKED:     { url: (id) => `${API_BASE_URL}/orders/${id}/start-inspection`, method: 'POST' },
   INSPECTION_PASSED: { url: (id) => `${API_BASE_URL}/orders/${id}/status`,           method: 'PUT', body: { status: 'SHIPPING' } },
   SHIPPING:          { url: (id) => `${API_BASE_URL}/orders/${id}/status`,           method: 'PUT', body: { status: 'DELIVERED' } },
   DELIVERED:         { url: (id) => `${API_BASE_URL}/admin/orders/${id}/payout`,     method: 'PUT' },
 };
+
+// Statuses where inspector assignment is relevant
+const ASSIGNABLE_STATUSES = ['ESCROW_LOCKED', 'IN_INSPECTION'];
 
 export const AdminOrders: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -37,6 +47,12 @@ export const AdminOrders: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [error, setError] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // Inspector assignment modal state
+  const [assignModal, setAssignModal] = useState<{ open: boolean; order: Order | null }>({ open: false, order: null });
+  const [inspectors, setInspectors] = useState<Inspector[]>([]);
+  const [selectedInspector, setSelectedInspector] = useState('');
+  const [assignLoading, setAssignLoading] = useState(false);
 
   useEffect(() => { fetchOrders(); }, [pagination.page, statusFilter]);
 
@@ -61,6 +77,49 @@ export const AdminOrders: React.FC = () => {
       setError(isConnectionError(error) ? CONNECTION_ERROR_MESSAGE : 'Error loading orders');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchInspectors = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const res = await fetch(`${API_BASE_URL}/admin/inspectors`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setInspectors(data.data);
+      }
+    } catch { /* silent */ }
+  };
+
+  const openAssignModal = async (order: Order) => {
+    setAssignModal({ open: true, order });
+    setSelectedInspector(order.inspectorId?._id || '');
+    await fetchInspectors();
+  };
+
+  const handleAssignInspector = async () => {
+    if (!assignModal.order || !selectedInspector) return;
+    setAssignLoading(true);
+    try {
+      const token = localStorage.getItem('accessToken');
+      const res = await fetch(`${API_BASE_URL}/admin/orders/${assignModal.order._id}/assign-inspector`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inspectorId: selectedInspector }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAssignModal({ open: false, order: null });
+        fetchOrders();
+      } else {
+        alert(data.message || 'Failed to assign inspector');
+      }
+    } catch {
+      alert('Error assigning inspector');
+    } finally {
+      setAssignLoading(false);
     }
   };
 
@@ -106,12 +165,8 @@ export const AdminOrders: React.FC = () => {
     } catch { alert('Export failed'); }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat(undefined, {
-      style: 'currency',
-      currency: 'VND',
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat(undefined, { style: 'currency', currency: 'VND' }).format(amount);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -144,10 +199,7 @@ export const AdminOrders: React.FC = () => {
             <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
             <select
               value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setPagination({ ...pagination, page: 1 });
-              }}
+              onChange={(e) => { setStatusFilter(e.target.value); setPagination({ ...pagination, page: 1 }); }}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-800 focus:ring-2 focus:ring-slate-300 outline-none"
             >
               <option value="">All</option>
@@ -167,112 +219,204 @@ export const AdminOrders: React.FC = () => {
         {loading ? (
           <AdminLoadingState message="Loading orders..." />
         ) : (
-              <>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-slate-50 border-b border-slate-200">
-                      <tr>
-                        <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Order ID</th>
-                        <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Listing</th>
-                        <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Buyer</th>
-                        <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Seller</th>
-                        <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Amount</th>
-                        <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Status</th>
-                        <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {orders
-                        .filter((order) => order && order._id)
-                        .map((order) => (
-                        <tr key={order._id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="px-5 py-3.5">
-                            <p className="text-sm font-mono text-slate-900">{order._id.substring(0, 8)}...</p>
-                          </td>
-                          <td className="px-5 py-3.5">
-                            <p className="font-medium text-slate-900">
-                              {order.listingId?.title ?? (typeof order.listingId === 'string' ? order.listingId : 'N/A')}
-                            </p>
-                          </td>
-                          <td className="px-5 py-3.5">
-                            <div>
-                              <p className="font-medium text-slate-900">{order.buyerId?.fullName ?? 'N/A'}</p>
-                              <p className="text-slate-500">{order.buyerId?.email ?? ''}</p>
-                            </div>
-                          </td>
-                          <td className="px-5 py-3.5">
-                            <div>
-                              <p className="font-medium text-slate-900">{order.sellerId?.fullName ?? 'N/A'}</p>
-                              <p className="text-slate-500">{order.sellerId?.email ?? ''}</p>
-                            </div>
-                          </td>
-                          <td className="px-5 py-3.5">
-                            <div>
-                              <p className="font-semibold text-slate-900">
-                                {formatCurrency(order.amount ?? order.financials?.totalAmount ?? 0)}
-                              </p>
-                              <p className="text-xs text-slate-500">
-                                Platform fee: {formatCurrency(order.financials?.platformFee ?? 0)}
-                              </p>
-                            </div>
-                          </td>
-                          <td className="px-5 py-3.5">
-                            <span className={`px-2.5 py-1 text-xs font-medium rounded-md border ${getStatusColor(order.status)}`}>
-                              {order.status}
-                            </span>
-                          </td>
-                          <td className="px-5 py-3.5">
-                            <div className="flex flex-col gap-1">
-                              {NEXT_ACTION[order.status] ? (
-                                <button
-                                  onClick={() => handleNextStep(order)}
-                                  disabled={actionLoading === order._id}
-                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-lg transition-colors disabled:opacity-50 ${NEXT_ACTION[order.status]!.color}`}
-                                >
-                                  {actionLoading === order._id ? (
-                                    <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                  ) : (
-                                    <ArrowRight size={12} />
-                                  )}
-                                  {NEXT_ACTION[order.status]!.label}
-                                </button>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Listing</th>
+                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Buyer</th>
+                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Seller</th>
+                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Inspector</th>
+                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Amount</th>
+                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Status</th>
+                    <th className="px-5 py-3.5 text-left font-semibold text-slate-700">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {orders
+                    .filter((order) => order && order._id)
+                    .map((order) => (
+                    <tr key={order._id} className="hover:bg-slate-50/80 transition-colors">
+                     
+                      <td className="px-5 py-3.5">
+                        <p className="font-medium text-slate-900">
+                          {order.listingId?.title ?? (typeof order.listingId === 'string' ? order.listingId : 'N/A')}
+                        </p>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div>
+                          <p className="font-medium text-slate-900">{order.buyerId?.fullName ?? 'N/A'}</p>
+                          <p className="text-slate-500">{order.buyerId?.email ?? ''}</p>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div>
+                          <p className="font-medium text-slate-900">{order.sellerId?.fullName ?? 'N/A'}</p>
+                          <p className="text-slate-500">{order.sellerId?.email ?? ''}</p>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        {order.inspectorId ? (
+                          <div>
+                            <p className="font-medium text-slate-900">{order.inspectorId.fullName}</p>
+                            <p className="text-slate-500 text-xs">{order.inspectorId.email}</p>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">Unassigned</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div>
+                          <p className="font-semibold text-slate-900">
+                            {formatCurrency(order.amount ?? order.financials?.totalAmount ?? 0)}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            Platform fee: {formatCurrency(order.financials?.platformFee ?? 0)}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className={`px-2.5 py-1 text-xs font-medium rounded-md border ${getStatusColor(order.status)}`}>
+                          {order.status}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex flex-col gap-1">
+                          {NEXT_ACTION[order.status] ? (
+                            <button
+                              onClick={() => handleNextStep(order)}
+                              disabled={actionLoading === order._id}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-lg transition-colors disabled:opacity-50 ${NEXT_ACTION[order.status]!.color}`}
+                            >
+                              {actionLoading === order._id ? (
+                                <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
                               ) : (
-                                <span className="text-xs text-slate-400 italic">
-                                  {['COMPLETED','REFUNDED','CANCELLED'].includes(order.status) ? 'Finalized' : 'Awaiting action'}
-                                </span>
+                                <ArrowRight size={12} />
                               )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                              {NEXT_ACTION[order.status]!.label}
+                            </button>
+                          ) : (
+                            <span className="text-xs text-slate-400 italic">
+                              {['COMPLETED','REFUNDED','CANCELLED'].includes(order.status) ? 'Finalized' : 'Awaiting action'}
+                            </span>
+                          )}
+                          {ASSIGNABLE_STATUSES.includes(order.status) && (
+                            <button
+                              onClick={() => openAssignModal(order)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-lg transition-colors text-indigo-700 border-indigo-200 hover:bg-indigo-50"
+                            >
+                              <UserCog size={12} />
+                              {order.inspectorId ? 'Reassign' : 'Assign Inspector'}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-                <div className="px-5 py-4 border-t border-slate-200 flex justify-between items-center bg-slate-50/50">
-                  <p className="text-sm text-slate-600">
-                    {((pagination.page - 1) * pagination.limit) + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} / {pagination.total} orders
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
-                      disabled={pagination.page === 1}
-                      className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
-                    >
-                      <ChevronLeft className="h-4 w-4" /> Previous
-                    </button>
-                    <button
-                      onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
-                      disabled={pagination.page >= pagination.pages}
-                      className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
-                    >
-                      Next <ChevronRight className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </>
+            <div className="px-5 py-4 border-t border-slate-200 flex justify-between items-center bg-slate-50/50">
+              <p className="text-sm text-slate-600">
+                {((pagination.page - 1) * pagination.limit) + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} / {pagination.total} orders
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
+                  disabled={pagination.page === 1}
+                  className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
+                >
+                  <ChevronLeft className="h-4 w-4" /> Previous
+                </button>
+                <button
+                  onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
+                  disabled={pagination.page >= pagination.pages}
+                  className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Next <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </>
         )}
       </div>
+
+      {/* Assign Inspector Modal */}
+      {assignModal.open && assignModal.order && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <h2 className="text-lg font-semibold text-slate-900 mb-3">Assign Inspector</h2>
+
+            {/* Seller location info */}
+            <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 mb-4">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Seller contact (bike is here)</p>
+              <div className="space-y-1 text-sm">
+                <p className="font-medium text-slate-900">{assignModal.order.sellerId?.fullName}</p>
+                {assignModal.order.sellerId?.phone && (
+                  <p className="text-slate-700">📞 {assignModal.order.sellerId.phone}</p>
+                )}
+                {assignModal.order.sellerId?.email && (
+                  <p className="text-slate-500">{assignModal.order.sellerId.email}</p>
+                )}
+                {assignModal.order.sellerId?.address?.street && (
+                  <p className="text-slate-700">📍 {assignModal.order.sellerId.address.street}</p>
+                )}
+                {[
+                  assignModal.order.sellerId?.address?.district,
+                  assignModal.order.sellerId?.address?.city,
+                  assignModal.order.sellerId?.address?.province,
+                ].filter(Boolean).length > 0 ? (
+                  <p className="text-slate-600 pl-5">
+                    {[
+                      assignModal.order.sellerId?.address?.district,
+                      assignModal.order.sellerId?.address?.city,
+                      assignModal.order.sellerId?.address?.province,
+                    ].filter(Boolean).join(', ')}
+                  </p>
+                ) : (
+                  <p className="text-amber-600 text-xs">⚠ No address — ask seller to update profile</p>
+                )}
+              </div>
+            </div>
+
+            <label className="block text-sm font-medium text-slate-700 mb-1">Select Inspector</label>
+            <select
+              value={selectedInspector}
+              onChange={(e) => setSelectedInspector(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-800 focus:ring-2 focus:ring-indigo-300 outline-none mb-5"
+            >
+              <option value="">-- Choose an inspector --</option>
+              {inspectors.map((ins) => {
+                const loc = [ins.address?.city, ins.address?.province].filter(Boolean).join(', ');
+                return (
+                  <option key={ins._id} value={ins._id}>
+                    {ins.fullName}{loc ? ` — ${loc}` : ''}
+                  </option>
+                );
+              })}
+            </select>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setAssignModal({ open: false, order: null })}
+                className="px-4 py-2 text-sm border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAssignInspector}
+                disabled={!selectedInspector || assignLoading}
+                className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {assignLoading && <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminPageLayout>
   );
 };

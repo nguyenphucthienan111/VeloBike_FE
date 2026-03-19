@@ -11,6 +11,7 @@ interface Order {
   buyerId: any;
   status: string;
   totalAmount: number;
+  financials?: { inspectionFee?: number; totalAmount?: number };
   inspectionRequired: boolean;
   createdAt: string;
   updatedAt: string;
@@ -251,13 +252,19 @@ export const SellerOrders: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            order.inspectionRequired ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
-                          }`}
-                        >
-                          {order.inspectionRequired ? 'Required' : 'Not Required'}
-                        </span>
+                        {(() => {
+                          // inspectionRequired field (new orders), or infer from status/fee for old orders
+                          const hasInspection = order.inspectionRequired === true ||
+                            ['IN_INSPECTION','INSPECTION_PASSED','INSPECTION_FAILED'].includes(order.status) ||
+                            (order.financials?.inspectionFee ?? 0) > 0;
+                          return (
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              hasInspection ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+                            }`}>
+                              {hasInspection ? 'Required' : 'Not Required'}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">
                         {new Date(order.createdAt).toLocaleDateString()}

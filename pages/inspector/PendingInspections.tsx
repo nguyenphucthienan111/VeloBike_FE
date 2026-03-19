@@ -24,6 +24,8 @@ interface PendingInspection {
   sellerId: {
     fullName: string;
     email: string;
+    phone?: string;
+    address?: { street?: string; district?: string; city?: string; province?: string };
   };
   financials: {
     totalAmount: number;
@@ -162,17 +164,32 @@ export const PendingInspections: React.FC = () => {
                         <p className="text-xs text-gray-600">{inspection.buyerId?.email || 'N/A'}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-600 mb-1">Seller</p>
+                        <p className="text-xs text-gray-600 mb-1">Seller (bike location)</p>
                         <p className="text-sm font-semibold text-gray-900">{inspection.sellerId?.fullName || 'N/A'}</p>
-                        <p className="text-xs text-gray-600">{inspection.sellerId?.email || 'N/A'}</p>
+                        {inspection.sellerId?.phone && (
+                          <p className="text-xs text-gray-700">📞 {inspection.sellerId.phone}</p>
+                        )}
+                        <p className="text-xs text-gray-500">{inspection.sellerId?.email || 'N/A'}</p>
+                        {inspection.sellerId?.address?.street && (
+                          <p className="text-xs text-gray-700 mt-0.5">📍 {inspection.sellerId.address.street}</p>
+                        )}
+                        {[
+                          inspection.sellerId?.address?.district,
+                          inspection.sellerId?.address?.city,
+                          inspection.sellerId?.address?.province,
+                        ].filter(Boolean).length > 0 && (
+                          <p className="text-xs text-gray-500 pl-4">
+                            {[
+                              inspection.sellerId?.address?.district,
+                              inspection.sellerId?.address?.city,
+                              inspection.sellerId?.address?.province,
+                            ].filter(Boolean).join(', ')}
+                          </p>
+                        )}
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-                      <div>
-                        <p className="text-xs text-gray-600">Order ID</p>
-                        <p className="text-sm font-mono text-gray-900">{inspection._id.substring(0, 8).toUpperCase()}...</p>
-                      </div>
+                    <div className="flex justify-end items-center pt-4 border-t border-gray-200">
                       <button
                         onClick={() => navigate(`/inspector/inspect/${inspection._id}`)}
                         className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
