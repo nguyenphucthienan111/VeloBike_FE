@@ -4,6 +4,15 @@ import { BikeListing, BikeType, InspectionStatus } from './types';
 const VITE_API_URL = (import.meta as any).env.VITE_API_URL;
 export const API_BASE_URL = VITE_API_URL || 'http://localhost:5000/api';
 
+// Auto-add ngrok bypass header when using ngrok URL
+export const getHeaders = (extra?: Record<string, string>) => {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', ...extra };
+  if (API_BASE_URL.includes('ngrok')) {
+    headers['ngrok-skip-browser-warning'] = '1';
+  }
+  return headers;
+};
+
 /** Message when backend is not reachable (ERR_CONNECTION_REFUSED / Failed to fetch) */
 export const CONNECTION_ERROR_MESSAGE =
   'Không kết nối được máy chủ. Vui lòng đảm bảo backend đang chạy (mặc định: localhost:5000).';
