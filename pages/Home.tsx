@@ -72,7 +72,7 @@ export const Home: React.FC = () => {
   const [trendingLoading, setTrendingLoading] = useState(true);
   const [featuredListings, setFeaturedListings] = useState<any[]>([]);
   const [featuredLoading, setFeaturedLoading] = useState(true);
-  const [plans, setPlans] = useState<Record<string, number>>({ FREE: 0, BASIC: 99000, PRO: 299000, PREMIUM: 500000 });
+  const [plans, setPlans] = useState<Record<string, number>>({ FREE: 0, BASIC: 99000, PRO: 299000, PREMIUM: 5000 });
 
   useEffect(() => {
     setIsAuthenticated(!!localStorage.getItem('accessToken'));
@@ -82,7 +82,7 @@ export const Home: React.FC = () => {
       .then(data => {
         const list: any[] = Array.isArray(data?.data) ? data.data : [];
         const map: Record<string, number> = { FREE: 0, BASIC: 99000, PRO: 299000, PREMIUM: 500000 };
-        list.forEach(p => { if (p.planType && p.price !== undefined) map[p.planType] = p.price; });
+        list.forEach(p => { if (p.name && p.price !== undefined) map[p.name] = p.price; });
         setPlans(map);
       })
       .catch(() => {});
