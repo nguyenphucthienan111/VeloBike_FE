@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { InspectorSidebar } from '../../components/InspectorSidebar';
 import { InspectorHeader } from '../../components/InspectorHeader';
 import { API_BASE_URL } from '../../constants';
+import { formatVerdict } from '../../utils/statusLabels';
 
 interface Inspection {
   _id: string; // Inspection ID
@@ -116,9 +117,9 @@ export const MyInspections: React.FC = () => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
                 >
                   <option value="">All Verdicts</option>
-                  <option value="PASSED">PASSED</option>
-                  <option value="FAILED">FAILED</option>
-                  <option value="SUGGEST_ADJUSTMENT">SUGGEST_ADJUSTMENT</option>
+                  <option value="PASSED">Passed</option>
+                  <option value="FAILED">Failed</option>
+                  <option value="SUGGEST_ADJUSTMENT">Suggest adjustment</option>
                 </select>
               </div>
             </div>
@@ -157,7 +158,7 @@ export const MyInspections: React.FC = () => {
                           </td>
                           <td className="px-6 py-4">
                             <span className={`px-2 py-1 text-xs font-semibold rounded ${getVerdictColor(inspection.overallVerdict)}`}>
-                              {inspection.overallVerdict}
+                              {formatVerdict(inspection.overallVerdict)}
                             </span>
                           </td>
                           <td className="px-6 py-4">

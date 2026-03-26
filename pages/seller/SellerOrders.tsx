@@ -4,6 +4,7 @@ import { MessageCircle, Truck, CheckCircle, AlertTriangle } from 'lucide-react';
 import { API_BASE_URL } from '../../constants';
 import { SellerHeaderUserMenu } from '../../components/SellerHeaderUserMenu';
 import { SellerPageLayout, SellerPageHeader } from '../../components/SellerPageLayout';
+import { formatStatus } from '../../utils/statusLabels';
 
 interface Order {
   _id: string;
@@ -241,8 +242,8 @@ export const SellerOrders: React.FC = () => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {statuses.map(status => (
-                  <option key={status} value={status}>{status}</option>
-                ))}
+                    <option key={status} value={status}>{status === 'ALL' ? 'All' : formatStatus(status)}</option>
+                  ))}
               </select>
             </div>
           </div>
@@ -287,7 +288,7 @@ export const SellerOrders: React.FC = () => {
                             statusColors[order.status] || 'bg-gray-100 text-gray-800'
                           }`}
                         >
-                          {order.status}
+                          {formatStatus(order.status)}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm">
@@ -463,7 +464,7 @@ export const SellerOrders: React.FC = () => {
                   <p className="text-xs text-gray-400 mt-0.5">{new Date(selectedOrder.createdAt).toLocaleDateString('vi-VN')}</p>
                 </div>
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold shrink-0 ${statusColors[selectedOrder.status] || 'bg-gray-100 text-gray-700'}`}>
-                  {selectedOrder.status}
+                  {formatStatus(selectedOrder.status)}
                 </span>
               </div>
 

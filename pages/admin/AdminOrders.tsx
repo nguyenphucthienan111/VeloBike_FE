@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ArrowRight, UserCog } from 'lucide-react';
 import { API_BASE_URL, CONNECTION_ERROR_MESSAGE, isConnectionError } from '../../constants';
 import { AdminPageLayout, AdminPageHeader, AdminErrorBanner, AdminLoadingState } from '../../components/AdminPageLayout';
+import { formatStatus } from '../../utils/statusLabels';
 
 interface Inspector {
   _id: string;
@@ -211,13 +212,13 @@ export const AdminOrders: React.FC = () => {
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-800 focus:ring-2 focus:ring-slate-300 outline-none"
             >
               <option value="">All</option>
-              <option value="CREATED">CREATED</option>
-              <option value="ESCROW_LOCKED">ESCROW_LOCKED</option>
-              <option value="IN_INSPECTION">IN_INSPECTION</option>
-              <option value="INSPECTION_PASSED">INSPECTION_PASSED</option>
-              <option value="SHIPPING">SHIPPING</option>
-              <option value="DELIVERED">DELIVERED</option>
-              <option value="COMPLETED">COMPLETED</option>
+              <option value="CREATED">Created</option>
+              <option value="ESCROW_LOCKED">Payment held</option>
+              <option value="IN_INSPECTION">In inspection</option>
+              <option value="INSPECTION_PASSED">Inspection passed</option>
+              <option value="SHIPPING">Shipping</option>
+              <option value="DELIVERED">Delivered</option>
+              <option value="COMPLETED">Completed</option>
             </select>
           </div>
         </div>
@@ -286,7 +287,7 @@ export const AdminOrders: React.FC = () => {
                       </td>
                       <td className="px-5 py-3.5">
                         <span className={`px-2.5 py-1 text-xs font-medium rounded-md border ${getStatusColor(order.status)}`}>
-                          {order.status}
+                          {formatStatus(order.status)}
                         </span>
                       </td>
                       <td className="px-5 py-3.5">

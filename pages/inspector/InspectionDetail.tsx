@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { InspectorSidebar } from '../../components/InspectorSidebar';
 import { InspectorHeader } from '../../components/InspectorHeader';
+import { formatVerdict, formatCheckpointStatus } from '../../utils/statusLabels';
 
 interface Checkpoint {
   component: string;
@@ -161,7 +162,7 @@ export const InspectionDetail: React.FC = () => {
               <div>
                 <p className="text-sm text-gray-600 mb-1">Verdict</p>
                 <span className={`px-2 py-1 text-xs font-semibold rounded ${getVerdictColor(inspection.overallVerdict)}`}>
-                  {inspection.overallVerdict}
+                  {formatVerdict(inspection.overallVerdict)}
                 </span>
               </div>
               <div>
@@ -186,7 +187,7 @@ export const InspectionDetail: React.FC = () => {
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-semibold text-gray-900">{checkpoint.component}</h3>
                     <span className={`px-2 py-1 text-xs font-semibold rounded ${getStatusColor(checkpoint.status)}`}>
-                      {checkpoint.status}
+                      {formatCheckpointStatus(checkpoint.status)}
                     </span>
                   </div>
                   {checkpoint.severity && (

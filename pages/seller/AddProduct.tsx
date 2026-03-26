@@ -575,8 +575,13 @@ export const AddProduct: React.FC = () => {
 
             {/* Images */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Product Images <span className="text-red-500">*</span></label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 hover:bg-blue-50 transition-all cursor-pointer">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Product Images <span className="text-red-500">*</span>
+                {uploadedImages.length === 0 && <span className="ml-2 text-xs text-red-500 font-normal">At least 1 image required</span>}
+              </label>
+              <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-all cursor-pointer ${
+                uploadedImages.length === 0 ? 'border-red-300 bg-red-50 hover:border-red-400' : 'border-gray-300 hover:border-blue-500 hover:bg-blue-50'
+              }`}>
                 <input
                   type="file"
                   multiple
@@ -653,8 +658,9 @@ export const AddProduct: React.FC = () => {
               </button>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || uploadedImages.length === 0}
                 className="px-8 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                title={uploadedImages.length === 0 ? 'Please upload at least one image' : undefined}
               >
                 {loading ? (
                   <span className="flex items-center gap-2">

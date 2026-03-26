@@ -230,7 +230,7 @@ export const BuyerOrders: React.FC = () => {
 
       // Check which orders have already been inspector-rated
       const inspectorRatableOrders = fetchedOrders.filter(o =>
-        ['INSPECTION_PASSED', 'SHIPPING', 'DELIVERED', 'COMPLETED'].includes(o.status)
+        ['INSPECTION_PASSED', 'SHIPPING', 'DELIVERED', 'COMPLETED', 'REFUNDED'].includes(o.status) && o.inspectorId
       );
       if (inspectorRatableOrders.length > 0) {
         const checks = await Promise.all(
@@ -596,7 +596,7 @@ export const BuyerOrders: React.FC = () => {
                               Review
                             </button>
                           )}
-                          {(['INSPECTION_PASSED', 'SHIPPING', 'DELIVERED', 'COMPLETED'].includes(order.status)) && !ratedInspectorOrderIds.has(order._id) && (
+                          {(['INSPECTION_PASSED', 'SHIPPING', 'DELIVERED', 'COMPLETED', 'REFUNDED'].includes(order.status)) && order.inspectorId && !ratedInspectorOrderIds.has(order._id) && (
                             <button
                               type="button"
                               onClick={() => {

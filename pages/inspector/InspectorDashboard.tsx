@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { InspectorSidebar } from '../../components/InspectorSidebar';
 import { InspectorHeader } from '../../components/InspectorHeader';
 import { API_BASE_URL } from '../../constants';
+import { formatVerdict } from '../../utils/statusLabels';
 
 interface Stats {
   totalInspections: number;
@@ -236,7 +237,7 @@ export const InspectorDashboard: React.FC = () => {
                           </td>
                           <td className="py-3 px-2">
                             <span className={`px-2 py-1 text-xs font-semibold rounded ${getVerdictColor(insp.overallVerdict)}`}>
-                              {insp.overallVerdict}
+                              {formatVerdict(insp.overallVerdict)}
                             </span>
                           </td>
                           <td className="py-3 px-2 text-sm font-semibold text-gray-900">
