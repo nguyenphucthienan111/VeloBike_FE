@@ -286,7 +286,7 @@ export const AdminOrders: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className={`px-2.5 py-1 text-xs font-medium rounded-md border ${getStatusColor(order.status)}`}>
+                        <span className={`px-2.5 py-1 text-xs font-medium rounded-md border whitespace-nowrap ${getStatusColor(order.status)}`}>
                           {formatStatus(order.status)}
                         </span>
                       </td>
