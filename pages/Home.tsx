@@ -72,9 +72,20 @@ export const Home: React.FC = () => {
   const [trendingLoading, setTrendingLoading] = useState(true);
   const [featuredListings, setFeaturedListings] = useState<any[]>([]);
   const [featuredLoading, setFeaturedLoading] = useState(true);
+  const [plans, setPlans] = useState<Record<string, number>>({ FREE: 0, BASIC: 99000, PRO: 299000, PREMIUM: 500000 });
 
   useEffect(() => {
     setIsAuthenticated(!!localStorage.getItem('accessToken'));
+    // Fetch subscription plans to get live pricing
+    fetch(`${API_BASE_URL}/subscriptions/plans`)
+      .then(r => r.json())
+      .then(data => {
+        const list: any[] = Array.isArray(data?.data) ? data.data : [];
+        const map: Record<string, number> = { FREE: 0, BASIC: 99000, PRO: 299000, PREMIUM: 500000 };
+        list.forEach(p => { if (p.planType && p.price !== undefined) map[p.planType] = p.price; });
+        setPlans(map);
+      })
+      .catch(() => {});
   }, []);
 
   // Trending: limit=9 để carousel có đủ data
@@ -245,20 +256,20 @@ export const Home: React.FC = () => {
             </div>
             <div className="rounded-2xl border-2 border-gray-200 bg-white p-6 flex flex-col">
               <div className="flex items-center gap-2 mb-4"><span className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center"><Zap size={18} className="text-amber-500" /></span><span className="font-bold">Basic</span></div>
-              <div className="mb-5"><span className="text-3xl font-extrabold">99</span><span className="text-gray-400 text-sm ml-1">k/mo</span></div>
+              <div className="mb-5"><span className="text-3xl font-extrabold">{Math.round(plans.BASIC / 1000)}</span><span className="text-gray-400 text-sm ml-1">k/mo</span></div>
               <ul className="space-y-2.5 flex-1 mb-6 text-sm text-gray-600">{['10 listings/month','10% commission','"Verified Seller" badge','Approval: 12–24h','Basic analytics'].map(f=><li key={f} className="flex items-center gap-2"><Check size={14} className="text-green-500 flex-shrink-0"/>{f}</li>)}</ul>
               <Link to="/seller/subscription" className="block text-center py-2.5 rounded-xl bg-gray-900 text-white font-semibold text-sm hover:bg-gray-700 transition-colors">Upgrade</Link>
             </div>
             <div className="rounded-2xl border-2 border-accent bg-white p-6 flex flex-col relative shadow-md">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">Most popular</div>
               <div className="flex items-center gap-2 mb-4"><span className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center"><Sparkles size={18} className="text-blue-500" /></span><span className="font-bold">Pro</span></div>
-              <div className="mb-5"><span className="text-3xl font-extrabold">299</span><span className="text-gray-400 text-sm ml-1">k/mo</span></div>
+              <div className="mb-5"><span className="text-3xl font-extrabold">{Math.round(plans.PRO / 1000)}</span><span className="text-gray-400 text-sm ml-1">k/mo</span></div>
               <ul className="space-y-2.5 flex-1 mb-6 text-sm text-gray-600">{['30 listings/month','8% commission','"Pro Seller" badge ⭐','Priority in search','Approval: 8–12h','Detailed analytics','1 free boost/week'].map(f=><li key={f} className="flex items-center gap-2"><Check size={14} className="text-green-500 flex-shrink-0"/>{f}</li>)}</ul>
               <Link to="/seller/subscription" className="block text-center py-2.5 rounded-xl bg-accent text-white font-semibold text-sm hover:opacity-90 transition-opacity">Upgrade</Link>
             </div>
             <div className="rounded-2xl border-2 border-amber-400 bg-gradient-to-b from-amber-50 to-white p-6 flex flex-col">
               <div className="flex items-center gap-2 mb-4"><span className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center"><Crown size={18} className="text-amber-600" /></span><span className="font-bold">Premium</span></div>
-              <div className="mb-5"><span className="text-3xl font-extrabold">500</span><span className="text-gray-400 text-sm ml-1">k/mo</span></div>
+              <div className="mb-5"><span className="text-3xl font-extrabold">{Math.round(plans.PREMIUM / 1000)}</span><span className="text-gray-400 text-sm ml-1">k/mo</span></div>
               <ul className="space-y-2.5 flex-1 mb-6 text-sm text-gray-600">{['Unlimited listings','5% commission','"Premium Seller" badge 👑','Top search placement','Approval: 1–2h','2 free inspections/mo','24/7 hotline support','3 free boosts/week','Featured on homepage'].map(f=><li key={f} className="flex items-center gap-2"><Check size={14} className="text-green-500 flex-shrink-0"/>{f}</li>)}</ul>
               <Link to="/seller/subscription" className="block text-center py-2.5 rounded-xl bg-amber-500 text-white font-semibold text-sm hover:bg-amber-600 transition-colors">Upgrade</Link>
             </div>
