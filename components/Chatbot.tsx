@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { X, Send, Loader2, Bot } from 'lucide-react';
 import { API_BASE_URL } from '../constants';
 
@@ -7,7 +8,64 @@ interface Message {
   text: string;
   sender: 'user' | 'bot';
   timestamp: string;
+  listings?: ProductCard[];
 }
+
+interface ProductCard {
+  id: string;
+  title: string;
+  price: number;
+  image: string;
+  url: string;
+}
+
+// Parse [PRODUCT:{...}] tokens out of bot message text
+const parseMessageParts = (text: string): Array<{ type: 'text'; content: string } | { type: 'product'; data: ProductCard }> => {
+  const parts: Array<{ type: 'text'; content: string } | { type: 'product'; data: ProductCard }> = [];
+  const regex = /\[PRODUCT:(\{[^}]+\})\]/g;
+  let lastIndex = 0;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) parts.push({ type: 'text', content: text.slice(lastIndex, match.index) });
+    try { parts.push({ type: 'product', data: JSON.parse(match[1]) }); } catch { /* skip malformed */ }
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) parts.push({ type: 'text', content: text.slice(lastIndex) });
+  return parts;
+};
+
+const fmt = (n: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
+
+const BotMessage: React.FC<{ text: string }> = ({ text }) => {
+  const parts = parseMessageParts(text);
+  return (
+    <div className="space-y-2">
+      {parts.map((part, i) => {
+        if (part.type === 'text' && part.content.trim()) {
+          return <p key={i} className="whitespace-pre-wrap text-sm text-gray-800">{part.content}</p>;
+        }
+        if (part.type === 'product') {
+          const p = part.data;
+          return (
+            <a key={i} href={p.url} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-3 p-2.5 border border-gray-200 rounded-xl hover:border-gray-400 hover:shadow-sm transition bg-gray-50 group">
+              {p.image && (
+                <img src={p.image} alt={p.title}
+                  className="w-16 h-16 object-cover rounded-lg flex-shrink-0 bg-gray-200" />
+              )}
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-gray-900 line-clamp-2 group-hover:text-black">{p.title}</p>
+                <p className="text-xs text-green-700 font-bold mt-0.5">{fmt(p.price)}</p>
+                <p className="text-[10px] text-blue-600 mt-0.5">Xem trên VeloBike →</p>
+              </div>
+            </a>
+          );
+        }
+        return null;
+      })}
+    </div>
+  );
+};
 
 export const Chatbot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -115,6 +173,7 @@ export const Chatbot: React.FC = () => {
           id: (Date.now() + 1).toString(),
           text: data.reply,
           sender: 'bot',
+          listings: data.listings?.length > 0 ? data.listings : undefined,
           timestamp: new Date().toISOString()
         };
         setMessages(prev => [...prev, botMessage]);
@@ -276,7 +335,26 @@ export const Chatbot: React.FC = () => {
                       : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm'
                   }`}
                 >
-                  {msg.text}
+                  {msg.sender === 'bot' ? <BotMessage text={msg.text} /> : msg.text}
+                  {msg.sender === 'bot' && msg.listings && msg.listings.length > 0 && (
+                    <div className="mt-3 space-y-2 border-t border-gray-100 pt-3">
+                      <p className="text-xs text-gray-500 font-medium">🛒 Sản phẩm có sẵn trên VeloBike:</p>
+                      {msg.listings.map(p => (
+                        <a key={p.id} href={p.url} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-3 p-2 border border-gray-200 rounded-xl hover:border-gray-400 hover:shadow-sm transition bg-gray-50 group">
+                          {p.image && (
+                            <img src={p.image} alt={p.title}
+                              className="w-14 h-14 object-cover rounded-lg flex-shrink-0 bg-gray-200" />
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-gray-900 line-clamp-2">{p.title}</p>
+                            <p className="text-xs text-green-700 font-bold mt-0.5">{fmt(p.price)}</p>
+                            <p className="text-[10px] text-blue-600 mt-0.5">Xem chi tiết →</p>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))
