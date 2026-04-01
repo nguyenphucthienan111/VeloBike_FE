@@ -33,6 +33,7 @@ export const AdminUsers: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const currentUserId = (() => { try { return JSON.parse(localStorage.getItem('user') || '{}')._id; } catch { return null; } })();
   const [showKycModal, setShowKycModal] = useState(false);
   const [kycStatus, setKycStatus] = useState('VERIFIED');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -315,7 +316,8 @@ export const AdminUsers: React.FC = () => {
                               )}
                               <button
                                 onClick={() => handleBanUser(user._id, user.isActive)}
-                                className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                                disabled={user.role === 'ADMIN' || user._id === currentUserId}
+                                className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
                                   user.isActive
                                     ? 'text-red-700 border-red-200 hover:bg-red-50'
                                     : 'text-emerald-700 border-emerald-200 hover:bg-emerald-50'
