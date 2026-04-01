@@ -588,7 +588,7 @@ export const SellerWallet: React.FC = () => {
                 <p className="text-xs text-gray-500 mb-2">CURRENT PLAN</p>
                 <div className="flex items-center gap-2">
                   <span className="text-xl">{getPlanIcon(subscriptionInfo.planType)}</span>
-                  <span className={`px-2 py-1 rounded text-xs font-bold ${getPlanBadgeStyle(subscriptionInfo.planType)}`}>
+                  <span className={`px-2 py-1 rounded text-xs font-bold whitespace-nowrap ${getPlanBadgeStyle(subscriptionInfo.planType)}`}>
                     {subscriptionInfo.planDisplayName}
                   </span>
                 </div>
@@ -742,8 +742,8 @@ export const SellerWallet: React.FC = () => {
                         <td className="py-4 px-4 text-gray-700">{formatCurrency(withdrawal.fee)}</td>
                         <td className="py-4 px-4 text-gray-700">{withdrawal.bankAccount}</td>
                         <td className="py-4 px-4">
-                          <span className={`px-3 py-1 rounded text-xs font-semibold ${getStatusBadge(withdrawal.status)}`}>
-                            {withdrawal.status}
+                          <span className={`px-3 py-1 rounded text-xs font-semibold whitespace-nowrap ${getStatusBadge(withdrawal.status)}`}>
+                            {withdrawal.status.replace(/_/g, ' ')}
                           </span>
                         </td>
                         <td className="py-4 px-4">
@@ -791,11 +791,11 @@ export const SellerWallet: React.FC = () => {
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${getTransactionTypeStyle(transaction.type)}`}>
+                            <span className={`px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap ${getTransactionTypeStyle(transaction.type)}`}>
                               {getTransactionTypeLabel(transaction.type)}
                             </span>
-                            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${getStatusBadge(transaction.status)}`}>
-                              {transaction.status}
+                            <span className={`px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap ${getStatusBadge(transaction.status)}`}>
+                              {transaction.status.replace(/_/g, ' ')}
                             </span>
                             <span className="text-xs text-gray-400">
                               {new Date(transaction.createdAt).toLocaleDateString('vi-VN')}

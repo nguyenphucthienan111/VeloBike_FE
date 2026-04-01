@@ -502,7 +502,7 @@ export const BuyerOrders: React.FC = () => {
                       <td className="py-3 px-4">
                         <div className="flex flex-col gap-1">
                           <span
-                            className={`inline-flex px-2 py-1 rounded text-xs font-medium w-fit ${statusInfo.className}`}
+                            className={`inline-flex px-2 py-1 rounded text-xs font-medium w-fit whitespace-nowrap ${statusInfo.className}`}
                           >
                             {statusInfo.label}
                           </span>

@@ -27,10 +27,13 @@ export const CHECKPOINT_STATUS_LABELS: Record<string, string> = {
 };
 
 export const formatStatus = (status: string) =>
-  ORDER_STATUS_LABELS[status] ?? status.replace(/_/g, ' ').toLowerCase().replace(/^\w/, c => c.toUpperCase());
+  ORDER_STATUS_LABELS[status] ?? status.replace(/_/g, ' ');
 
 export const formatVerdict = (verdict: string) =>
-  VERDICT_LABELS[verdict] ?? verdict.replace(/_/g, ' ').toLowerCase().replace(/^\w/, c => c.toUpperCase());
+  VERDICT_LABELS[verdict] ?? verdict.replace(/_/g, ' ');
 
 export const formatCheckpointStatus = (status: string) =>
-  CHECKPOINT_STATUS_LABELS[status] ?? status;
+  CHECKPOINT_STATUS_LABELS[status] ?? status.replace(/_/g, ' ');
+
+/** Generic: replace _ with space for any raw enum string */
+export const formatLabel = (s: string) => s.replace(/_/g, ' ');

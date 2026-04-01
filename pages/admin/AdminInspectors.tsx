@@ -143,7 +143,7 @@ export const AdminInspectors: React.FC = () => {
                         <p className="text-slate-500 text-xs">{app.email}</p>
                         {app.userId && (
                           <span className={`text-xs px-1.5 py-0.5 rounded ${app.userId.kycStatus === 'VERIFIED' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                            KYC: {app.userId.kycStatus}
+                            KYC: {app.userId.kycStatus.replace(/_/g, ' ')}
                           </span>
                         )}
                       </td>
@@ -157,7 +157,7 @@ export const AdminInspectors: React.FC = () => {
                       </td>
                       <td className="px-5 py-3.5 text-slate-700">{app.certificates.length}</td>
                       <td className="px-5 py-3.5">
-                        <span className={`px-2 py-1 text-xs font-medium rounded ${statusBadge(app.status)}`}>{app.status}</span>
+                        <span className={`px-2 py-1 text-xs font-medium rounded whitespace-nowrap ${statusBadge(app.status)}`}>{app.status.replace(/_/g, ' ')}</span>
                       </td>
                       <td className="px-5 py-3.5">
                         <button onClick={() => { setSelectedApp(app); setRejectReason(''); setError(''); }}
@@ -204,7 +204,7 @@ export const AdminInspectors: React.FC = () => {
                         ) : <span className="text-slate-400 text-xs">No reviews</span>}
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className={`px-2.5 py-1 text-xs font-medium rounded-md border ${inspector.isActive ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-red-700 bg-red-50 border-red-200'}`}>
+                        <span className={`px-2.5 py-1 text-xs font-medium rounded-md border whitespace-nowrap ${inspector.isActive ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-red-700 bg-red-50 border-red-200'}`}>
                           {inspector.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>
@@ -236,7 +236,7 @@ export const AdminInspectors: React.FC = () => {
                 <h2 className="text-lg font-bold text-slate-900">{selectedApp.fullName}</h2>
                 <p className="text-sm text-slate-500">{selectedApp.email} · {selectedApp.phone}</p>
               </div>
-              <span className={`px-2 py-1 text-xs font-medium rounded ${statusBadge(selectedApp.status)}`}>{selectedApp.status}</span>
+              <span className={`px-2 py-1 text-xs font-medium rounded whitespace-nowrap ${statusBadge(selectedApp.status)}`}>{selectedApp.status.replace(/_/g, ' ')}</span>
             </div>
             <div className="p-6 space-y-5">
               <div className="grid grid-cols-2 gap-4 text-sm">

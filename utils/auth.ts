@@ -4,6 +4,8 @@
  */
 export function handleSessionExpired(): void {
   localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+  localStorage.removeItem('user');
   window.dispatchEvent(new Event('authChange'));
   window.location.href = '/login';
 }

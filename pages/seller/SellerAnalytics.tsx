@@ -264,7 +264,7 @@ export const SellerAnalytics: React.FC = () => {
                         <p className="text-xs text-gray-500 mt-1">{listing.views.toLocaleString()} views</p>
                       </div>
                       <span className="text-xs font-semibold bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                        {listing.status}
+                        {listing.status.replace(/_/g, ' ')}
                       </span>
                     </div>
                   ))}

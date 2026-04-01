@@ -443,8 +443,8 @@ export const SellerInventory: React.FC = () => {
                         <span className="text-gray-400">#</span> {listing.views}
                       </td>
                       <td className="px-3 py-4 align-middle">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(listing.status)}`}>
-                          {listing.status}
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStatusColor(listing.status)}`}>
+                          {listing.status.replace(/_/g, ' ')}
                         </span>
                       </td>
                       <td className="px-3 py-4 align-middle text-gray-600 text-sm">

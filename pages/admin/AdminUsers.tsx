@@ -278,23 +278,23 @@ export const AdminUsers: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className="px-2.5 py-1 text-xs font-medium rounded-md bg-slate-100 text-slate-700 border border-slate-200">
+                        <span className="px-2.5 py-1 text-xs font-medium rounded-md bg-slate-100 text-slate-700 border border-slate-200 whitespace-nowrap">
                           {formatRoleLabel(user.role)}
                         </span>
                       </td>
                       <td className="px-5 py-3.5">
                         {user.role === 'SELLER' ? (
-                          <span className={`px-2.5 py-1 text-xs font-medium rounded-md border ${getStatusColor(user.kycStatus)}`}>
-                            {user.kycStatus}
+                          <span className={`px-2.5 py-1 text-xs font-medium rounded-md border whitespace-nowrap ${getStatusColor(user.kycStatus)}`}>
+                            {user.kycStatus.replace(/_/g, ' ')}
                           </span>
                         ) : (
-                          <span className="px-2.5 py-1 text-xs font-medium rounded-md text-slate-400 bg-slate-50 border border-slate-200">
+                          <span className="px-2.5 py-1 text-xs font-medium rounded-md text-slate-400 bg-slate-50 border border-slate-200 whitespace-nowrap">
                             N/A
                           </span>
                         )}
                       </td>
                       <td className="px-5 py-3.5">
-                            <span className={`px-2.5 py-1 text-xs font-medium rounded-md border ${
+                            <span className={`px-2.5 py-1 text-xs font-medium rounded-md border whitespace-nowrap ${
                               user.isActive ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-red-700 bg-red-50 border-red-200'
                             }`}>
                               {user.isActive ? 'Active' : 'Inactive'}
@@ -366,7 +366,7 @@ export const AdminUsers: React.FC = () => {
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-900 mb-2">{selectedUser.role === 'SELLER' ? 'Seller' : 'User'}</label>
               <p className="text-gray-700">{selectedUser.fullName} ({selectedUser.email})</p>
-              <p className="text-xs text-gray-500 mt-1">Role: {selectedUser.role}</p>
+              <p className="text-xs text-gray-500 mt-1">Role: {selectedUser.role.replace(/_/g, ' ')}</p>
             </div>
 
             {/* Submitted KYC profile — always show, whether documents exist or not */}

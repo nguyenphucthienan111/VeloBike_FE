@@ -561,8 +561,8 @@ export const InspectorWallet: React.FC = () => {
                           <td className="py-4 px-4 text-gray-700">{formatCurrency(withdrawal.fee)}</td>
                           <td className="py-4 px-4 text-gray-700">{withdrawal.bankAccount}</td>
                           <td className="py-4 px-4">
-                            <span className={`px-3 py-1 rounded text-xs font-semibold ${getStatusBadge(withdrawal.status)}`}>
-                              {withdrawal.status}
+                            <span className={`px-3 py-1 rounded text-xs font-semibold whitespace-nowrap ${getStatusBadge(withdrawal.status)}`}>
+                              {withdrawal.status.replace(/_/g, ' ')}
                             </span>
                           </td>
                           <td className="py-4 px-4">
@@ -621,8 +621,8 @@ export const InspectorWallet: React.FC = () => {
                           <td className="py-4 px-4 text-gray-900 font-semibold">{formatCurrency(transaction.amount)}</td>
                           <td className="py-4 px-4 text-gray-700">{transaction.description}</td>
                           <td className="py-4 px-4">
-                            <span className={`px-3 py-1 rounded text-xs font-semibold ${getStatusBadge(transaction.status)}`}>
-                              {transaction.status}
+                            <span className={`px-3 py-1 rounded text-xs font-semibold whitespace-nowrap ${getStatusBadge(transaction.status)}`}>
+                              {transaction.status.replace(/_/g, ' ')}
                             </span>
                           </td>
                         </tr>

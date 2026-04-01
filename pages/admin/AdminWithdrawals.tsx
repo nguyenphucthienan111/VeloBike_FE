@@ -264,7 +264,7 @@ export const AdminWithdrawals: React.FC = () => {
                       <p className="text-xs text-slate-500">Fee: {formatCurrency(w.fee || 0)}</p>
                     </td>
                     <td className="px-5 py-3.5">
-                      <span className={`px-2.5 py-1 rounded-md text-xs font-medium border ${getStatusColor(w.status)}`}>{w.status}</span>
+                      <span className={`px-2.5 py-1 rounded-md text-xs font-medium border whitespace-nowrap ${getStatusColor(w.status)}`}>{w.status.replace(/_/g, ' ')}</span>
                     </td>
                     <td className="px-5 py-3.5 text-slate-600">{formatDate(w.requestedAt)}</td>
                     <td className="px-5 py-3.5 text-right">

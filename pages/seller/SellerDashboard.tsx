@@ -316,8 +316,8 @@ export const SellerDashboard: React.FC = () => {
                           <td className="py-4 px-4 text-gray-700">{tx.productTitle}</td>
                           <td className="py-4 px-4 text-gray-900 font-semibold">{formatCurrency(tx.amount)}</td>
                           <td className="py-4 px-4">
-                            <span className={`px-3 py-1 rounded text-xs font-bold ${getStatusBadgeColor(tx.status)}`}>
-                              {tx.status}
+                            <span className={`px-3 py-1 rounded text-xs font-bold whitespace-nowrap ${getStatusBadgeColor(tx.status)}`}>
+                              {tx.status.replace(/_/g, ' ')}
                             </span>
                           </td>
                         </tr>
@@ -375,10 +375,10 @@ export const SellerDashboard: React.FC = () => {
                         {style.icon}
                         {subscription.displayName}
                       </div>
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
                         subscription.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                       }`}>
-                        {subscription.status}
+                        {subscription.status.replace(/_/g, ' ')}
                       </span>
                     </div>
 

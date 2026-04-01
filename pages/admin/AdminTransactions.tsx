@@ -206,9 +206,9 @@ export const AdminTransactions: React.FC = () => {
                       <td className="px-5 py-3.5 text-right font-semibold text-slate-900">{formatCurrency(t.amount)}</td>
                       <td className="px-5 py-3.5">
                         <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border ${getStatusClass(t.status)}`}
+                          className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border whitespace-nowrap ${getStatusClass(t.status)}`}
                         >
-                          {t.status}
+                          {t.status.replace(/_/g, ' ')}
                         </span>
                       </td>
                       <td className="px-5 py-3.5 text-slate-600">{formatDate(t.createdAt)}</td>

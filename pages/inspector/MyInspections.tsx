@@ -157,7 +157,7 @@ export const MyInspections: React.FC = () => {
                             <p className="font-semibold text-gray-900">{inspection.orderId.listingId?.title || 'Unknown Listing'}</p>
                           </td>
                           <td className="px-6 py-4">
-                            <span className={`px-2 py-1 text-xs font-semibold rounded ${getVerdictColor(inspection.overallVerdict)}`}>
+                            <span className={`px-2 py-1 text-xs font-semibold rounded whitespace-nowrap ${getVerdictColor(inspection.overallVerdict)}`}>
                               {formatVerdict(inspection.overallVerdict)}
                             </span>
                           </td>

@@ -284,7 +284,7 @@ export const SellerOrders: React.FC = () => {
                       <td className="px-6 py-4 text-sm text-gray-900 font-medium">{formatCurrency(order.financials?.totalAmount ?? order.totalAmount)}</td>
                       <td className="px-6 py-4 text-sm">
                         <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
                             statusColors[order.status] || 'bg-gray-100 text-gray-800'
                           }`}
                         >
@@ -298,7 +298,7 @@ export const SellerOrders: React.FC = () => {
                             ['IN_INSPECTION','INSPECTION_PASSED','INSPECTION_FAILED','SHIPPING','DELIVERED','COMPLETED'].includes(order.status) ||
                             (order.financials?.inspectionFee ?? 0) > 0;
                           return (
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
                               hasInspection ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
                             }`}>
                               {hasInspection ? 'Required' : 'Not Required'}
@@ -463,7 +463,7 @@ export const SellerOrders: React.FC = () => {
                   <p className="text-sm font-medium text-gray-900">{selectedOrder.listingId?.title || 'N/A'}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{new Date(selectedOrder.createdAt).toLocaleDateString('vi-VN')}</p>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold shrink-0 ${statusColors[selectedOrder.status] || 'bg-gray-100 text-gray-700'}`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold shrink-0 whitespace-nowrap ${statusColors[selectedOrder.status] || 'bg-gray-100 text-gray-700'}`}>
                   {formatStatus(selectedOrder.status)}
                 </span>
               </div>
@@ -537,7 +537,7 @@ export const SellerOrders: React.FC = () => {
                       <div key={idx} className="flex gap-3 text-xs">
                         <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 shrink-0" />
                         <div>
-                          <span className="font-medium text-gray-800">{event.status}</span>
+                          <span className="font-medium text-gray-800">{event.status.replace(/_/g, ' ')}</span>
                           <span className="text-gray-400 ml-2">{new Date(event.timestamp).toLocaleString('vi-VN')}</span>
                           {event.note && <p className="text-gray-400 italic">{event.note}</p>}
                         </div>

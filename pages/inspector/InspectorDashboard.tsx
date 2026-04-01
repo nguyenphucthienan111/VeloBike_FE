@@ -236,7 +236,7 @@ export const InspectorDashboard: React.FC = () => {
                             {insp.orderId?._id?.substring(0, 8).toUpperCase() || 'N/A'}...
                           </td>
                           <td className="py-3 px-2">
-                            <span className={`px-2 py-1 text-xs font-semibold rounded ${getVerdictColor(insp.overallVerdict)}`}>
+                            <span className={`px-2 py-1 text-xs font-semibold rounded whitespace-nowrap ${getVerdictColor(insp.overallVerdict)}`}>
                               {formatVerdict(insp.overallVerdict)}
                             </span>
                           </td>

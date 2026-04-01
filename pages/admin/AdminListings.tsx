@@ -254,7 +254,7 @@ export const AdminListings: React.FC = () => {
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-800 focus:ring-2 focus:ring-slate-300 outline-none"
             >
               <option value="">All</option>
-              <option value="PENDING_APPROVAL">PENDING_APPROVAL</option>
+              <option value="PENDING_APPROVAL">PENDING APPROVAL</option>
               <option value="PUBLISHED">PUBLISHED</option>
               <option value="DRAFT">DRAFT</option>
               <option value="SOLD">SOLD</option>
@@ -331,13 +331,13 @@ export const AdminListings: React.FC = () => {
                             <p className="font-semibold text-gray-900">{formatCurrency(getListingPrice(listing))}</p>
                           </td>
                           <td className="px-6 py-4">
-                            <span className={`px-2 py-1 text-xs font-semibold rounded ${
+                            <span className={`px-2 py-1 text-xs font-semibold rounded whitespace-nowrap ${
                               listing.status === 'PUBLISHED' ? 'text-green-600 bg-green-50' :
                               listing.status === 'REJECTED' ? 'text-red-600 bg-red-50' :
                               listing.status === 'PENDING_APPROVAL' ? 'text-yellow-600 bg-yellow-50' :
                               'text-gray-600 bg-gray-50'
                             }`}>
-                              {listing.status}
+                              {listing.status.replace(/_/g, ' ')}
                             </span>
                           </td>
                           {statusFilter === 'PENDING_APPROVAL' && (

@@ -383,13 +383,13 @@ export const InspectorProfile: React.FC = () => {
                       })}
                     </div>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      {profile?.reputation?.reviewCount ?? 0} đánh giá
+                      {profile?.reputation?.reviewCount ?? 0} reviews
                     </p>
                   </div>
                 </div>
                 <button onClick={() => navigate('/inspector/reviews')}
                   className="w-full text-sm text-gray-600 hover:text-gray-900 underline text-left">
-                  Xem tất cả đánh giá →
+                  View all reviews →
                 </button>
               </div>
             </div>

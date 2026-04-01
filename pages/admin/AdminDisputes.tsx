@@ -200,8 +200,8 @@ export const AdminDisputes: React.FC = () => {
                             <span className="font-medium text-gray-900">{dispute.reason}</span>
                           </td>
                           <td className="px-6 py-4">
-                            <span className={`px-2 py-1 text-xs font-semibold rounded ${getStatusColor(dispute.status)}`}>
-                              {dispute.status}
+                            <span className={`px-2 py-1 text-xs font-semibold rounded whitespace-nowrap ${getStatusColor(dispute.status)}`}>
+                              {dispute.status.replace(/_/g, ' ')}
                             </span>
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-600">
@@ -263,7 +263,7 @@ export const AdminDisputes: React.FC = () => {
                 <div className={`p-4 rounded-lg ${getStatusColor(selectedDispute.status)} bg-opacity-10 border`}>
                   <div className="flex items-center gap-2">
                     <AlertTriangle size={20} />
-                    <span className="font-bold">Status: {selectedDispute.status}</span>
+                    <span className="font-bold">Status: {selectedDispute.status.replace(/_/g, ' ')}</span>
                   </div>
                 </div>
 

@@ -135,7 +135,7 @@ export const BuyerWallet: React.FC = () => {
                     <td className="py-3 px-3 font-semibold text-gray-900">{fmt(w.amount)}</td>
                     <td className="py-3 px-3 text-gray-600">{fmt(w.fee)}</td>
                     <td className="py-3 px-3 text-gray-600">{w.bankAccount}</td>
-                    <td className="py-3 px-3"><span className={`px-2 py-0.5 text-xs font-semibold rounded ${statusBadge(w.status)}`}>{w.status}</span></td>
+                    <td className="py-3 px-3"><span className={`px-2 py-0.5 text-xs font-semibold rounded whitespace-nowrap ${statusBadge(w.status)}`}>{w.status.replace(/_/g, ' ')}</span></td>
                     <td className="py-3 px-3">
                       {w.status === "PENDING" && <button onClick={() => handleCancel(w.id)} disabled={cancellingId === w.id} className="text-red-600 text-xs font-medium hover:underline disabled:opacity-50">{cancellingId === w.id ? "Cancelling..." : "Cancel"}</button>}
                       {w.status === "COMPLETED" && (w.transferProof || w.note) && <button onClick={() => setProofModal({ image: w.transferProof, note: w.note })} className="text-blue-600 text-xs font-medium hover:underline">View proof</button>}
@@ -163,7 +163,7 @@ export const BuyerWallet: React.FC = () => {
                     <td className="py-3 px-3 text-gray-800 font-medium">{TYPE_LABELS[t.type] || t.type}</td>
                     <td className="py-3 px-3 text-gray-500 max-w-xs truncate">{t.description}</td>
                     <td className={`py-3 px-3 text-right font-semibold ${isOutflow(t.type) ? "text-red-600" : "text-green-600"}`}>{isOutflow(t.type) ? "-" : "+"}{fmt(Math.abs(t.amount))}</td>
-                    <td className="py-3 px-3"><span className={`px-2 py-0.5 text-xs font-medium rounded-full ${statusBadge(t.status)}`}>{t.status}</span></td>
+                    <td className="py-3 px-3"><span className={`px-2 py-0.5 text-xs font-medium rounded-full whitespace-nowrap ${statusBadge(t.status)}`}>{t.status.replace(/_/g, ' ')}</span></td>
                   </tr>
                 ))}
               </tbody>
