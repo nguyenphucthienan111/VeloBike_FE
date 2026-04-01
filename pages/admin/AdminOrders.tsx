@@ -26,7 +26,6 @@ interface Order {
 // FSM: mỗi status chỉ có đúng 1 next action admin có thể trigger
 const NEXT_ACTION: Record<string, { label: string; confirm: string; color: string } | null> = {
   ESCROW_LOCKED:       { label: 'Start Inspection',  confirm: 'Start inspection for this order?',          color: 'text-amber-700 border-amber-200 hover:bg-amber-50' },
-  INSPECTION_PASSED:   { label: 'Mark as Shipped',   confirm: 'Mark this order as shipped?',               color: 'text-violet-700 border-violet-200 hover:bg-violet-50' },
   DELIVERED:           { label: 'Release Payment',   confirm: 'Release payout to seller? This cannot be undone.', color: 'text-emerald-700 border-emerald-200 hover:bg-emerald-50' },
 };
 

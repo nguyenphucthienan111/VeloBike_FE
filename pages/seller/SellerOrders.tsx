@@ -363,15 +363,10 @@ export const SellerOrders: React.FC = () => {
                             </button>
                           )}
                           {order.status === 'SHIPPING' && (
-                            <button
-                              onClick={() => handleUpdateStatus(order._id, 'DELIVERED')}
-                              disabled={updatingStatus}
-                              className="inline-flex items-center gap-1 text-green-600 hover:text-green-800 font-medium disabled:opacity-50"
-                              title="Confirm delivery"
-                            >
-                              <CheckCircle size={16} />
-                              Delivered
-                            </button>
+                            <span className="inline-flex items-center gap-1 text-gray-400 text-xs italic cursor-default">
+                              <CheckCircle size={14} />
+                              Awaiting buyer confirmation
+                            </span>
                           )}
                           {order.buyerId?._id && (
                             <button
