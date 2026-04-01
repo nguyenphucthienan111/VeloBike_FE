@@ -23,6 +23,7 @@ interface User {
   kycData?: KycData;
   wallet?: { balance: number; currency: string };
   reputation?: { score: number; reviewCount: number };
+  address?: { street?: string; district?: string; city?: string; province?: string };
 }
 
 export const AdminUsers: React.FC = () => {
@@ -33,6 +34,7 @@ export const AdminUsers: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const currentUserId = (() => { try { return JSON.parse(localStorage.getItem('user') || '{}')._id; } catch { return null; } })();
   const [showKycModal, setShowKycModal] = useState(false);
   const [kycStatus, setKycStatus] = useState('VERIFIED');
@@ -302,6 +304,12 @@ export const AdminUsers: React.FC = () => {
                           </td>
                           <td className="px-5 py-3.5">
                             <div className="flex gap-2">
+                              <button
+                                onClick={() => { setSelectedUser(user); setShowDetailModal(true); }}
+                                className="px-3 py-1.5 text-xs font-medium text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                              >
+                                View
+                              </button>
                               {(user.role === 'SELLER' || user.kycStatus === 'PENDING' || (user.kycData && (user.kycData.documentType || user.kycData.documentId || user.kycData.frontImage || user.kycData.backImage))) && (
                                 <button
                                   onClick={() => {
@@ -357,6 +365,71 @@ export const AdminUsers: React.FC = () => {
               </>
         )}
       </div>
+
+      {/* User Detail Modal */}
+      {showDetailModal && selectedUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full shadow-xl">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
+              <h2 className="text-base font-semibold text-gray-900">User Details</h2>
+              <button onClick={() => setShowDetailModal(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-sm">
+                  {selectedUser.fullName?.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">{selectedUser.fullName}</p>
+                  <p className="text-xs text-gray-500">{selectedUser.role} · {selectedUser.kycStatus}</p>
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Email</span>
+                  <a href={`mailto:${selectedUser.email}`} className="text-blue-600 hover:underline">{selectedUser.email}</a>
+                </div>
+                {selectedUser.phone ? (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Phone</span>
+                    <a href={`tel:${selectedUser.phone}`} className="text-blue-600 hover:underline">{selectedUser.phone}</a>
+                  </div>
+                ) : (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Phone</span>
+                    <span className="text-gray-400 italic text-xs">Not provided</span>
+                  </div>
+                )}
+                {selectedUser.address && (selectedUser.address.street || selectedUser.address.city) ? (
+                  <div className="flex justify-between gap-4">
+                    <span className="text-gray-500 shrink-0">Address</span>
+                    <span className="text-gray-900 text-right text-xs">
+                      {[selectedUser.address.street, selectedUser.address.district, selectedUser.address.city || selectedUser.address.province].filter(Boolean).join(', ')}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Address</span>
+                    <span className="text-gray-400 italic text-xs">Not provided</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Status</span>
+                  <span className={selectedUser.isActive ? 'text-emerald-600 font-medium' : 'text-red-600 font-medium'}>
+                    {selectedUser.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="px-6 pb-5">
+              <button onClick={() => setShowDetailModal(false)}
+                className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 text-sm font-medium">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* KYC Modal — SELLER or any user with KYC data (including BUYER who has submitted KYC) */}
       {showKycModal && selectedUser && (selectedUser.role === 'SELLER' || selectedUser.kycStatus === 'PENDING' || (selectedUser.kycData && (selectedUser.kycData.documentType || selectedUser.kycData.documentId || selectedUser.kycData.frontImage || selectedUser.kycData.backImage))) && (
