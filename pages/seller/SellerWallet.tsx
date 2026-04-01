@@ -142,7 +142,7 @@ export const SellerWallet: React.FC = () => {
       if (transRes.ok) {
         const data = await transRes.json();
         const raw = Array.isArray(data.data) ? data.data : [];
-        const sellerTypes = ['PAYMENT_RELEASE', 'WITHDRAW', 'COMMISSION_DEBIT'];
+        const sellerTypes = ['PAYMENT_RELEASE', 'WITHDRAW', 'COMMISSION_DEBIT', 'REFUND'];
         const list = raw
           .filter((t: { type?: string }) => sellerTypes.includes(t.type))
           .map((t: { _id: string; type: string; amount: number; status: string; description: string; createdAt: string; metadata?: any }) => ({
@@ -510,6 +510,8 @@ export const SellerWallet: React.FC = () => {
     const map: Record<string, string> = {
       PAYMENT_RELEASE: 'Payout',
       COMMISSION_DEBIT: 'Commission Fee',
+      REFUND: 'Dispute Clawback',
+      WITHDRAW: 'Withdrawal',
       WITHDRAW: 'Withdrawal',
     };
     return map[type] || type;
@@ -519,6 +521,8 @@ export const SellerWallet: React.FC = () => {
     const map: Record<string, string> = {
       PAYMENT_RELEASE: 'bg-green-100 text-green-700',
       COMMISSION_DEBIT: 'bg-orange-100 text-orange-700',
+      REFUND: 'bg-red-100 text-red-700',
+      WITHDRAW: 'bg-blue-100 text-blue-700',
       WITHDRAW: 'bg-blue-100 text-blue-700',
     };
     return map[type] || 'bg-gray-100 text-gray-700';
@@ -786,6 +790,7 @@ export const SellerWallet: React.FC = () => {
                   const bd = transaction.metadata?.breakdown;
                   const isRelease = transaction.type === 'PAYMENT_RELEASE';
                   const isCommission = transaction.type === 'COMMISSION_DEBIT';
+                  const isRefund = transaction.type === 'REFUND';
                   return (
                     <div key={transaction.id} className="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                       <div className="flex items-start justify-between gap-4">
@@ -846,8 +851,8 @@ export const SellerWallet: React.FC = () => {
                         </div>
 
                         <div className="text-right shrink-0">
-                          <p className={`text-base font-bold ${isRelease ? 'text-green-600' : isCommission ? 'text-orange-600' : 'text-gray-900'}`}>
-                            {isRelease ? '+' : isCommission ? '-' : ''}{formatCurrency(transaction.amount)}
+                          <p className={`text-base font-bold ${isRelease ? 'text-green-600' : isCommission ? 'text-orange-600' : isRefund ? 'text-red-600' : 'text-gray-900'}`}>
+                            {isRelease ? '+' : isCommission ? '-' : isRefund ? '-' : ''}{formatCurrency(Math.abs(transaction.amount))}
                           </p>
                         </div>
                       </div>

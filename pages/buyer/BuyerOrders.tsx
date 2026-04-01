@@ -570,19 +570,25 @@ export const BuyerOrders: React.FC = () => {
                               Mark as received
                             </button>
                           )}
-                          {(order.status === 'SHIPPING' || order.status === 'DELIVERED') && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedOrderForAction(order._id);
-                                setShowDisputeModal(true);
-                              }}
-                              className="inline-flex items-center gap-1 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 px-3 py-1.5 rounded transition-colors shadow-sm"
-                            >
-                              <AlertTriangle size={14} />
-                              Open dispute
-                            </button>
-                          )}
+                          {(() => {
+                            const canDispute = order.status === 'SHIPPING' || order.status === 'DELIVERED' ||
+                              (order.status === 'COMPLETED' && (() => {
+                                const completedEvent = order.timeline?.slice().reverse().find((e: any) => e.status === 'COMPLETED');
+                                if (!completedEvent) return true;
+                                const daysSince = (Date.now() - new Date(completedEvent.timestamp).getTime()) / (1000 * 60 * 60 * 24);
+                                return daysSince <= 7;
+                              })());
+                            return canDispute ? (
+                              <button
+                                type="button"
+                                onClick={() => { setSelectedOrderForAction(order._id); setShowDisputeModal(true); }}
+                                className="inline-flex items-center gap-1 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 px-3 py-1.5 rounded transition-colors shadow-sm"
+                              >
+                                <AlertTriangle size={14} />
+                                Open dispute
+                              </button>
+                            ) : null;
+                          })()}
                           {(order.status === 'COMPLETED' || order.status === 'DELIVERED') && !reviewedOrderIds.has(order._id) && (
                             <button
                               type="button"
