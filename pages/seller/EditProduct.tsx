@@ -80,7 +80,7 @@ export const EditProduct: React.FC = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/listings/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/listings/${id}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
@@ -262,7 +262,7 @@ export const EditProduct: React.FC = () => {
         inspectionRequired: formData.inspectionRequired,
       };
 
-      const response = await fetch(`http://localhost:5000/api/listings/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/listings/${id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
