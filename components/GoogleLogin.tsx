@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { signInWithGoogle } from '../firebase';
+import { signInWithGoogle, getGoogleRedirectResult } from '../firebase';
 
 interface GoogleLoginProps {
   onSuccess?: () => void;
@@ -11,55 +11,61 @@ const showToast = (type: 'success' | 'error' | 'info', message: string) => {
   window.dispatchEvent(new CustomEvent('showToast', { detail: { type, message } }));
 };
 
+const API_URL = (import.meta as any).env.VITE_API_URL || 'http://localhost:5000/api';
+
+const handleAuthSuccess = async (firebaseIdToken: string, navigate: any, location: any, onSuccess?: () => void) => {
+  const res = await fetch(`${API_URL}/auth/google`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ firebaseToken: firebaseIdToken }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Google login failed');
+  if (data.accessToken) localStorage.setItem('accessToken', data.accessToken);
+  if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
+  if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
+  window.dispatchEvent(new Event('authChange'));
+  showToast('success', 'Welcome! Signed in with Google successfully.');
+  const role = data.user?.role;
+  const from = (location.state as any)?.from;
+  if (from && typeof from === 'string') navigate(from, { replace: true });
+  else if (role === 'ADMIN') navigate('/admin/dashboard');
+  else if (role === 'INSPECTOR') navigate('/inspector/dashboard');
+  else navigate('/');
+  if (onSuccess) onSuccess();
+};
+
 export const GoogleLogin: React.FC<GoogleLoginProps> = ({ onSuccess, onError }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(false);
 
+  // Handle redirect result when returning from Google
+  useEffect(() => {
+    const checkRedirect = async () => {
+      try {
+        const token = await getGoogleRedirectResult();
+        if (token) {
+          setLoading(true);
+          await handleAuthSuccess(token, navigate, location, onSuccess);
+        }
+      } catch (err: any) {
+        showToast('error', err.message || 'Google sign-in failed');
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkRedirect();
+  }, []);
+
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
       const firebaseIdToken = await signInWithGoogle();
-
-      const res = await fetch(
-        `${(import.meta as any).env.VITE_API_URL || 'http://localhost:5000/api'}/auth/google`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ firebaseToken: firebaseIdToken }),
-        }
-      );
-
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.message || 'Google login failed');
-
-      if (data.accessToken) localStorage.setItem('accessToken', data.accessToken);
-      if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
-      if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
-
-      window.dispatchEvent(new Event('authChange'));
-      showToast('success', 'Welcome! Signed in with Google successfully.');
-
-      const role = data.user?.role;
-      const from = (location.state as any)?.from;
-      if (from && typeof from === 'string') {
-        navigate(from, { replace: true });
-      } else if (role === 'ADMIN') {
-        navigate('/admin/dashboard');
-      } else if (role === 'INSPECTOR') {
-        navigate('/inspector/dashboard');
-      } else {
-        navigate('/');
-      }
-
-      if (onSuccess) onSuccess();
+      if (!firebaseIdToken) return; // redirect mode — page will reload
+      await handleAuthSuccess(firebaseIdToken, navigate, location, onSuccess);
     } catch (error: any) {
-      // User closed the popup — don't show error
-      if (error?.code === 'auth/popup-closed-by-user') {
-        setLoading(false);
-        return;
-      }
+      if (error?.code === 'auth/popup-closed-by-user') { setLoading(false); return; }
       showToast('error', error.message || 'Google sign-in failed');
       if (onError) onError(error.message);
     } finally {

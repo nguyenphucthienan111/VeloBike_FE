@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
-import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 
 // Get these from Firebase Console → Project Settings → General → Your apps → Web app
 const firebaseConfig = {
@@ -18,9 +18,23 @@ export const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
 export const signInWithGoogle = async (): Promise<string> => {
-  const result = await signInWithPopup(auth, googleProvider);
-  const idToken = await result.user.getIdToken();
-  return idToken;
+  // Use redirect on deployed environments to avoid CORS/popup issues
+  const isLocalhost = window.location.hostname === 'localhost';
+  if (isLocalhost) {
+    const result = await signInWithPopup(auth, googleProvider);
+    return await result.user.getIdToken();
+  } else {
+    await signInWithRedirect(auth, googleProvider);
+    return ''; // redirect will handle the rest
+  }
+};
+
+export const getGoogleRedirectResult = async (): Promise<string | null> => {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result) return await result.user.getIdToken();
+    return null;
+  } catch { return null; }
 };
 
 // VAPID key from Firebase Console → Project Settings → Cloud Messaging → Web Push certificates
