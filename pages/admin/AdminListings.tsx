@@ -270,30 +270,30 @@ export const AdminListings: React.FC = () => {
         ) : (
               <>
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full table-fixed">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left">
+                        <th className="px-4 py-3 text-left w-8">
                           <input type="checkbox" checked={listings.length > 0 && selectedIds.size === listings.length} onChange={(e) => setSelectedIds(e.target.checked ? new Set(listings.map(l => l._id)) : new Set())} />
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Listing</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Seller</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Price</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 uppercase w-[35%]">Listing</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 uppercase w-[18%]">Seller</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 uppercase w-[12%]">Price</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 uppercase w-[12%]">Status</th>
                         {statusFilter === 'PENDING_APPROVAL' && (
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Priority</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 uppercase w-[14%]">Priority</th>
                         )}
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Actions</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 uppercase w-[15%]">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {listings.map((listing) => (
                         <tr key={listing._id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4">
+                          <td className="px-4 py-4">
                             <input type="checkbox" checked={selectedIds.has(listing._id)} onChange={() => setSelectedIds(prev => { const n = new Set(prev); if (n.has(listing._id)) n.delete(listing._id); else n.add(listing._id); return n; })} />
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
+                          <td className="px-4 py-4 max-w-0">
+                            <div className="flex items-center gap-3 min-w-0">
                               {/* Product Image */}
                               <div className="flex-shrink-0">
                                 {listing.media?.thumbnails?.[0] ? (
@@ -312,25 +312,25 @@ export const AdminListings: React.FC = () => {
                                 )}
                               </div>
                               {/* Product Info */}
-                              <div className="flex-1 min-w-0">
+                              <div className="flex-1 min-w-0 overflow-hidden">
                                 <p className="font-semibold text-gray-900 truncate">{listing.title}</p>
-                                <p className="text-sm text-gray-600">
+                                <p className="text-sm text-gray-600 truncate">
                                   {getListingBrand(listing)} {getListingModel(listing)}
                                   {getListingYear(listing) && ` (${getListingYear(listing)})`}
                                 </p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <div>
-                              <p className="font-semibold text-gray-900">{listing.sellerId?.fullName || 'N/A'}</p>
-                              <p className="text-sm text-gray-600">{listing.sellerId?.email || 'N/A'}</p>
+                          <td className="px-4 py-4 max-w-0">
+                            <div className="min-w-0">
+                              <p className="font-semibold text-gray-900 truncate">{listing.sellerId?.fullName || 'N/A'}</p>
+                              <p className="text-sm text-gray-600 truncate">{listing.sellerId?.email || 'N/A'}</p>
                             </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <p className="font-semibold text-gray-900">{formatCurrency(getListingPrice(listing))}</p>
+                          <td className="px-4 py-4">
+                            <p className="font-semibold text-gray-900 whitespace-nowrap">{formatCurrency(getListingPrice(listing))}</p>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-4 py-4">
                             <span className={`px-2 py-1 text-xs font-semibold rounded whitespace-nowrap ${
                               listing.status === 'PUBLISHED' ? 'text-green-600 bg-green-50' :
                               listing.status === 'REJECTED' ? 'text-red-600 bg-red-50' :
@@ -341,7 +341,7 @@ export const AdminListings: React.FC = () => {
                             </span>
                           </td>
                           {statusFilter === 'PENDING_APPROVAL' && (
-                            <td className="px-6 py-4">
+                            <td className="px-4 py-4">
                               <div>
                                 <p className="text-sm font-semibold text-gray-900">
                                   {listing.sellerPlanType || 'FREE'} (Level {listing.priorityLevel || 0})
@@ -352,7 +352,7 @@ export const AdminListings: React.FC = () => {
                               </div>
                             </td>
                           )}
-                          <td className="px-6 py-4">
+                          <td className="px-4 py-4 whitespace-nowrap">
                             {listing.status === 'PENDING_APPROVAL' && (
                               <div className="flex gap-2">
                                 <button
