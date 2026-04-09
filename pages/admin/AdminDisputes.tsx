@@ -7,18 +7,14 @@ interface Dispute {
   _id: string;
   orderId: {
     _id: string;
-    listingId: {
-      title: string;
-    };
+    amount: number;
+    financials?: { itemPrice: number; platformFee: number; totalAmount: number };
+    shippingAddress?: { fullName: string; phone: string; street?: string; district?: string; city?: string; province?: string };
+    listingId: { title: string };
+    status?: string;
   };
-  claimantId: {
-    fullName: string;
-    email: string;
-  };
-  respondentId: {
-    fullName: string;
-    email: string;
-  };
+  claimantId: { fullName: string; email: string; phone?: string };
+  respondentId: { fullName: string; email: string; phone?: string };
   reason: string;
   description: string;
   status: string;
@@ -82,9 +78,22 @@ export const AdminDisputes: React.FC = () => {
 
   const handleResolve = async (action: 'REFUND_BUYER' | 'PAY_SELLER') => {
     if (!selectedDispute) return;
-    if (!resolutionNote) {
+    if (!resolutionNote.trim()) {
       showToast('Please provide a resolution note');
       return;
+    }
+    if (action === 'REFUND_BUYER') {
+      const itemPrice = selectedDispute.orderId?.financials?.itemPrice || selectedDispute.orderId?.amount || 0;
+      const platformFee = selectedDispute.orderId?.financials?.platformFee || 0;
+      const maxAmount = Math.max(0, itemPrice - platformFee);
+      if (refundAmount <= 0) {
+        showToast('Refund amount must be greater than 0');
+        return;
+      }
+      if (maxAmount > 0 && refundAmount > maxAmount) {
+        showToast(`Refund cannot exceed order amount (${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(maxAmount)})`);
+        return;
+      }
     }
     setConfirmModal({ action });
   };
@@ -279,27 +288,62 @@ export const AdminDisputes: React.FC = () => {
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <h3 className="text-sm font-bold text-gray-900 uppercase mb-2">Claimant (Buyer)</h3>
-                    <div className="bg-white border p-3 rounded-lg">
+                    <div className="bg-white border p-3 rounded-lg space-y-1">
                       <p className="font-semibold">{selectedDispute.claimantId?.fullName}</p>
                       <p className="text-sm text-gray-600">{selectedDispute.claimantId?.email}</p>
+                      {selectedDispute.claimantId?.phone && (
+                        <p className="text-sm text-gray-600">📞 {selectedDispute.claimantId.phone}</p>
+                      )}
+                      {/* Contact from order shipping address */}
+                      {selectedDispute.orderId?.shippingAddress && (
+                        <div className="mt-2 pt-2 border-t border-gray-100">
+                          <p className="text-xs text-gray-400 mb-1">Order contact</p>
+                          {selectedDispute.orderId.shippingAddress.phone && (
+                            <p className="text-sm text-gray-700">📞 {selectedDispute.orderId.shippingAddress.phone}</p>
+                          )}
+                          {[
+                            selectedDispute.orderId.shippingAddress.street,
+                            selectedDispute.orderId.shippingAddress.district,
+                            selectedDispute.orderId.shippingAddress.city,
+                          ].filter(Boolean).length > 0 && (
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              📍 {[
+                                selectedDispute.orderId.shippingAddress.street,
+                                selectedDispute.orderId.shippingAddress.district,
+                                selectedDispute.orderId.shippingAddress.city,
+                              ].filter(Boolean).join(', ')}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-gray-900 uppercase mb-2">Respondent (Seller)</h3>
-                    <div className="bg-white border p-3 rounded-lg">
+                    <div className="bg-white border p-3 rounded-lg space-y-1">
                       <p className="font-semibold">{selectedDispute.respondentId?.fullName}</p>
                       <p className="text-sm text-gray-600">{selectedDispute.respondentId?.email}</p>
+                      {selectedDispute.respondentId?.phone && (
+                        <p className="text-sm text-gray-600">📞 {selectedDispute.respondentId.phone}</p>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 {/* Resolution Form (Only if OPEN or IN_REVIEW) */}
                 {(selectedDispute.status === 'OPEN' || selectedDispute.status === 'IN_REVIEW') && (
-                  <div className="border-t pt-6">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">Resolution</h3>
-                    
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Resolution Note</label>
+                  <div className="border-t pt-6 space-y-4">
+                    <h3 className="text-lg font-bold text-gray-900">Resolution</h3>
+
+                    {/* Order amount info */}
+                    {selectedDispute.orderId?.amount > 0 && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 text-sm text-blue-800">
+                        Order amount: <span className="font-semibold">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(selectedDispute.orderId.amount)}</span>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Resolution Note <span className="text-red-500">*</span></label>
                       <textarea
                         value={resolutionNote}
                         onChange={(e) => setResolutionNote(e.target.value)}
@@ -308,35 +352,73 @@ export const AdminDisputes: React.FC = () => {
                       />
                     </div>
 
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Refund Amount (to Buyer)</label>
-                      <input
-                        type="number"
-                        value={refundAmount}
-                        onChange={(e) => setRefundAmount(Number(e.target.value))}
-                        className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                        placeholder="0"
-                        min="0"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Enter 0 if denying the claim (paying seller).</p>
-                    </div>
+                    {/* Two separate action cards */}
+                    <div className="grid grid-cols-2 gap-4 pt-2">
+                      {/* Accept Claim - Refund Buyer */}
+                      <div className="border-2 border-red-200 rounded-xl p-4 bg-red-50 space-y-3">
+                        <div>
+                          <p className="font-semibold text-red-800">Accept Claim</p>
+                          <p className="text-xs text-red-600 mt-0.5">Refund buyer, seller receives remainder</p>
+                        </div>
+                        <div>
+                          {(() => {
+                            const itemPrice = selectedDispute.orderId?.financials?.itemPrice || selectedDispute.orderId?.amount || 0;
+                            const platformFee = selectedDispute.orderId?.financials?.platformFee || 0;
+                            const maxAmt = Math.max(0, itemPrice - platformFee);
+                            return (
+                              <>
+                                <label className="block text-xs font-medium text-red-700 mb-1">
+                                  Refund amount {maxAmt > 0 && `(max: ${new Intl.NumberFormat('vi-VN').format(maxAmt)}đ)`}
+                                </label>
+                                <input
+                                  type="number"
+                                  value={refundAmount}
+                                  onChange={(e) => {
+                                    const val = Number(e.target.value);
+                                    setRefundAmount(maxAmt > 0 ? Math.min(val, maxAmt) : val);
+                                  }}
+                                  className="w-full border border-red-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-400 focus:outline-none bg-white"
+                                  placeholder="0"
+                                  min="0"
+                                  max={maxAmt > 0 ? maxAmt : undefined}
+                                />
+                              </>
+                            );
+                          })()}
+                        </div>
+                        <button
+                          onClick={() => handleResolve('REFUND_BUYER')}
+                          disabled={processing}
+                          className="w-full bg-red-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-50"
+                        >
+                          {processing ? 'Processing...' : 'Refund Buyer'}
+                        </button>
+                      </div>
 
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => handleResolve('REFUND_BUYER')}
-                        disabled={processing}
-                        className="flex-1 bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50"
-                      >
-                        {processing ? 'Processing...' : 'Refund Buyer (Accept Claim)'}
-                      </button>
-                      <button
-                        onClick={() => handleResolve('PAY_SELLER')}
-                        disabled={processing}
-                        className="flex-1 bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50"
-                      >
-                        {processing ? 'Processing...' : 'Pay Seller (Deny Claim)'}
-                      </button>
-                    </div>                  </div>
+                      {/* Deny Claim - Pay Seller */}
+                      <div className="border-2 border-green-200 rounded-xl p-4 bg-green-50 space-y-3">
+                        <div>
+                          <p className="font-semibold text-green-800">Deny Claim</p>
+                          <p className="text-xs text-green-600 mt-0.5">Seller receives full payment, no refund to buyer</p>
+                        </div>
+                        <div className="bg-white border border-green-200 rounded-lg px-3 py-2 text-sm text-green-800">
+                          Seller payout: <span className="font-semibold">
+                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(
+                              Math.max(0, (selectedDispute.orderId?.financials?.itemPrice ?? selectedDispute.orderId?.amount ?? 0) - (selectedDispute.orderId?.financials?.platformFee ?? 0))
+                            )}
+                          </span>
+                          <p className="text-xs text-green-600 mt-0.5">(after platform fee deduction)</p>
+                        </div>
+                        <button
+                          onClick={() => handleResolve('PAY_SELLER')}
+                          disabled={processing}
+                          className="w-full bg-green-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-green-700 disabled:opacity-50"
+                        >
+                          {processing ? 'Processing...' : 'Pay Seller'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 )}
 
                 {/* Display Resolution if Resolved */}

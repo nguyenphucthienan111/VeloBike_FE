@@ -12,14 +12,15 @@ interface Order {
   buyerId: any;
   status: string;
   totalAmount: number;
-  financials?: { inspectionFee?: number; totalAmount?: number };
+  financials?: { inspectionFee?: number; totalAmount?: number; itemPrice?: number; shippingFee?: number; platformFee?: number };
   inspectionRequired: boolean;
+  shippingAddress?: { fullName?: string; phone?: string; street?: string; district?: string; city?: string; province?: string };
   shippingInfo?: { carrier?: string; trackingNumber?: string; trackingUrl?: string };
   createdAt: string;
   updatedAt: string;
   timeline?: any[];
   escrowStatus?: any;
-  inspectionVerdict?: string; // populated client-side
+  inspectionVerdict?: string;
 }
 
 export const SellerOrders: React.FC = () => {
@@ -463,11 +464,23 @@ export const SellerOrders: React.FC = () => {
                 </span>
               </div>
 
-              {/* Buyer */}
+                {/* Buyer */}
               <div className="bg-gray-50 rounded-lg px-4 py-3 text-sm">
                 <p className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">Buyer</p>
                 <p className="font-medium text-gray-900">{selectedOrder.buyerId?.fullName || selectedOrder.buyerId?.name || 'N/A'}</p>
                 {selectedOrder.buyerId?.email && <p className="text-gray-500 text-xs">{selectedOrder.buyerId.email}</p>}
+                {selectedOrder.shippingAddress?.phone && (
+                  <p className="text-gray-700 text-xs mt-1">📞 {selectedOrder.shippingAddress.phone}</p>
+                )}
+                {selectedOrder.shippingAddress && (
+                  <p className="text-gray-500 text-xs mt-0.5">
+                    📍 {[
+                      selectedOrder.shippingAddress.street,
+                      selectedOrder.shippingAddress.district,
+                      selectedOrder.shippingAddress.city,
+                    ].filter(Boolean).join(', ')}
+                  </p>
+                )}
               </div>
 
               {/* Shipping */}
