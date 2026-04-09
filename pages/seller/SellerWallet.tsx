@@ -512,7 +512,6 @@ export const SellerWallet: React.FC = () => {
       COMMISSION_DEBIT: 'Commission Fee',
       REFUND: 'Dispute Clawback',
       WITHDRAW: 'Withdrawal',
-      WITHDRAW: 'Withdrawal',
     };
     return map[type] || type;
   };
@@ -522,7 +521,6 @@ export const SellerWallet: React.FC = () => {
       PAYMENT_RELEASE: 'bg-green-100 text-green-700',
       COMMISSION_DEBIT: 'bg-orange-100 text-orange-700',
       REFUND: 'bg-red-100 text-red-700',
-      WITHDRAW: 'bg-blue-100 text-blue-700',
       WITHDRAW: 'bg-blue-100 text-blue-700',
     };
     return map[type] || 'bg-gray-100 text-gray-700';
