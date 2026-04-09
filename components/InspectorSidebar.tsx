@@ -1,19 +1,38 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { API_BASE_URL } from '../constants';
 
 export const InspectorSidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    const fetchPendingCount = async () => {
+      try {
+        const token = localStorage.getItem('accessToken');
+        if (!token) return;
+        const res = await fetch(`${API_BASE_URL}/inspections/pending`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setPendingCount(data.pagination?.total ?? data.total ?? data.data?.length ?? 0);
+        }
+      } catch {}
+    };
+    fetchPendingCount();
+  }, [location.pathname]);
 
   const isActive = (path: string) => location.pathname === path;
 
   const navItems = [
-    { path: '/inspector/dashboard', label: 'Dashboard' },
-    { path: '/inspector/pending', label: 'Pending Inspections' },
-    { path: '/inspector/history', label: 'My Inspections' },
-    { path: '/inspector/reviews', label: 'My Reviews' },
-    { path: '/inspector/wallet', label: 'My Wallet' },
-    { path: '/inspector/profile', label: 'My Profile' },
+    { path: '/inspector/dashboard', label: 'Dashboard', count: 0 },
+    { path: '/inspector/pending', label: 'Pending Inspections', count: pendingCount },
+    { path: '/inspector/history', label: 'My Inspections', count: 0 },
+    { path: '/inspector/reviews', label: 'My Reviews', count: 0 },
+    { path: '/inspector/wallet', label: 'My Wallet', count: 0 },
+    { path: '/inspector/profile', label: 'My Profile', count: 0 },
   ];
 
   return (
@@ -32,13 +51,20 @@ export const InspectorSidebar: React.FC = () => {
           <button
             key={item.path}
             onClick={() => navigate(item.path)}
-            className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
+            className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-between ${
               isActive(item.path)
                 ? 'bg-gray-900 text-white'
                 : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
-            {item.label}
+            <span>{item.label}</span>
+            {item.count > 0 && (
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                isActive(item.path) ? 'bg-white text-gray-900' : 'bg-red-500 text-white'
+              }`}>
+                {item.count}
+              </span>
+            )}
           </button>
         ))}
       </nav>

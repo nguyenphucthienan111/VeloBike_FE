@@ -96,8 +96,9 @@ export const AdminOrders: React.FC = () => {
 
   const openAssignModal = async (order: Order) => {
     setAssignModal({ open: true, order });
-    setSelectedInspector(order.inspectorId?._id || '');
+    setSelectedInspector('');
     await fetchInspectors();
+    setSelectedInspector(order.inspectorId?._id || '');
   };
 
   const handleAssignInspector = async () => {
@@ -113,7 +114,8 @@ export const AdminOrders: React.FC = () => {
       const data = await res.json();
       if (res.ok) {
         setAssignModal({ open: false, order: null });
-        fetchOrders();
+        setSelectedInspector('');
+        await fetchOrders();
       } else {
         alert(data.message || 'Failed to assign inspector');
       }

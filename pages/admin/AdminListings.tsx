@@ -352,9 +352,9 @@ export const AdminListings: React.FC = () => {
                               </div>
                             </td>
                           )}
-                          <td className="px-4 py-4 whitespace-nowrap">
+                          <td className="px-4 py-4">
                             {listing.status === 'PENDING_APPROVAL' && (
-                              <div className="flex gap-2">
+                              <div className="flex flex-col gap-1">
                                 <button
                                   onClick={() => {
                                     setSelectedListing(listing);
